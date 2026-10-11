@@ -1,5 +1,7 @@
 """Human compositions and performances, linked to their published recordings."""
 from html import escape as esc
+from pathlib import Path
+import json
 
 MUSIC = [
     dict(id='onegin', group='secular', composer='Пётр Чайковский',
@@ -85,10 +87,12 @@ MUSIC.append(dict(
     article='zabota-i-entropiya', sources=[]))
 
 
+MUSIC.extend(json.loads(Path(__file__).with_name('music_traditions.json').read_text()))
+
 def lesson_music(slug):
     items = [m for m in MUSIC if m.get('lesson') == slug]
     companions = {
-        'uvidet-drugogo': ('cello', 'Виолончельная сюита Баха звучит рядом с рассказом как спокойное сопровождение. Её можно включить после чтения и задержаться на мысли о помощи, которую люди оказывают друг другу.'),
+        'uvidet-drugogo': ('basiani-vineyard', 'Грузинское богородичное песнопение в исполнении Basiani открывает одну из христианских традиций Кавказа. Это выбранное нами слушание после рассказа, а не музыка, названная у Толстого.'),
         'matrenin-dvor-neuznannaya': ('vigil', '«Ныне отпущаеши» Рахманинова сопровождает тему памяти и прощания. У церковного песнопения остаётся собственный молитвенный смысл; выбор записи принадлежит мастерской.'),
     }
     note = 'Музыка рядом с текстом: запись, исполнители и небольшой комментарий.'
@@ -103,7 +107,7 @@ def lesson_music(slug):
 
 def publish_music(page):
     sections = []
-    for group, title in [('secular', 'Светская музыка'), ('sacred', 'Православное церковное пение'), ('western', 'Западнохристианская духовная музыка')]:
+    for group, title in [('secular', 'Светская музыка'), ('sacred', 'Православное церковное пение'), ('armenian', 'Армянская христианская традиция'), ('western', 'Западнохристианская духовная музыка')]:
         cards = []
         for m in MUSIC:
             if m['group'] != group:
@@ -111,15 +115,15 @@ def publish_music(page):
             questions = ''.join(f'<li>{esc(q)}</li>' for q in m['questions'])
             sources = ''.join(f'<li><a href="{esc(url, quote=True)}">{esc(label)}</a></li>' for url, label in m['sources'])
             source_list = f'<ul class="sources">{sources}</ul>' if sources else ''
-            destination = f'/masterskaya/{m["lesson"]}/' if m.get('lesson') else f'/filosofiya/{m["article"]}/'
-            destination_label = 'Перейти к литературному занятию' if m.get('lesson') else 'Перейти к философской статье'
+            destination = m.get('destination') or (f'/masterskaya/{m["lesson"]}/' if m.get('lesson') else f'/filosofiya/{m["article"]}/')
+            destination_label = 'Перейти к литературному занятию' if m.get('lesson') else 'Перейти к статье'
             cards.append(f'''<article class="music-card" id="{m['id']}"><p class="eyebrow">{esc(m['composer'])}</p><h3>{esc(m['title'])}</h3><p class="music-kind">{esc(m['kind'])}</p><p>{esc(m['context'])}</p>
             <p class="music-performers"><strong>Исполнение.</strong> {esc(m['performers'])}</p>
             <p><a class="button secondary" href="{esc(m['url'], quote=True)}">Открыть запись</a></p><p class="fine">Источник: {esc(m['platform'])}. {esc(m['source_note'])}</p>
             {source_list}<p><a href="{destination}">{destination_label}</a></p></article>''')
         sections.append(f'<section class="music-group" id="{group}"><h2>{title}</h2>{"".join(cards)}</section>')
-    body = f'''<div class="wrap"><div class="breadcrumb"><a href="/">Главная</a><span>/</span>Музыка</div><header class="page-title"><p class="eyebrow">Музыка рядом с книгой</p><h1>Когда слово<br>становится музыкой</h1><p class="lead">Светские сочинения и церковное пение рядом с литературным и философским чтением: восемь маршрутов для внимательного слушателя.</p></header>
+    body = f'''<div class="wrap"><div class="breadcrumb"><a href="/">Главная</a><span>/</span>Музыка</div><header class="page-title"><p class="eyebrow">Музыка рядом с книгой</p><h1>Когда слово<br>становится музыкой</h1><p class="lead">Светские сочинения и церковное пение рядом с литературным и философским чтением: русская, грузинская, сербская, греческая, армянская и западноевропейская традиции.</p></header>
     <article class="prose"><p>Музыку можно включить после чтения или оставить звучать в памяти рядом с ним. Здесь нет заданий по музыкальному анализу: записи подобраны как сопровождение к литературным и философским текстам.</p>
-    <nav class="jump-links" aria-label="Музыкальные разделы"><a href="#secular">Светская музыка</a><a href="#sacred">Православное пение</a><a href="#western">Западнохристианская музыка</a></nav>{''.join(sections)}
-    <p class="fine">Сведения о записях и ссылки подобраны 2 октября 2026 года. Записи открываются на страницах источников; доступность внешних плееров может меняться. Связь записей со статьями предложена мастерской. Святоотеческие цитаты по-прежнему берём только из <a href="/tsitaty/">выбранного цитатника</a>.</p></article></div>'''
+    <nav class="jump-links" aria-label="Музыкальные разделы"><a href="#secular">Светская музыка</a><a href="#sacred">Православное пение</a><a href="#armenian">Армянская традиция</a><a href="#western">Западнохристианская музыка</a></nav>{''.join(sections)}
+    <p class="fine">Подборка дополнена 12 октября 2026 года. Записи открываются на страницах источников; доступность внешних плееров может меняться. Связь записей со статьями предложена мастерской. Святоотеческие цитаты по-прежнему берём только из <a href="/tsitaty/">выбранного цитатника</a>.</p></article></div>'''
     page('/muzyka/', 'Музыка и литературное чтение', 'Светская и церковная музыка: Чайковский, Бородин, Рахманинов, знаменный распев; музыкальные иллюстрации к литературным произведениям.', body, active='music')

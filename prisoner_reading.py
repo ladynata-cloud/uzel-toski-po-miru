@@ -24,6 +24,8 @@ def analysis_html():
             parts.append(film_figure('caucasus-film-1975-aul'))
         if i == 13:
             parts.append(film_figure('caucasus-film-1975-zhilin-kostylin'))
+    from screen_adaptations import textual_basis
+    parts.append(textual_basis([dict(label='Глава ' + x['chapter'], url=x['url'], detail=x['verified_detail'].removeprefix('Прочитана полностью. ')) for x in ARTICLE['source_review']]))
     return ''.join(parts)
 
 

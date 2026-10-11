@@ -1,3 +1,4 @@
+from screen_adaptations import film_companions, textual_basis
 """Supplementary reading: source lists, original guides and bounded close readings."""
 import json
 from pathlib import Path
@@ -180,6 +181,8 @@ def essay_body(x):
         if i in headings:
             body += f'<h2>{e(headings[i])}</h2>'
         body += f'<p>{e(paragraph)}</p>'
+    body += textual_basis(x.get('textual_basis', []))
+    body += film_companions(x['slug'])
     body += '<h2>Встреча с православной мыслью</h2>'
     if x.get('quote_comments'):
         for comment in x['quote_comments']:
