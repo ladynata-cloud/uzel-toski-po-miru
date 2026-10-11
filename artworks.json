@@ -1,0 +1,91 @@
+{
+  "home": {
+    "artist": "Исаак Ильич Левитан",
+    "title": "Вечерний звон",
+    "date": "1892",
+    "kind": "Холст, масло",
+    "collection": "Государственная Третьяковская галерея",
+    "image": "/assets/art/levitan-evening-bells.webp",
+    "width": 1702,
+    "height": 1363,
+    "source": "https://commons.wikimedia.org/wiki/File:Isaak_Ilitsch_Lewitan_005.jpg",
+    "verification_source": "",
+    "original_image_url": "https://upload.wikimedia.org/wikipedia/commons/5/56/Isaak_Ilitsch_Lewitan_005.jpg",
+    "rights": "Общественное достояние; сведения Wikimedia Commons.",
+    "rights_details": "Public domain; Commons PD-Art / PD-old-100-expired. Source expressly identifies a faithful reproduction of a two-dimensional public-domain artwork and pre-1931 publication.",
+    "processing": "Faithful reproduction retained. WebP conversion, max 1800px longest edge, quality 91. No generation, restoration, recolouring, compositing, or upscaling.",
+    "verified_on": "2026-10-02",
+    "relation": "Самостоятельный пейзаж, выбранный для главной страницы мастерской.",
+    "alt": "Вечерний свет над рекой; лодки переправляются к монастырю на другом берегу.",
+    "questions": []
+  },
+  "onegin-dva-pisma": {
+    "artist": "Михаил Петрович Клодт",
+    "title": "Татьяна у окна",
+    "date": "1886",
+    "kind": "Холст, масло",
+    "collection": "Всероссийский музей А. С. Пушкина, КП-2849",
+    "image": "/assets/art/klodt-tatiana.webp",
+    "width": 517,
+    "height": 928,
+    "source": "https://commons.wikimedia.org/wiki/File:Eugene_Onegin_by_M.Klodt_(1886).jpg",
+    "verification_source": "https://www.museumpushkin.ru/kollekcii/virtualnaya_galereya/skazhi-_kotoraya_tatyana.html",
+    "original_image_url": "https://upload.wikimedia.org/wikipedia/commons/b/b3/Eugene_Onegin_by_M.Klodt_%281886%29.jpg",
+    "rights": "Общественное достояние; сведения Wikimedia Commons.",
+    "rights_details": "Public domain; Commons PD-Art / PD-old-100-expired. Faithful two-dimensional reproduction; source expressly records pre-1931 publication.",
+    "processing": "Faithful reproduction retained. WebP conversion, max 1800px longest edge, quality 91. No generation, restoration, recolouring, compositing, or upscaling.",
+    "verified_on": "2026-10-02",
+    "relation": "Образ Татьяны из романа Пушкина. На картине героиня стоит у окна; это не изображение процесса написания письма.",
+    "alt": "Татьяна в светлом платье стоит у окна, положив руку на грудь; комната за её спиной погружена в тень.",
+    "questions": [
+      "Как поза Татьяны и положение у окна помогают вам предположить её состояние? Какие детали вы действительно видите, а какие чувства только предполагаете?",
+      "Найдите в письме Татьяны слова, с которыми можно сопоставить картину. В чём живописный образ оставляет больше неопределённости, чем написанное признание?"
+    ]
+  },
+  "pechorin-samopoznanie": {
+    "artist": "Михаил Александрович Врубель",
+    "title": "Печорин",
+    "date": "1891",
+    "kind": "Иллюстрация к роману; акварель",
+    "collection": "",
+    "image": "/assets/art/vrubel-pechorin.webp",
+    "width": 1000,
+    "height": 722,
+    "source": "https://commons.wikimedia.org/wiki/File:Pechorin.jpg",
+    "verification_source": "https://tarhany.ru/events/news/424",
+    "original_image_url": "https://upload.wikimedia.org/wikipedia/commons/2/2c/Pechorin.jpg",
+    "rights": "Общественное достояние; сведения Wikimedia Commons.",
+    "rights_details": "Public domain per Commons PD-old-100. Artist died in 1910. The Commons file lacks a separate US tag; the Tarkhany museum identifies Pechorin among the illustrations included in the second volume of the 1891 Kushnerev edition, supporting pre-1931 publication.",
+    "processing": "Faithful reproduction retained. WebP conversion, max 1800px longest edge, quality 91. No generation, restoration, recolouring, compositing, or upscaling.",
+    "verified_on": "2026-10-02",
+    "relation": "Иллюстрация к «Княжне Мери» из романа «Герой нашего времени».",
+    "alt": "Печорин в военном мундире сидит на диване; рядом на столике горят свечи. Фигура окружена тёмным узорчатым интерьером.",
+    "questions": [
+      "Что можно сказать о позе, взгляде и окружении Печорина по изображению? Отделите эти наблюдения от предположений о его характере.",
+      "Сопоставьте образ Врубеля с одним самоописанием Печорина в журнале. Помогает ли текст подтвердить ваше первое впечатление или заставляет его уточнить?"
+    ]
+  },
+  "slovo-plach-yaroslavny": {
+    "artist": "Виктор Михайлович Васнецов",
+    "title": "После побоища Игоря Святославича с половцами",
+    "date": "1880",
+    "kind": "Холст, масло",
+    "collection": "Государственная Третьяковская галерея",
+    "image": "/assets/art/vasnetsov-after-igors-battle.webp",
+    "width": 1800,
+    "height": 944,
+    "source": "https://commons.wikimedia.org/wiki/File:Igorsvyat.jpg",
+    "verification_source": "",
+    "original_image_url": "https://upload.wikimedia.org/wikipedia/commons/6/6f/Igorsvyat.jpg",
+    "rights": "Общественное достояние; сведения Wikimedia Commons.",
+    "rights_details": "Public domain; Commons PD-Art / PD-old-95-expired. Artist died in 1926; source expressly records pre-1931 publication.",
+    "processing": "Faithful reproduction retained. WebP conversion, max 1800px longest edge, quality 91. No generation, restoration, recolouring, compositing, or upscaling.",
+    "verified_on": "2026-10-02",
+    "relation": "Картина на сюжет похода Игоря. Сопоставляем с плачем Ярославны; сама Ярославна здесь не изображена.",
+    "alt": "Павшие воины лежат среди трав на поле после битвы; над ними кружат птицы, у горизонта видна луна.",
+    "questions": [
+      "На чём задерживается ваш взгляд: фигурах воинов, траве, небе, птицах? Объясните роль одной детали в вашем восприятии последствий битвы.",
+      "Как безмолвная сцена на картине соотносится с голосом Ярославны в «Слове»? Приведите конкретное обращение из прочитанного перевода, которое помогает провести сравнение."
+    ]
+  }
+}

@@ -1,0 +1,188 @@
+{
+  "checked_on": "2026-10-09",
+  "method": "Exact substrings after HTML text extraction and whitespace normalization; eight directly indexed approved pages only.",
+  "checks": [
+    {
+      "id": "nadezhda",
+      "page": "txt01.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "dc76f3cce1cb4f2372e5ff4566cc7dc9b75edf0ef2ebc1111f52cc033378d9a8"
+    },
+    {
+      "id": "srebrolubie",
+      "page": "txt02.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "e14b929bbd9b0840d497a9dffd246a81d0d03e8121c494f71376b3f66f2367b6"
+    },
+    {
+      "id": "vnimanie",
+      "page": "txt04.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "9f10873f8f3e39e3ad921fd28c780d436922c848c04b43c2166c2d3d62a4172d"
+    },
+    {
+      "id": "smirenie",
+      "page": "txt06.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "b34b7425f3616b57e497d8df456e65658ac75c41a3c6efe0b26d7d47b6a17e51"
+    },
+    {
+      "id": "skorbi",
+      "page": "txt05.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "7529cad0257ab9939e16fca571be29acca16cfad7a13873dcbde293bab74973c"
+    },
+    {
+      "id": "molitva",
+      "page": "txt04.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "9f10873f8f3e39e3ad921fd28c780d436922c848c04b43c2166c2d3d62a4172d"
+    },
+    {
+      "id": "darenie",
+      "page": "txt06.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "b34b7425f3616b57e497d8df456e65658ac75c41a3c6efe0b26d7d47b6a17e51"
+    },
+    {
+      "id": "pristrastie",
+      "page": "txt02.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "e14b929bbd9b0840d497a9dffd246a81d0d03e8121c494f71376b3f66f2367b6"
+    },
+    {
+      "id": "peremena",
+      "page": "txt06.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "b34b7425f3616b57e497d8df456e65658ac75c41a3c6efe0b26d7d47b6a17e51"
+    },
+    {
+      "id": "blagodarenie",
+      "page": "txt05.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "7529cad0257ab9939e16fca571be29acca16cfad7a13873dcbde293bab74973c"
+    },
+    {
+      "id": "darit-bez-pechali",
+      "page": "txt02.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "e14b929bbd9b0840d497a9dffd246a81d0d03e8121c494f71376b3f66f2367b6"
+    },
+    {
+      "id": "bednost-i-bogatstvo",
+      "page": "txt02.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "e14b929bbd9b0840d497a9dffd246a81d0d03e8121c494f71376b3f66f2367b6"
+    },
+    {
+      "id": "sosredotochennaya-molitva",
+      "page": "txt04.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "9f10873f8f3e39e3ad921fd28c780d436922c848c04b43c2166c2d3d62a4172d"
+    },
+    {
+      "id": "serdechnaya-molitva",
+      "page": "txt04.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "9f10873f8f3e39e3ad921fd28c780d436922c848c04b43c2166c2d3d62a4172d"
+    },
+    {
+      "id": "volya-i-molitva",
+      "page": "txt04.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "9f10873f8f3e39e3ad921fd28c780d436922c848c04b43c2166c2d3d62a4172d"
+    },
+    {
+      "id": "blagodarnost-v-molitve",
+      "page": "txt04.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "9f10873f8f3e39e3ad921fd28c780d436922c848c04b43c2166c2d3d62a4172d"
+    },
+    {
+      "id": "mir-pered-molitvoy",
+      "page": "txt04.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "9f10873f8f3e39e3ad921fd28c780d436922c848c04b43c2166c2d3d62a4172d"
+    },
+    {
+      "id": "nachat-s-molitvy",
+      "page": "txt04.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "9f10873f8f3e39e3ad921fd28c780d436922c848c04b43c2166c2d3d62a4172d"
+    },
+    {
+      "id": "smysl-molitvy",
+      "page": "txt04.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "9f10873f8f3e39e3ad921fd28c780d436922c848c04b43c2166c2d3d62a4172d"
+    },
+    {
+      "id": "ne-teriat-nadezhdy",
+      "page": "txt05.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "7529cad0257ab9939e16fca571be29acca16cfad7a13873dcbde293bab74973c"
+    },
+    {
+      "id": "radost-pashi",
+      "page": "txt05.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "7529cad0257ab9939e16fca571be29acca16cfad7a13873dcbde293bab74973c"
+    },
+    {
+      "id": "pamyat-o-slabosti",
+      "page": "txt06.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "b34b7425f3616b57e497d8df456e65658ac75c41a3c6efe0b26d7d47b6a17e51"
+    },
+    {
+      "id": "smirenie-protiv-gordosti",
+      "page": "txt06.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "b34b7425f3616b57e497d8df456e65658ac75c41a3c6efe0b26d7d47b6a17e51"
+    },
+    {
+      "id": "angely-i-svoboda",
+      "page": "txt08.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "926e1b4362ac36b26f44611ef44c3827ed680f1f7d4c95c63fe2ca1342ff4a9e"
+    },
+    {
+      "id": "angelskoe-rukovodstvo",
+      "page": "txt08.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "926e1b4362ac36b26f44611ef44c3827ed680f1f7d4c95c63fe2ca1342ff4a9e"
+    },
+    {
+      "id": "angel-hranitel",
+      "page": "txt08.html",
+      "text_exact": true,
+      "attribution_exact": true,
+      "source_sha256": "926e1b4362ac36b26f44611ef44c3827ed680f1f7d4c95c63fe2ca1342ff4a9e"
+    }
+  ]
+}

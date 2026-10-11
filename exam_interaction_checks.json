@@ -1,0 +1,95 @@
+{
+  "executedAt": "2026-10-09T04:22:52.841Z",
+  "runtime": "v24.19.0",
+  "method": "Actual unchanged app.js and exam-practice.js executed in node:vm with fake DOM event targets and controllable monotonic performance clock; no browser or server.",
+  "sourceHashes": {
+    "app.js": "61662babadf5140ce3a0b4cffa34e7f7bfc97d90c54c64e673ddbf3c3f233a35",
+    "exam-practice.js": "5835b0e744ba340030543c7324024be6674d56ca6a875278829695474b93640d"
+  },
+  "summary": {
+    "pass": 16,
+    "fail": 0
+  },
+  "results": [
+    {
+      "name": "transfer updates prompt through bubbling change and preserves edited draft",
+      "status": "pass",
+      "changes": 3,
+      "draft": "Мой черновик: два примера и вывод.",
+      "prompt": "Третье условие: устный ответ.",
+      "dirtyStatePreserved": true
+    },
+    {
+      "name": "invalid transfer target is a no-op",
+      "status": "pass"
+    },
+    {
+      "name": "missing practice and timer do not throw",
+      "status": "pass"
+    },
+    {
+      "name": "timer 300s reaches zero once and repeats cleanly",
+      "status": "pass",
+      "zeroAtMilliseconds": 300000,
+      "repeated": true,
+      "maxActiveIntervals": 1
+    },
+    {
+      "name": "timer 120s reaches zero once and repeats cleanly",
+      "status": "pass",
+      "zeroAtMilliseconds": 120000,
+      "repeated": true,
+      "maxActiveIntervals": 1
+    },
+    {
+      "name": "timer 180s reaches zero once and repeats cleanly",
+      "status": "pass",
+      "zeroAtMilliseconds": 180000,
+      "repeated": true,
+      "maxActiveIntervals": 1
+    },
+    {
+      "name": "fractional pause freezes exact remainder; resume ends without negative values",
+      "status": "pass",
+      "pausedAtMilliseconds": 1234,
+      "pausedWallTimeMilliseconds": 50000,
+      "maxActiveIntervals": 1
+    },
+    {
+      "name": "reset during running and paused states clears timers",
+      "status": "pass"
+    },
+    {
+      "name": "timer stage selection stops old interval and uses 120/180/300 durations",
+      "status": "pass"
+    },
+    {
+      "name": "delayed callback clamps to zero rather than slowing or becoming negative",
+      "status": "pass"
+    },
+    {
+      "name": "pause click after deadline ends timer instead of overwriting completion state",
+      "status": "pass"
+    },
+    {
+      "name": "100 rapid toggles, resets and stage changes never leave duplicate intervals",
+      "status": "pass"
+    },
+    {
+      "name": "pagehide stops running interval and exposes honest paused UI for restored page",
+      "status": "pass"
+    },
+    {
+      "name": "second BFCache leave cleans restarted interval as well",
+      "status": "pass"
+    },
+    {
+      "name": "pagehide after deadline preserves completed state and does not offer a false resume",
+      "status": "pass"
+    },
+    {
+      "name": "model-context draft replacement stays compatible with transfer and dirty warning",
+      "status": "pass"
+    }
+  ]
+}

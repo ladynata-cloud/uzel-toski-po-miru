@@ -1,0 +1,22 @@
+{
+  "checked_on": "2026-10-12",
+  "pages": 544,
+  "internal_links_and_assets": 20278,
+  "supplementary_articles": 272,
+  "catalogue_positions_with_scoped_analysis": 232,
+  "catalogue_positions_waiting_for_primary_text": 4,
+  "quotation_fragments": 26,
+  "human_artworks": 21,
+  "exam_branches": 6,
+  "exam_lessons": 36,
+  "new_source_status": {
+    "limited": 152,
+    "blocked": 4,
+    "verified": 46
+  },
+  "errors": [],
+  "limits": [
+    "No browser rendering or external audio playback check.",
+    "Source availability and scope retained per article; no claim of full-book coverage."
+  ]
+}

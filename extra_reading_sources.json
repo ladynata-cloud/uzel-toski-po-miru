@@ -1,0 +1,51 @@
+{
+  "checked": "2026-10-02",
+  "official": {
+    "url": "https://edsoo.ru/wp-content/uploads/2026/07/proizvedeniya-rekomendovannye-dlya-vneklassnogo-chteniya.pdf",
+    "landing": "https://edsoo.ru/modernizacziya-shkolnyh-bibliotek/",
+    "scope": "List 2 only: primary 69, middle 105, senior 62; bibliographic positions, not individual books.",
+    "sha256": "70b00700656815ca3c00ef8cfb963602b513d32ca42af463e17fca05c19feb3d"
+  },
+  "textbooks": {
+    "klimanova4a": {
+      "title": "Климанова, Горецкий, Голованова, Виноградская, Бойкина. Литературное чтение. 4 класс. Часть 1",
+      "year": "2015",
+      "pages": "216–217",
+      "rubric": "Советуем прочитать",
+      "url": "https://my-uchebnik.ru/book/literature/5/literature-00000105.htm",
+      "grade": 4
+    },
+    "klimanova4b": {
+      "title": "Климанова, Горецкий, Голованова, Виноградская, Бойкина. Литературное чтение. 4 класс. Часть 2",
+      "year": "2015",
+      "pages": "219",
+      "rubric": "Советуем прочитать",
+      "url": "https://my-uchebnik.ru/book/literature/5/literature-00000106.htm",
+      "grade": 4
+    },
+    "lanin5": {
+      "title": "Ланин, Устинова, Шамчикова. Литература. 5 класс. Часть 2",
+      "year": "2022",
+      "pages": "301",
+      "rubric": "Круг чтения. Советуем прочитать (по выбору)",
+      "url": "https://my-uchebnik.ru/book/literature/5/literature-00000166.htm",
+      "grade": 5
+    }
+  },
+  "textbook_scope": "Only the stated recommendation rubrics have complete guide coverage. OCR representations were consulted; not all full textbook lines were read.",
+  "new_guides": 46,
+  "new_close_readings": 46,
+  "new_pages": 276,
+  "analysis_scope": "46 scoped articles for three textbook recommendation lists, plus 222 scoped articles for distinct catalogue positions. Ten other positions link to overlapping textbook articles. Every article identifies the work, chapter or available excerpt actually read. Remaining unavailable primary texts are explicitly marked in the catalogue.",
+  "quote_count": 26,
+  "catalogue_close_readings": 222,
+  "total_supplementary_articles": 268,
+  "edition_checked_on": "2026-10-09",
+  "catalogue_positions_with_scoped_analysis": 232,
+  "pending_primary_text_ids": [
+    "middle-017",
+    "middle-030",
+    "middle-093",
+    "senior-046"
+  ]
+}

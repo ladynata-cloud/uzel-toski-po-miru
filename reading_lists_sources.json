@@ -1,0 +1,68 @@
+{
+  "official_sources": [
+    {
+      "exam": "ege",
+      "status": "project",
+      "year": 2027,
+      "checked_on": "2026-10-02",
+      "source_page": "https://fipi.ru/ege/demoversii-specifikacii-kodifikatory",
+      "archive": "https://doc.fipi.ru/ege/demoversii-specifikacii-kodifikatory/2027/li_11_2027.zip",
+      "document": "ЛИ-11 ЕГЭ 2027 КОДИФ.pdf",
+      "sha256": "19eb72f6d5eef4d74ce88fd0a17e0cec4bc69e0a84bbb4ffa4500f29393107ed",
+      "table": "3",
+      "printed_pages": "9–13",
+      "entries": 66
+    },
+    {
+      "exam": "oge",
+      "status": "project",
+      "year": 2027,
+      "checked_on": "2026-10-02",
+      "source_page": "https://fipi.ru/oge/demoversii-specifikacii-kodifikatory",
+      "archive": "https://doc.fipi.ru/oge/demoversii-specifikacii-kodifikatory/2027/li_9_2027.zip",
+      "document": "ЛИ-9 ОГЭ 2027_КОДИФ.pdf",
+      "sha256": "d25219f77b4db195b71a04ee449ecedb417074e3a48bda90fa867f1cc15cbaa6",
+      "table": "3",
+      "printed_pages": "8–10",
+      "entries": 48
+    }
+  ],
+  "method": "All table-3 entries retained; PDF line wrapping normalized, split OGE Chekhov entry joined across pages; San-Francisco hyphen preserved. Reading selections and focus notes are original editorial material, not FIPI recommendations.",
+  "extra_primary_sources": [
+    {
+      "title": "Н. Г. Чернышевский. «Что делать?»",
+      "url": "https://ilibrary.ru/text/1694/index.html",
+      "scope": "ЕГЭ: код 11, углублённый уровень; избранные главы"
+    },
+    {
+      "title": "С. А. Есенин. «Чёрный человек»",
+      "url": "https://rvb.ru/20vek/esenin/pss7/vol3/poems/209.html",
+      "scope": "ЕГЭ: код 27, углублённый уровень"
+    },
+    {
+      "title": "Е. И. Замятин. «Мы»",
+      "url": "https://ilibrary.ru/text/1494/index.html",
+      "scope": "ЕГЭ: код 32, углублённый уровень"
+    },
+    {
+      "title": "В. В. Набоков. «Рождество»",
+      "url": "https://lib.ru/NABOKOW/rozhdestvo.txt",
+      "scope": "Наш выбор для позиции о прозе Набокова: ЕГЭ, код 36, углублённый уровень; возможное дополнительное чтение"
+    },
+    {
+      "title": "А. Т. Твардовский. «По праву памяти»",
+      "url": "https://smolensklib.ru/sites/default/files/old%20str/tvardov/poimi/pamyat/pamyat.htm",
+      "scope": "ЕГЭ: код 38; поэма дополняет стихотворения Твардовского"
+    },
+    {
+      "title": "Б. Л. Пастернак. «Доктор Живаго»",
+      "url": "https://www.litres.ru/book/boris-pasternak/doktor-zhivago-134194/chitat-onlayn/",
+      "scope": "ЕГЭ: код 43, углублённый уровень; избранные главы. Здесь — чтение начала, не полный разбор романа"
+    },
+    {
+      "title": "Митрополит Тихон (Шевкунов). «Гибель империи. Российский урок»",
+      "url": "https://www.litres.ru/book/arhimandrit-tihon-shevkunov/gibel-imperii-rossiyskiy-urok-70751089/chitat-onlayn/",
+      "scope": "Риторический анализ предисловия и начала первой части по доступному ознакомительному фрагменту; исторические утверждения автора не прошли отдельной проверки."
+    }
+  ]
+}

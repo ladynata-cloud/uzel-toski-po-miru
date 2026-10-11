@@ -1,0 +1,64 @@
+{
+  "collection": "http://www.biblioteka3.ru/biblioteka/citaty/",
+  "checked": "2026-10-02",
+  "total": 105,
+  "topics": [
+    {
+      "page": "txt01.html",
+      "topic": "Об унынии",
+      "quotations": 10,
+      "sha256": "e07f6404d11ffe7fe66d8e2ec8c6fbdb429ab52ca24839818388e44340c33159",
+      "bytes": 11589
+    },
+    {
+      "page": "txt02.html",
+      "topic": "О сребролюбии",
+      "quotations": 9,
+      "sha256": "959ae152a26e60a8a784c6178c4092e315c078e246009c3358a428f6e46aede0",
+      "bytes": 10070
+    },
+    {
+      "page": "txt03.html",
+      "topic": "О бесах",
+      "quotations": 10,
+      "sha256": "726546c91bc95eba69da9870b9d7f9a16b8224816ceb9c3ed9f6fe901fd3b601",
+      "bytes": 14819
+    },
+    {
+      "page": "txt04.html",
+      "topic": "О молитве",
+      "quotations": 17,
+      "sha256": "2c0c4f2e67388678bc960b937d3d708ec524379bc0c2ad9e25ca3246754731f0",
+      "bytes": 16565
+    },
+    {
+      "page": "txt05.html",
+      "topic": "О скорбях",
+      "quotations": 19,
+      "sha256": "e56494aac53b3086539312c6f7417c2e799c325d33768ce6a0a177dfdb8ffc98",
+      "bytes": 17777
+    },
+    {
+      "page": "txt06.html",
+      "topic": "О гордости",
+      "quotations": 13,
+      "sha256": "db4bb3aa07150e658cbbbd0a5c6383565c2abc00e9eec469823fc4cf27dc756e",
+      "bytes": 15124
+    },
+    {
+      "page": "txt07.html",
+      "topic": "Об аде",
+      "quotations": 13,
+      "sha256": "9c093ad86bc257377b08c7d5695d92ace6fe0938128456fa8d5be3b3f96f4e82",
+      "bytes": 16901
+    },
+    {
+      "page": "txt08.html",
+      "topic": "Об Ангелах",
+      "quotations": 14,
+      "sha256": "da02df8c1ec66ccb606eb531ff83c73b26b0cf2342f2d4b37f50f7f91bf53abf",
+      "bytes": 20627
+    }
+  ],
+  "method": "Count individually quoted entries in the eight topic pages linked directly by the index. txt02 has seven attributed blocks but nine quotations; txt08 includes one quotation preceded by [Ангелы]. No deduplication across pages. Exclude navigation, random quotation widgets and related collections."
+}

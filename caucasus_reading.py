@@ -1,0 +1,100 @@
+"""Six connected readings of Tolstoy's Caucasus prose; primary-source notes retained."""
+import json
+from html import escape as e
+from pathlib import Path
+
+ROOT = '/chtenie/tolstoy-kavkaz/'
+BASE = Path(__file__).parent
+FILES = ('caucasus_early.json', 'caucasus_razhalovanny.json',
+         'caucasus_kazaki.json', 'caucasus_hadzhi.json')
+DATA = []
+for name in FILES:
+    value = json.loads((BASE / name).read_text())
+    DATA.extend(value if isinstance(value, list) else [value])
+
+WORKS = [
+    ('uvidet-drugogo', 'Кавказский пленник', '/masterskaya/uvidet-drugogo/',
+     'Как помощь становится возможной по другую сторону вражды?'),
+    ('tolstoy-nabeg', 'Набег', '/chtenie/razbory/tolstoy-nabeg/',
+     'Что остаётся от красивого представления о войне, когда видишь её вблизи?'),
+    ('tolstoy-rubka-lesa', 'Рубка леса', '/chtenie/razbory/tolstoy-rubka-lesa/',
+     'Как среди привычного солдатского дела заметить отдельную человеческую жизнь?'),
+    ('tolstoy-razhalovanny', 'Встреча в отряде с московским знакомым',
+     '/chtenie/razbory/tolstoy-razhalovanny/',
+     'Что мешает рассказчику увидеть человека за стыдом, жалобами и прежним знакомством?'),
+    ('senior-045', 'Казаки', '/chtenie/razbory/senior-045/',
+     'Можно ли полюбить чужую жизнь, не стараясь сделать её своей?'),
+    ('tolstoy-hadzhi-murat', 'Хаджи-Мурат', '/chtenie/razbory/tolstoy-hadzhi-murat/',
+     'Что происходит с человеком между властью, войной и страхом за семью?'),
+]
+
+def to_essay(item):
+    sources = [(s['url'], s['label']) for s in item['sources']]
+    comments = item['quote_comments']
+    portrait = item['slug'] == 'tolstoy-hadzhi-murat'
+    essay = dict(item, source=sources[0][0], source_label=sources[0][1], sources=sources,
+                 quote=comments[0]['id'],
+                 reflection='Комментарий мастерской. ' + comments[0]['comment'].removeprefix('Комментарий мастерской. '),
+                 art='gagarin-hadji-murat' if portrait else 'lermontov-kobi',
+                 art_note=('Портрет исторического Хаджи-Мурата работы его современника. '
+                           'Рядом с литературным текстом он напоминает о реальном прообразе героя.' if portrait else
+                           'Пейзаж Лермонтова сопровождает общий разговор о Кавказе. '
+                           'Он создан независимо от произведений Толстого; место изображённого вида — близ Коби.'),
+                 music='cello',
+                 music_note='Сарабанда из Первой виолончельной сюиты Баха — спокойное инструментальное сопровождение для паузы после чтения. Выбор музыки принадлежит мастерской.',
+                 editorial_route=ROOT)
+    if item['slug'] == 'senior-045':
+        essay['catalogue'] = 'senior-045'
+    return essay
+
+ARTICLES = [to_essay(item) for item in DATA]
+NEW_ESSAYS = [item for item in ARTICLES if item['slug'] != 'senior-045']
+KAZAKI = next(item for item in ARTICLES if item['slug'] == 'senior-045')
+
+def navigation(current=None):
+    links = [f'<a href="{ROOT}">Толстой: Кавказ и человек</a>']
+    links.extend(f'<a href="{url}"' + (' aria-current="page"' if slug == current else '') + f'>{e(work)}</a>'
+                 for slug, work, url, _ in WORKS)
+    return '<nav class="reading-list-nav" aria-label="Кавказская проза Толстого">' + ''.join(links) + '</nav>'
+
+def hub_body():
+    from art_library import ART_LIBRARY
+    from illustrations import figure
+    body = ('<p>У Толстого Кавказ никогда не остаётся только красивым дальним краем. '
+            'Здесь человек встречает чужой уклад, испытывает страх, мечтает о новой жизни, '
+            'распоряжается чужой судьбой и сам оказывается зависим от помощи. '
+            'Как меняется взгляд писателя, когда вместо военного подвига мы начинаем видеть цену происходящего?</p>'
+            '<p>В этом маршруте — шесть основных законченных художественных произведений Толстого о Кавказе. '
+            'Начать удобно с «Кавказского пленника», затем перейти к ранним военным рассказам, '
+            '«Казакам» и «Хаджи-Мурату». Можно выбрать одну книгу: у каждого разбора есть собственные источники и вопросы.</p>')
+    body += figure(ART_LIBRARY['lermontov-kobi'])
+    body += '<h2>Шесть встреч с текстом</h2><ol>'
+    for _, work, url, question in WORKS:
+        body += f'<li><h3><a href="{url}">{e(work)}</a></h3><p>{e(question)}</p></li>'
+    body += ('</ol><p>«Встреча в отряде с московским знакомым» и «Разжалованный» — два названия одного рассказа.</p>'
+             '<h2>Что связывает эти произведения</h2>'
+             '<p>В «Кавказском пленнике» забота возникает в малых поступках. В «Набеге» и «Рубке леса» '
+             'рассказчик учится различать храбрость, самолюбование и привычку к опасности. '
+             '«Разжалованный» затрудняет суд над человеком, который нам неприятен. '
+             'В «Казаках» желание нравственно обновиться встречается со свободой другого человека. '
+             '«Хаджи-Мурат» соединяет семейную беду с решениями тех, кто распоряжается войной.</p>'
+             '<p>Православное прочтение в каждой статье начинается после литературного разбора. '
+             'Мы возвращаемся к состраданию, смирению и ответственности за ближнего, '
+             'сохраняя различие между словами Толстого, поступками персонажей и собственным выводом читателя.</p>'
+             '<h2>Попробуйте сопоставить</h2><ul>'
+             '<li>Дина и Хлопов: как конкретный поступок позволяет судить о заботе? Что каждый из них замечает и чего не замечает?</li>'
+             '<li>Оленин и рассказчик «Разжалованного»: в какой момент чужой ответ мешает человеку остаться довольным собой?</li>'
+             '<li>Веленчук и Авдеев: как писатель возвращает отдельную судьбу человеку, чья гибель могла бы остаться строкой военного сообщения?</li>'
+             '</ul><p>Выберите один вопрос и два эпизода. Сначала покажите, как устроен каждый эпизод, '
+             'затем сформулируйте сходство и различие. Обоснованный ответ может не совпадать с нашим.</p>'
+             '<p class="fine">Маршрут посвящён законченной художественной прозе. Кавказские дневники, письма, '
+             'черновики и незавершённые «Записки о Кавказе» требуют отдельной работы.</p>'
+             '<p><a href="/chtenie/vneklassnoe/">Вернуться к дополнительному чтению</a></p>')
+    return body
+
+def home_card():
+    return ('<section class="section"><div class="section-top"><div><p class="eyebrow">Новый маршрут чтения</p>'
+            '<h2>Толстой: Кавказ и человек</h2></div><p>Шесть произведений — от «Кавказского пленника» '
+            'и ранних военных рассказов до «Казаков» и «Хаджи-Мурата». '
+            'Читаем о храбрости, чужой боли, семье и способности увидеть человека.</p></div>'
+            f'<div class="hero-actions"><a class="button" href="{ROOT}">Открыть кавказский маршрут</a></div></section>')
