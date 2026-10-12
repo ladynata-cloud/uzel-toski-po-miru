@@ -185,3 +185,27 @@ Correct distinctions include OGE Literature task 2 (another scene in the same wo
 The seven preserved sample texts in `exam_cases.py` were read and checked for structure and approximate length. The EGE Literature model now accurately treats Masha's appeal as restoration of Grinyov's freedom and innocence, rather than implying that an unreduced death sentence was still in force. The source paragraph numbering and the independent nature of the oral monologue are explicit.
 
 `dist/assets/exam-practice.js` connects lesson buttons to the existing draft editor without erasing text and adds a 5/2/3-minute practice timer to the oral route. Drafts remain in the open page; download is explicit. No recording, transmission, automatic grading or persistent progress is claimed. Timer behavior is checked with Node VM and virtual clocks; browser rendering and live official-resource availability on the learner's device are not verified in this runtime.
+
+## Exam materials integration — 12 October 2026
+
+The page `/k-sochineniyu/materialy/` groups official downloads and external
+practice by examination. `exam_resources_data.json` records 20 FIPI sources,
+their years, project/archive status, download sizes and hashes. The review
+copies already downloaded contain 40 readable PDFs; they are not republished
+on the public site. Download buttons point directly to FIPI. Expert manuals
+and comparison sets for 2026 are separated from the 2027 projects.
+
+Four Reshu portals are integrated as attributed external links, including nine
+selected writing/analysis collections. Every selected URL was found in its
+retrieved subject catalogue. The catalogues show 2026; historical tasks are
+not presented as verified 2027 exam materials. The source licence prohibits
+republishing tasks and solutions, so no problem bank, explanation or solution
+was copied into this repository. The collection descriptions are workshop
+instructions. The full content of every external task has not been audited.
+
+All six branches now accept the learner's own answer to an external task.
+Its source is saved with the browser draft and included in the downloaded
+answer and short email. For a long answer it is included in the file which
+the learner must attach manually. Existing drafts without the new source
+field remain readable. Source metadata does not affect the draft word count.
+The site itself does not transmit email or import external platform results.

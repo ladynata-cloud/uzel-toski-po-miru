@@ -1,0 +1,33 @@
+{
+  "checked_on": "2026-10-12",
+  "scope": "Exam source materials and submission of learner answers to external tasks",
+  "fipi_download_sources": 20,
+  "fipi_pdf_files_readable": 40,
+  "fipi_publication": "Direct official links; downloaded review copies not mirrored",
+  "reshu_portals": 4,
+  "reshu_selected_collections": 9,
+  "reshu_publication": "Links only; no tasks, solutions or explanations copied",
+  "source_versions": {
+    "oge_ege_2027": "project",
+    "final_essay": "2026/27",
+    "expert_manuals": "2026",
+    "reshu_catalogues": "2026 as shown when retrieved"
+  },
+  "checks": {
+    "build_pages": 545,
+    "internal_links_and_assets": 20374,
+    "internal_errors": 0,
+    "external_links_on_materials_page_with_new_tab": 67,
+    "selected_collection_urls_found_in_source_catalogues": 9,
+    "existing_pages_with_unchanged_blockquotes": 544,
+    "javascript_syntax": "passed",
+    "draft_dom_tests": "passed for six branches, external source persistence, short email, long file flow, compatibility with previous drafts and workshop regression",
+    "email_sent": false
+  },
+  "limits": [
+    "Full contents of all 890 PDF pages were not methodically audited.",
+    "Every task in the external collections was not audited.",
+    "Browser rendering not yet checked in this revision.",
+    "HTTPS custom domain currently returns 502; HTTP is available."
+  ]
+}

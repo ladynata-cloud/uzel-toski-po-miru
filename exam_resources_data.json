@@ -1,0 +1,530 @@
+{
+  "checked_on": "2026-10-12",
+  "documents": [
+    {
+      "id": "ege-russkiy-2027",
+      "title": "Демоверсия, критерии, спецификация и кодификатор",
+      "description": "Скачайте и распакуйте ZIP. Критерии находятся в демоверсии; спецификация объясняет устройство экзамена, кодификатор — проверяемое содержание.",
+      "tracks": [
+        "ege-russkiy"
+      ],
+      "role": "current",
+      "year": "2027",
+      "status": "Проект 2027",
+      "format": "ZIP",
+      "url": "https://doc.fipi.ru/ege/demoversii-specifikacii-kodifikatory/2027/ru_11_2027.zip",
+      "source_page": "https://fipi.ru/ege/demoversii-specifikacii-kodifikatory",
+      "size_bytes": 1440302,
+      "sha256": "b109165272379b897447d980b4e729fa2aa0e1b2a77844693389ee226f19b6b9",
+      "downloaded_for_review": true,
+      "source_files": [
+        "РУ-11 ЕГЭ 2027 КОДИФ.pdf",
+        "РУ-11 ЕГЭ 2027 СПЕЦ.pdf",
+        "РУ-11 ЕГЭ 2027 ДЕМО.pdf"
+      ]
+    },
+    {
+      "id": "ege-literatura-2027",
+      "title": "Демоверсия, критерии, спецификация и кодификатор",
+      "description": "Скачайте и распакуйте ZIP. Критерии находятся в демоверсии; спецификация объясняет устройство экзамена, кодификатор — проверяемое содержание.",
+      "tracks": [
+        "ege-literatura"
+      ],
+      "role": "current",
+      "year": "2027",
+      "status": "Проект 2027",
+      "format": "ZIP",
+      "url": "https://doc.fipi.ru/ege/demoversii-specifikacii-kodifikatory/2027/li_11_2027.zip",
+      "source_page": "https://fipi.ru/ege/demoversii-specifikacii-kodifikatory",
+      "size_bytes": 1460582,
+      "sha256": "aba3a1f5a439366851345b491a171c762e7e4dd813ec9429f2de57d4f24d1fcc",
+      "downloaded_for_review": true,
+      "source_files": [
+        "ЛИ-11 ЕГЭ 2027 КОДИФ.pdf",
+        "ЛИ-11 ЕГЭ 2027 СПЕЦ.pdf",
+        "ЛИ-11 ЕГЭ 2027 ДЕМО.pdf"
+      ]
+    },
+    {
+      "id": "ege-changes",
+      "title": "Планируемые изменения EGE 2027",
+      "description": "Что ФИПИ предлагает изменить по сравнению с 2026 годом. Документ относится ко всем предметам.",
+      "tracks": [
+        "ege-russkiy",
+        "ege-literatura"
+      ],
+      "role": "changes",
+      "year": "2027",
+      "status": "Планируемые изменения",
+      "format": "PDF",
+      "url": "https://doc.fipi.ru/ege/demoversii-specifikacii-kodifikatory/2027/Plan_izmeneniya_KIM_EGE_2027.pdf",
+      "source_page": "https://fipi.ru/ege/demoversii-specifikacii-kodifikatory",
+      "size_bytes": 217700,
+      "sha256": "3e88c4f506dd5f21d530675d326282d6c15a24fbe97e709e0eb22880d2df633d",
+      "downloaded_for_review": true,
+      "source_files": [
+        "Plan_izmeneniya_KIM_EGE_2027.pdf"
+      ]
+    },
+    {
+      "id": "ege-literatura-2026",
+      "title": "Демоверсия, критерии, спецификация и кодификатор",
+      "description": "Скачайте и распакуйте ZIP. Критерии находятся в демоверсии; спецификация объясняет устройство экзамена, кодификатор — проверяемое содержание.",
+      "tracks": [
+        "ege-literatura"
+      ],
+      "role": "archive",
+      "year": "2026",
+      "status": "Архив 2026",
+      "format": "ZIP",
+      "url": "https://doc.fipi.ru/ege/demoversii-specifikacii-kodifikatory/2026/li_11_2026.zip",
+      "source_page": "https://fipi.ru/ege/demoversii-specifikacii-kodifikatory",
+      "size_bytes": 2773872,
+      "sha256": "fe5768157b4a2801784cbf236711abb5463d672bc02ec47641461ae3f8ce2cf7",
+      "downloaded_for_review": true,
+      "source_files": [
+        "ЛИ-11 ЕГЭ 2026 ДЕМО.pdf",
+        "ЛИ-11 ЕГЭ 2026 КОДИФ.pdf",
+        "ЛИ-11 ЕГЭ 2026 СПЕЦ.pdf"
+      ]
+    },
+    {
+      "id": "ege-russkiy-2026",
+      "title": "Демоверсия, критерии, спецификация и кодификатор",
+      "description": "Скачайте и распакуйте ZIP. Критерии находятся в демоверсии; спецификация объясняет устройство экзамена, кодификатор — проверяемое содержание.",
+      "tracks": [
+        "ege-russkiy"
+      ],
+      "role": "archive",
+      "year": "2026",
+      "status": "Архив 2026",
+      "format": "ZIP",
+      "url": "https://doc.fipi.ru/ege/demoversii-specifikacii-kodifikatory/2026/ru_11_2026.zip",
+      "source_page": "https://fipi.ru/ege/demoversii-specifikacii-kodifikatory",
+      "size_bytes": 2826955,
+      "sha256": "8d4d4d197f97507b4f782a19d916073bd9b80bb3a0cd2d4b8eb0ff4ecb2c716f",
+      "downloaded_for_review": true,
+      "source_files": [
+        "РУ-11 ЕГЭ 2026 СПЕЦ.pdf",
+        "РУ-11 ЕГЭ 2026 ДЕМО.pdf",
+        "РУ-11 ЕГЭ 2026 КОДИФ.pdf"
+      ]
+    },
+    {
+      "id": "ege-russkiy-experts-2026",
+      "title": "Пособие для проверяющих",
+      "description": "Разбор оценивания развёрнутых ответов. Сначала попробуйте оценить работу сами, затем сравните с пояснениями авторов пособия.",
+      "tracks": [
+        "ege-russkiy"
+      ],
+      "role": "teacher",
+      "year": "2026",
+      "status": "Для экзамена 2026 года",
+      "format": "PDF",
+      "url": "https://doc.fipi.ru/ege/dlya-predmetnyh-komissiy-subektov-rf/2026/russki_yazyk_mr_ege_2026.pdf",
+      "source_page": "https://fipi.ru/ege/dlya-predmetnyh-komissiy-subektov-rf",
+      "size_bytes": 10032556,
+      "sha256": "71c8cf0792b149acdf3e6b6ba9726437335becc487a89756890bd920888245fb",
+      "downloaded_for_review": true,
+      "source_files": [
+        "russki_yazyk_mr_ege_2026.pdf"
+      ]
+    },
+    {
+      "id": "ege-literatura-experts-2026",
+      "title": "Пособие для проверяющих",
+      "description": "Разбор оценивания развёрнутых ответов. Сначала попробуйте оценить работу сами, затем сравните с пояснениями авторов пособия.",
+      "tracks": [
+        "ege-literatura"
+      ],
+      "role": "teacher",
+      "year": "2026",
+      "status": "Для экзамена 2026 года",
+      "format": "PDF",
+      "url": "https://doc.fipi.ru/ege/dlya-predmetnyh-komissiy-subektov-rf/2026/literatura_mr_ege_2026.pdf",
+      "source_page": "https://fipi.ru/ege/dlya-predmetnyh-komissiy-subektov-rf",
+      "size_bytes": 1356671,
+      "sha256": "1e073d77a8f77449d55b11a8fa7ac2aa2a7dd87035b63028e5e49854845974c2",
+      "downloaded_for_review": true,
+      "source_files": [
+        "literatura_mr_ege_2026.pdf"
+      ]
+    },
+    {
+      "id": "oge-russkiy-2027",
+      "title": "Демоверсия, критерии, спецификация и кодификатор",
+      "description": "Скачайте и распакуйте ZIP. Критерии находятся в демоверсии; спецификация объясняет устройство экзамена, кодификатор — проверяемое содержание. В этом архиве также есть итоговое собеседование.",
+      "tracks": [
+        "oge-russkiy"
+      ],
+      "role": "current",
+      "year": "2027",
+      "status": "Проект 2027",
+      "format": "ZIP",
+      "url": "https://doc.fipi.ru/oge/demoversii-specifikacii-kodifikatory/2027/ru_9_2027.zip",
+      "source_page": "https://fipi.ru/oge/demoversii-specifikacii-kodifikatory",
+      "size_bytes": 2325878,
+      "sha256": "1197f568b80ac0f8a92648759b3e94c8b16f4c95cad1b4dbc8e76170e0217aa0",
+      "downloaded_for_review": true,
+      "source_files": [
+        "РУ-9_ДЕМО_итоговое_собеседование.pdf",
+        "РУ-9_СПЕЦИФ_итоговое_собеседование.pdf",
+        "РУ-9 ОГЭ 2027_ДЕМО.pdf",
+        "РУ-9 ОГЭ 2027_КОДИФ.pdf",
+        "РУ-9 ОГЭ 2027_СПЕЦ.pdf"
+      ]
+    },
+    {
+      "id": "oge-literatura-2027",
+      "title": "Демоверсия, критерии, спецификация и кодификатор",
+      "description": "Скачайте и распакуйте ZIP. Критерии находятся в демоверсии; спецификация объясняет устройство экзамена, кодификатор — проверяемое содержание.",
+      "tracks": [
+        "oge-literatura"
+      ],
+      "role": "current",
+      "year": "2027",
+      "status": "Проект 2027",
+      "format": "ZIP",
+      "url": "https://doc.fipi.ru/oge/demoversii-specifikacii-kodifikatory/2027/li_9_2027.zip",
+      "source_page": "https://fipi.ru/oge/demoversii-specifikacii-kodifikatory",
+      "size_bytes": 1224026,
+      "sha256": "f4ad0b7deb64df2d0d761d56143e6ffd174d5740cf2f7b53c2bfc93a03e7f4a5",
+      "downloaded_for_review": true,
+      "source_files": [
+        "ЛИ-9 ОГЭ 2027_КОДИФ.pdf",
+        "ЛИ-9 ОГЭ 2027_СПЕЦ.pdf",
+        "ЛИ-9 ОГЭ 2027_ДЕМО.pdf"
+      ]
+    },
+    {
+      "id": "oge-changes",
+      "title": "Планируемые изменения OGE 2027",
+      "description": "Что ФИПИ предлагает изменить по сравнению с 2026 годом. Документ относится ко всем предметам.",
+      "tracks": [
+        "oge-russkiy",
+        "oge-literatura",
+        "sobesedovanie"
+      ],
+      "role": "changes",
+      "year": "2027",
+      "status": "Планируемые изменения",
+      "format": "PDF",
+      "url": "https://doc.fipi.ru/oge/demoversii-specifikacii-kodifikatory/2027/Plan_izmeneniya_KIM_OGE_2027.pdf",
+      "source_page": "https://fipi.ru/oge/demoversii-specifikacii-kodifikatory",
+      "size_bytes": 221175,
+      "sha256": "82bc966d0558edc0b6cbe9bdb98aacdd666ee8ec61e6777a89f93066b8876e7f",
+      "downloaded_for_review": true,
+      "source_files": [
+        "Plan_izmeneniya_KIM_OGE_2027.pdf"
+      ]
+    },
+    {
+      "id": "oge-literatura-2026",
+      "title": "Демоверсия, критерии, спецификация и кодификатор",
+      "description": "Скачайте и распакуйте ZIP. Критерии находятся в демоверсии; спецификация объясняет устройство экзамена, кодификатор — проверяемое содержание.",
+      "tracks": [
+        "oge-literatura"
+      ],
+      "role": "archive",
+      "year": "2026",
+      "status": "Архив 2026",
+      "format": "ZIP",
+      "url": "https://doc.fipi.ru/oge/demoversii-specifikacii-kodifikatory/2026/li_9_2026.zip",
+      "source_page": "https://fipi.ru/oge/demoversii-specifikacii-kodifikatory",
+      "size_bytes": 2558420,
+      "sha256": "5ed2df71c3392650a287e43ee767557a8a7dbc37e01d855c8bc39034e09e58a7",
+      "downloaded_for_review": true,
+      "source_files": [
+        "ЛИ-9 ОГЭ 2026_СПЕЦ.pdf",
+        "ЛИ-9 ОГЭ 2026_ДЕМО.pdf",
+        "ЛИ-9 ОГЭ 2026_КОДИФ.pdf"
+      ]
+    },
+    {
+      "id": "oge-russkiy-2026",
+      "title": "Демоверсия, критерии, спецификация и кодификатор",
+      "description": "Скачайте и распакуйте ZIP. Критерии находятся в демоверсии; спецификация объясняет устройство экзамена, кодификатор — проверяемое содержание. В этом архиве также есть итоговое собеседование.",
+      "tracks": [
+        "oge-russkiy"
+      ],
+      "role": "archive",
+      "year": "2026",
+      "status": "Архив 2026",
+      "format": "ZIP",
+      "url": "https://doc.fipi.ru/oge/demoversii-specifikacii-kodifikatory/2026/ru_9_2026.zip",
+      "source_page": "https://fipi.ru/oge/demoversii-specifikacii-kodifikatory",
+      "size_bytes": 5648600,
+      "sha256": "44088c7729051fe2250691fe2453a5d5060eb053250a83767a5a30c78a370d47",
+      "downloaded_for_review": true,
+      "source_files": [
+        "РУ-9 ОГЭ 2026_ДЕМО.pdf",
+        "РУ-9 ОГЭ 2026_КОДИФ.pdf",
+        "РУ-9 ОГЭ 2026_СПЕЦ.pdf",
+        "РУ-9_СПЕЦИФ_итоговое_собеседование.pdf",
+        "РУ-9_ДЕМО_итоговое_собеседование.pdf"
+      ]
+    },
+    {
+      "id": "oge-russkiy-experts-2026",
+      "title": "Пособие для проверяющих",
+      "description": "Разбор оценивания развёрнутых ответов. Сначала попробуйте оценить работу сами, затем сравните с пояснениями авторов пособия.",
+      "tracks": [
+        "oge-russkiy"
+      ],
+      "role": "teacher",
+      "year": "2026",
+      "status": "Для экзамена 2026 года",
+      "format": "PDF",
+      "url": "https://doc.fipi.ru/oge/dlya-predmetnyh-komissiy-subektov-rf/2026/mr_oge_russkiy_yazyk_2026.pdf",
+      "source_page": "https://fipi.ru/oge/dlya-predmetnyh-komissiy-subektov-rf",
+      "size_bytes": 14505184,
+      "sha256": "98e0dc681acb14351bdd473f57bf0248d3e19614b1ad3b990ed2e70248283db7",
+      "downloaded_for_review": true,
+      "source_files": [
+        "mr_oge_russkiy_yazyk_2026.pdf"
+      ]
+    },
+    {
+      "id": "oge-literatura-experts-2026",
+      "title": "Пособие для проверяющих",
+      "description": "Разбор оценивания развёрнутых ответов. Сначала попробуйте оценить работу сами, затем сравните с пояснениями авторов пособия.",
+      "tracks": [
+        "oge-literatura"
+      ],
+      "role": "teacher",
+      "year": "2026",
+      "status": "Для экзамена 2026 года",
+      "format": "PDF",
+      "url": "https://doc.fipi.ru/oge/dlya-predmetnyh-komissiy-subektov-rf/2026/mr_oge_literatura_2026.pdf",
+      "source_page": "https://fipi.ru/oge/dlya-predmetnyh-komissiy-subektov-rf",
+      "size_bytes": 1570994,
+      "sha256": "d96173d8a82409a8abcf80524c0dcfe86425c565b118f946467bad9b51150d99",
+      "downloaded_for_review": true,
+      "source_files": [
+        "mr_oge_literatura_2026.pdf"
+      ]
+    },
+    {
+      "id": "essay-1",
+      "title": "Структура банка тем",
+      "description": "Разделы и подразделы, из которых составляют комплект тем.",
+      "tracks": [
+        "itogovoe"
+      ],
+      "role": "current",
+      "year": "2026/27",
+      "status": "Материалы 2026/27",
+      "format": "PDF",
+      "url": "https://doc.fipi.ru/itogovoe-sochinenie/2026/01_Struktura_banka_tem_sochineniy.pdf",
+      "source_page": "https://fipi.ru/itogovoe-sochinenie",
+      "size_bytes": 189447,
+      "sha256": "fe2fd9349799f7364389399afea2dc450a9ba4300eb6918542616d7035bc3d26",
+      "downloaded_for_review": true,
+      "source_files": [
+        "01_Struktura_banka_tem_sochineniy.pdf"
+      ]
+    },
+    {
+      "id": "essay-2",
+      "title": "Комментарии к разделам банка тем",
+      "description": "О чём можно рассуждать в каждом разделе.",
+      "tracks": [
+        "itogovoe"
+      ],
+      "role": "current",
+      "year": "2026/27",
+      "status": "Материалы 2026/27",
+      "format": "PDF",
+      "url": "https://doc.fipi.ru/itogovoe-sochinenie/2026/02_Kommentarii_k_razdelam_banka_tem_sochineniy.pdf",
+      "source_page": "https://fipi.ru/itogovoe-sochinenie",
+      "size_bytes": 221905,
+      "sha256": "bf006d9af5240b5eeb03cc4e6da11d57578fa96b4ca4b02093e9cc7dea1ee63f",
+      "downloaded_for_review": true,
+      "source_files": [
+        "02_Kommentarii_k_razdelam_banka_tem_sochineniy.pdf"
+      ]
+    },
+    {
+      "id": "essay-3",
+      "title": "Образец комплекта тем",
+      "description": "Пример выбора из шести тем с инструкцией участнику.",
+      "tracks": [
+        "itogovoe"
+      ],
+      "role": "current",
+      "year": "2026/27",
+      "status": "Материалы 2026/27",
+      "format": "PDF",
+      "url": "https://doc.fipi.ru/itogovoe-sochinenie/2026/03_Obrazec_komplekta_tem.pdf",
+      "source_page": "https://fipi.ru/itogovoe-sochinenie",
+      "size_bytes": 204799,
+      "sha256": "ea0fe7f44590ab781fb37b65991a29d22568a7fe3c54a623515ad7e9adefcd19",
+      "downloaded_for_review": true,
+      "source_files": [
+        "03_Obrazec_komplekta_tem.pdf"
+      ]
+    },
+    {
+      "id": "essay-4",
+      "title": "Критерии оценивания",
+      "description": "Условия допуска к проверке и критерии зачёта.",
+      "tracks": [
+        "itogovoe"
+      ],
+      "role": "current",
+      "year": "2026/27",
+      "status": "Материалы 2026/27",
+      "format": "PDF",
+      "url": "https://doc.fipi.ru/itogovoe-sochinenie/2026/04_Kriterii_it_soch.pdf",
+      "source_page": "https://fipi.ru/itogovoe-sochinenie",
+      "size_bytes": 229710,
+      "sha256": "bb75b102e58a1da33ba69411ee77255862733cb8d4ec50a21941a2de242bff4e",
+      "downloaded_for_review": true,
+      "source_files": [
+        "04_Kriterii_it_soch.pdf"
+      ]
+    },
+    {
+      "id": "essay-5",
+      "title": "Примеры исторических тем",
+      "description": "Примеры тем об истории России; это не предсказание темы экзамена.",
+      "tracks": [
+        "itogovoe"
+      ],
+      "role": "current",
+      "year": "2026/27",
+      "status": "Материалы 2026/27",
+      "format": "PDF",
+      "url": "https://doc.fipi.ru/itogovoe-sochinenie/2026/05_Primery_lit_tem.pdf",
+      "source_page": "https://fipi.ru/itogovoe-sochinenie",
+      "size_bytes": 261225,
+      "sha256": "88e9235ca6bde4e1b665d0a5cfe33f7976f73e7531a136519f6645e279097a5a",
+      "downloaded_for_review": true,
+      "source_files": [
+        "05_Primery_lit_tem.pdf"
+      ]
+    },
+    {
+      "id": "essay-6",
+      "title": "Рекомендации по подготовке",
+      "description": "Как понимать тему, строить рассуждение и проверять написанное.",
+      "tracks": [
+        "itogovoe"
+      ],
+      "role": "current",
+      "year": "2026/27",
+      "status": "Материалы 2026/27",
+      "format": "PDF",
+      "url": "https://doc.fipi.ru/itogovoe-sochinenie/2026/06_Metodicheskie_rekomendazii_itogovoe_sochinenie.pdf",
+      "source_page": "https://fipi.ru/itogovoe-sochinenie",
+      "size_bytes": 930880,
+      "sha256": "d8ee5633b1d64b1e7d06126e0d845a5e3d1dbb26ce478edff20d95b93824bee9",
+      "downloaded_for_review": true,
+      "source_files": [
+        "06_Metodicheskie_rekomendazii_itogovoe_sochinenie.pdf"
+      ]
+    }
+  ],
+  "external": {
+    "oge-russkiy": {
+      "name": "Решу ОГЭ · русский язык",
+      "base": "https://rus-oge.sdamgia.ru",
+      "selections": [
+        {
+          "label": "Сжатое изложение",
+          "url": "https://rus-oge.sdamgia.ru/test?category_id=17&filter=all",
+          "help": "Прослушайте текст и запишите микротемы. После своей попытки проверьте, что вы сохранили главное. В каталоге это дополнительная подборка: формат сверяйте с ФИПИ."
+        },
+        {
+          "label": "Сочинение по прочитанному тексту",
+          "url": "https://rus-oge.sdamgia.ru/test?category_id=159&filter=all",
+          "help": "Выберите один вопрос. Найдите в исходном тексте два примера и объясните каждый. В проекте 2027 года пояснения обязательны."
+        }
+      ],
+      "catalog_url": "https://rus-oge.sdamgia.ru/prob_catalog",
+      "checked_on": "2026-10-12",
+      "observed_catalog_year": "2026",
+      "integration": "links_only",
+      "verification": "Catalogue page retrieved; destination URLs read from links in catalogue. Some target pages also opened through web search. No claim that every task was audited."
+    },
+    "oge-literatura": {
+      "name": "Решу ОГЭ · литература",
+      "base": "https://lit-oge.sdamgia.ru",
+      "selections": [
+        {
+          "label": "Ответ на вопрос по тексту",
+          "url": "https://lit-oge.sdamgia.ru/test?filter=all&category_id=6",
+          "help": "Сначала ответьте на сам вопрос. Затем подберите подтверждения из предложенного текста."
+        },
+        {
+          "label": "Сопоставление произведений",
+          "url": "https://lit-oge.sdamgia.ru/test?filter=all&category_id=8",
+          "help": "Найдите основание для сравнения, указанное в задании. Объясните пример из каждого текста."
+        },
+        {
+          "label": "Литературное сочинение",
+          "url": "https://lit-oge.sdamgia.ru/test?filter=all&category_id=4",
+          "help": "Выберите знакомое произведение и составьте план ответа. Проверьте ограничения темы по текстам и объёму."
+        }
+      ],
+      "catalog_url": "https://lit-oge.sdamgia.ru/prob_catalog",
+      "checked_on": "2026-10-12",
+      "observed_catalog_year": "2026",
+      "integration": "links_only",
+      "verification": "Catalogue page retrieved; destination URLs read from links in catalogue. Some target pages also opened through web search. No claim that every task was audited."
+    },
+    "ege-russkiy": {
+      "name": "Решу ЕГЭ · русский язык",
+      "base": "https://rus-ege.sdamgia.ru",
+      "selections": [
+        {
+          "label": "Сочинение по исходному тексту",
+          "url": "https://rus-ege.sdamgia.ru/test?category_id=399&filter=all",
+          "help": "Определите позицию автора, объясните два примера и их связь. Затем обоснуйте своё отношение. Формулировку конкретного задания сверяйте с актуальной демоверсией."
+        }
+      ],
+      "catalog_url": "https://rus-ege.sdamgia.ru/prob_catalog",
+      "checked_on": "2026-10-12",
+      "observed_catalog_year": "2026",
+      "integration": "links_only",
+      "verification": "Catalogue page retrieved; destination URLs read from links in catalogue. Some target pages also opened through web search. No claim that every task was audited."
+    },
+    "ege-literatura": {
+      "name": "Решу ЕГЭ · литература",
+      "base": "https://lit-ege.sdamgia.ru",
+      "selections": [
+        {
+          "label": "Развёрнутый ответ по прозе",
+          "url": "https://lit-ege.sdamgia.ru/test?category_id=66&filter=all",
+          "help": "Подборка по русской прозе второй половины XIX века. Объясните, как детали текста помогают ответить на вопрос."
+        },
+        {
+          "label": "Развёрнутый ответ по лирике",
+          "url": "https://lit-ege.sdamgia.ru/test?category_id=69&filter=all",
+          "help": "Подборка по русской поэзии второй половины XIX века. Свяжите наблюдение над формой со смыслом стихотворения."
+        },
+        {
+          "label": "Темы литературных сочинений",
+          "url": "https://lit-ege.sdamgia.ru/test?category_id=97&filter=all",
+          "help": "Первая часть подборки тем. Проверьте, какие произведения разрешает выбрать формулировка; начните с плана доказательства."
+        }
+      ],
+      "catalog_url": "https://lit-ege.sdamgia.ru/prob_catalog",
+      "checked_on": "2026-10-12",
+      "observed_catalog_year": "2026",
+      "integration": "links_only",
+      "verification": "Catalogue page retrieved; destination URLs read from links in catalogue. Some target pages also opened through web search. No claim that every task was audited."
+    }
+  },
+  "publication_mode": "Source documents are offered through direct official download links. Downloaded review copies are not mirrored on the public site.",
+  "usage_evidence": [
+    {
+      "url": "https://inf-ege.sdamgia.ru/licence",
+      "note": "Search-indexed licence prohibits copying tasks, explanations and solutions to computer networks. Links to the source are used instead of republication."
+    },
+    {
+      "url": "https://lit-ege.sdamgia.ru/licence",
+      "note": "Direct HTML returns a JavaScript shell; do not claim that its full live text was fetched."
+    }
+  ]
+}

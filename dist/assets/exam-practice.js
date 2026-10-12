@@ -2,6 +2,13 @@
   'use strict';
   const select = document.querySelector('.practice select');
   const area = document.querySelector('.practice textarea');
+  if (new URLSearchParams(window.location.search).get('practice') === 'external') {
+    const externalOption = select?.querySelector('[data-external-practice]');
+    if (externalOption) {
+      select.value = externalOption.value;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
   document.querySelectorAll('[data-exam-open]').forEach(button => {
     button.addEventListener('click', () => {
       const value = button.dataset.examOpen;
