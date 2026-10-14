@@ -24,10 +24,11 @@ from reading_pages import publish_reading_pages
 from reading_lists import publish_reading_lists
 from extra_reading import publish_extra_reading
 from caucasus_reading import home_card as caucasus_home, navigation as caucasus_nav
+from site_config import SITE_URL, deployment_links, write_domain_file
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / 'dist'
-ORIGIN = 'https://usel-toski-po-miru.art'
+ORIGIN = SITE_URL
 TITLE = 'Узел тоски по миру'
 FIPI = 'https://fipi.ru/'
 FIPI_ESSAY = 'https://fipi.ru/itogovoe-sochinenie'
@@ -173,7 +174,7 @@ def page(path, title, description, body, active='', structured=None):
 <main id="main">{body}</main><footer class="footer"><div class="wrap footer-inner"><div><p><strong>Узел тоски по миру</strong> · Литературная мастерская</p><p>Литература, православная мысль и самостоятельное письмо.</p></div><div class="footer-links"><a href="/o-proekte/#principles">Принципы</a><a href="/tsitaty/">Проверенные цитаты</a><a href="/uchebniki/">Учебные линии</a><a href="/kurs/">Тематические маршруты</a><a href="/k-sochineniyu/materialy/">Материалы к экзаменам</a></div></div></footer></body></html>'''
     destination=OUT / path.strip('/') / 'index.html' if path!='/' else OUT / 'index.html'
     destination.parent.mkdir(parents=True,exist_ok=True)
-    destination.write_text(open_sources_separately(html),encoding='utf-8')
+    destination.write_text(deployment_links(open_sources_separately(html)),encoding='utf-8')
 
 def lesson_row(d):
     return f'''<article class="lesson-row"><span class="lesson-number">{d['number']}</span><div><span class="author">{d['author']} · «{d['work']}»</span><h3><a href="/masterskaya/{d['slug']}/">{d['title']}</a></h3><p>{d['desc']}</p><p class="lesson-label">{d['stage']} · {d['circle']}</p></div><div class="lesson-side"><span>{d['form']}<br>{d['time']}</span><a href="/masterskaya/{d['slug']}/">Открыть занятие</a></div></article>'''
@@ -244,7 +245,7 @@ extra_reading_paths = publish_extra_reading(page)
 paths=['/','/o-proekte/','/k-sochineniyu/','/masterskaya/','/kurs/','/chtenie-i-tradiciya/','/tsitaty/','/muzyka/']+['/masterskaya/'+d['slug']+'/' for d in LESSONS]+school_paths+exam_paths+philosophy_paths+reading_paths+reading_list_paths+extra_reading_paths+['/iskusstvo/','/uchebniki/']
 (OUT/'sitemap.xml').write_text('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+''.join('<url><loc>'+ORIGIN+p+'</loc></url>' for p in paths)+'</urlset>',encoding='utf-8')
 (OUT/'robots.txt').write_text('User-agent: *\nAllow: /\nSitemap: '+ORIGIN+'/sitemap.xml\n',encoding='utf-8')
-(OUT/'CNAME').write_text('usel-toski-po-miru.art\n', encoding='utf-8')
+write_domain_file(OUT)
 (OUT/'.nojekyll').write_text('', encoding='utf-8')
 (OUT/'_headers').write_text('/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n  X-Frame-Options: SAMEORIGIN\n',encoding='utf-8')
-print(f'Built {len(paths)} pages.')
+print(f'Built {len(paths)} pages for {SITE_URL}/.')

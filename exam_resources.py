@@ -2,6 +2,7 @@
 import json
 from html import escape as e
 from pathlib import Path
+from site_config import SITE_URL
 
 ROOT = Path(__file__).resolve().parent
 DATA = json.loads((ROOT / 'exam_resources_data.json').read_text())
@@ -95,7 +96,7 @@ def publish(page):
             lines += [external['name'] + ': каталог просмотрен с маркировкой 2026 года.', external['catalog_url']]
             for item in external['selections']:
                 lines += [item['label'], item['url']]
-        lines += ['Черновик мастерской: https://usel-toski-po-miru.art/k-sochineniyu/' + slug + '/?practice=external#practice', '']
+        lines += ['Черновик мастерской: ' + SITE_URL + '/k-sochineniyu/' + slug + '/?practice=external#practice', '']
     file = ROOT / 'dist/assets/exams/materialy-i-ssylki.txt'
     file.parent.mkdir(parents=True, exist_ok=True)
     file.write_text('\n'.join(lines) + '\n', encoding='utf-8-sig')
