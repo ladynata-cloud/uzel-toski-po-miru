@@ -210,8 +210,15 @@ def publish_extra_reading(page):
         assert len([x for x in data if x['band'] == band]) == count
         pages.append((ROOT + band + '/', 'Внеклассное чтение: ' + label, 'Официальный рекомендательный перечень и вопросы мастерской.', catalogue(band, data)))
     pages.append((CAUCASUS_ROOT, 'Толстой: Кавказ и человек', 'Шесть произведений, разные точки зрения и вопросы к собственному суждению.', caucasus_hub()))
-    for x in ESSAYS + CATALOGUE_ESSAYS + INDEPENDENT_ESSAYS:
-        pages.append((essay_path(x), x['title'], x['author'] + '. Подробности текста, православное осмысление, искусство и самостоятельный ответ.', essay_body(x)))
     for path, title, lead, body in pages:
         page(path, title, lead, shell(title, lead, body), active='reading')
-    return [p[0] for p in pages]
+    paths = [path for path, _, _, _ in pages]
+    for essay in ESSAYS + CATALOGUE_ESSAYS + INDEPENDENT_ESSAYS:
+        path = essay_path(essay)
+        title = essay['title']
+        lead = essay['author'] + '. Подробности текста, православное осмысление, искусство и самостоятельный ответ.'
+        summary = essay.get('lead', essay['task'])
+        description = f'{essay["author"].rstrip(".")}. {summary}'
+        page(path, title, description, shell(title, lead, essay_body(essay)), active='reading')
+        paths.append(path)
+    return paths
