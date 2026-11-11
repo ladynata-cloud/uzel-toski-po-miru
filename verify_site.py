@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from site_config import SITE_URL, BASE_PATH, site_path
-from seo_metadata import HOMEPAGE_ANALYSES, PAGE_METADATA
+from seo_metadata import GOOGLE_SITE_VERIFICATION, HOMEPAGE_ANALYSES, PAGE_METADATA
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / 'dist'
@@ -28,6 +28,7 @@ class Page(HTMLParser):
         self.og_urls = []
         self.titles = []
         self.descriptions = []
+        self.google_verification = []
         self.schemas = []
         self.head_text = None
     def handle_starttag(self, tag, attrs):
@@ -36,6 +37,8 @@ class Page(HTMLParser):
             self.head_text = []
         if tag == 'meta' and a.get('name') == 'description':
             self.descriptions.append(a.get('content', ''))
+        if tag == 'meta' and a.get('name') == 'google-site-verification':
+            self.google_verification.append(a.get('content', ''))
         if 'id' in a: self.ids.append(a['id'])
         if tag == 'h1': self.h1 += 1
         if tag == 'a' and a.get('href'):
@@ -72,6 +75,9 @@ def verify():
             errors.append((route, 'expected one nonempty title'))
         if len(p.descriptions) != 1 or not p.descriptions[0].strip():
             errors.append((route, 'expected one nonempty description'))
+        verification = GOOGLE_SITE_VERIFICATION.get(SITE_URL) if route == '/' else None
+        if p.google_verification != ([verification] if verification else []):
+            errors.append((route, 'Google site verification mismatch'))
         if route in PAGE_METADATA:
             title, description = PAGE_METADATA[route]
             if p.titles != [title] or p.descriptions != [description]:
