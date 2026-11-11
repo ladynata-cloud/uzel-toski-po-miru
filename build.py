@@ -25,6 +25,7 @@ from reading_lists import publish_reading_lists
 from extra_reading import publish_extra_reading
 from caucasus_reading import home_card as caucasus_home, navigation as caucasus_nav
 from site_config import SITE_URL, deployment_links, write_domain_file
+from seo_metadata import PAGE_METADATA
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / 'dist'
@@ -162,14 +163,30 @@ LOGO = '<svg aria-hidden="true" viewBox="0 0 64 64"><path d="M9 36C9 15 32 15 40
 
 def page(path, title, description, body, active='', structured=None):
     body = direct_quote_links(body)
-    name = TITLE if path == '/' else title + ' — ' + TITLE
+    name, description = PAGE_METADATA.get(path, (title + ' — ' + TITLE, description))
+    canonical = ORIGIN + path
+    website_id = ORIGIN + '/#website'
+    if path == '/':
+        schema = {
+            '@context': 'https://schema.org', '@type': 'WebSite', '@id': website_id,
+            'name': TITLE, 'url': canonical, 'description': description, 'inLanguage': 'ru',
+        }
+    else:
+        schema = {
+            '@context': 'https://schema.org', '@type': 'WebPage',
+            'name': name, 'url': canonical, 'description': description, 'inLanguage': 'ru',
+            'isPartOf': {'@id': website_id},
+        }
+        if structured:
+            schema['mainEntity'] = {key: value for key, value in structured.items() if key != '@context'}
+            schema['mainEntity']['description'] = description
+    schema_json = json.dumps(schema, ensure_ascii=False).replace('<', '\\u003c')
     nav = ''.join(f'<a href="{href}"'+(' aria-current="page"' if key==active else '')+f'>{label}</a>' for key,href,label in [('school','/shkola/','1–11 классы'),('reading','/chtenie/','Что читать'),('workshop','/masterskaya/','Занятия'),('philosophy','/filosofiya/','Философия'),('art','/iskusstvo/','Искусство'),('music','/muzyka/','Музыка'),('exam','/k-sochineniyu/','К экзаменам'),('about','/o-proekte/','О проекте')])
-    schema = structured or {'@context':'https://schema.org','@type':'WebSite','name':TITLE,'url':ORIGIN,'inLanguage':'ru'}
     html=f'''<!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{esc(name)}</title>
-<meta name="description" content="{esc(description,quote=True)}"><meta name="theme-color" content="#132b40"><link rel="canonical" href="{ORIGIN+path}">
-<meta property="og:title" content="{esc(name,quote=True)}"><meta property="og:description" content="{esc(description,quote=True)}"><meta property="og:type" content="{'website' if path=='/' else 'article'}"><meta property="og:url" content="{ORIGIN+path}"><meta property="og:locale" content="ru_RU">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,{quote(FAVICON,safe='')}"><link rel="stylesheet" href="/assets/style.css"><script defer src="/assets/app.js"></script><script type="application/ld+json">{json.dumps(schema,ensure_ascii=False)}</script></head>
+<meta name="description" content="{esc(description,quote=True)}"><meta name="theme-color" content="#132b40"><link rel="canonical" href="{canonical}">
+<meta property="og:title" content="{esc(name,quote=True)}"><meta property="og:description" content="{esc(description,quote=True)}"><meta property="og:type" content="{'website' if path=='/' else 'article'}"><meta property="og:url" content="{canonical}"><meta property="og:locale" content="ru_RU">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,{quote(FAVICON,safe='')}"><link rel="stylesheet" href="/assets/style.css"><script defer src="/assets/app.js"></script><script type="application/ld+json">{schema_json}</script></head>
 <body><a class="skip" href="#main">Перейти к содержанию</a><header class="site-head"><div class="wrap head-inner"><a class="brand" href="/" aria-label="Узел тоски по миру — главная">{LOGO}<span>Узел тоски<br>по миру</span></a><nav class="site-nav" aria-label="Главная навигация">{nav}</nav></div></header>
 <main id="main">{body}</main><footer class="footer"><div class="wrap footer-inner"><div><p><strong>Узел тоски по миру</strong> · Литературная мастерская</p><p>Литература, православная мысль и самостоятельное письмо.</p></div><div class="footer-links"><a href="/o-proekte/#principles">Принципы</a><a href="/tsitaty/">Проверенные цитаты</a><a href="/uchebniki/">Учебные линии</a><a href="/kurs/">Тематические маршруты</a><a href="/k-sochineniyu/materialy/">Материалы к экзаменам</a></div></div></footer></body></html>'''
     destination=OUT / path.strip('/') / 'index.html' if path!='/' else OUT / 'index.html'
@@ -188,7 +205,7 @@ home=f'''<div class="wrap"><section class="hero"><div><p class="eyebrow">Лит�
 <section class="school-home section"><div class="section-top"><div><p class="eyebrow">Курс по школьной программе</p><h2>От первой книги<br>к самостоятельной мысли</h2></div><p>{SCHOOL_COUNT} страниц чтения и анализа для 1–11 классов: литературные разборы, точные духовные цитаты и самостоятельное рассуждение. Рядом — {len(LESSONS)} подробных занятий.</p></div><nav class="grade-chooser" aria-label="Выберите класс">{GRADE_LINKS}</nav><div class="home-paths"><a href="/chtenie/vneklassnoe/">Внеклассное чтение 1–11 классов</a><a href="/chtenie/">Что читать для экзаменов и творческих работ</a><a href="/uchebniki/">Несколько учебных линий</a><a href="/iskusstvo/">Живопись, иконы и книжная графика</a><a href="/k-sochineniyu/">Творческая часть ОГЭ, ЕГЭ и итоговое сочинение</a></div></section>
 {exam_home()}
 {caucasus_home()}
-<section class="philosophy-home section"><div><p class="eyebrow">Философская мастерская</p><h2>Почему добро<br>сильнее зла?</h2></div><div><p>Одиннадцать статей о добре, свободе, надежде, прощении и мире. Христианская мысль встречается с вопросами математики и физики, живописью и музыкой.</p><p>Начинаем с общего вопроса. Затем ищем литературную опору для собственного сочинения.</p><div class="home-paths"><a href="/filosofiya/">Все философские статьи</a><a href="/filosofiya/pochemu-dobro-pobedit-zlo/">«Почему добро победит зло» и «Философы» Нестерова</a><a href="/filosofiya/obrazovanie-i-dobrota/">Делает ли образование человека добрее?</a><a href="/filosofiya/dobro-i-zhestokost/">Как защищать добро и не привыкнуть к жестокости</a><a href="/filosofiya/toska-po-miru/">Чего нам не хватает, когда мы тоскуем по миру</a></div></div></section><section class="section" id="masterskaya"><div class="section-top"><div><p class="eyebrow">Новый круг чтения</p><h2>Дом, разлука, милосердие</h2></div><p>Восемь встреч с текстами о привязанности, заботе и сопротивлении жестокости. Начните с обновлённых разборов «Матрёниного двора» и «Кавказского пленника». Можно пройти круг по порядку или выбрать одно произведение.</p></div><div class="lesson-list">{''.join(lesson_row(d) for d in FEATURED)}</div><div class="hero-actions"><a class="button" href="/masterskaya/">Все занятия ({len(LESSONS)})</a><a href="/kurs/">Карта основного и дополнительного чтения</a></div></section>
+<section class="philosophy-home section"><div><p class="eyebrow">Философская мастерская</p><h2>Почему добро<br>сильнее зла?</h2></div><div><p>Одиннадцать статей о добре, свободе, надежде, прощении и мире. Христианская мысль встречается с вопросами математики и физики, живописью и музыкой.</p><p>Начинаем с общего вопроса. Затем ищем литературную опору для собственного сочинения.</p><div class="home-paths"><a href="/filosofiya/">Все философские статьи</a><a href="/filosofiya/pochemu-dobro-pobedit-zlo/">«Почему добро победит зло» и «Философы» Нестерова</a><a href="/filosofiya/obrazovanie-i-dobrota/">Делает ли образование человека добрее?</a><a href="/filosofiya/dobro-i-zhestokost/">Как защищать добро и не привыкнуть к жестокости</a><a href="/filosofiya/toska-po-miru/">Чего нам не хватает, когда мы тоскуем по миру</a></div></div></section><section class="section" id="masterskaya"><div class="section-top"><div><p class="eyebrow">Новый круг чтения</p><h2>Дом, разлука, милосердие</h2></div><p>Восемь встреч с текстами о привязанности, заботе и сопротивлении жестокости. Начните с обновлённых разборов «Матрёниного двора» и «Кавказского пленника». Можно пройти круг по порядку или выбрать одно произведение.</p></div><div class="lesson-list">{''.join(lesson_row(d) for d in FEATURED)}</div><div class="hero-actions"><a class="button" href="/masterskaya/">Все занятия ({len(LESSONS)})</a><a href="/kurs/">Карта основного и дополнительного чтения</a><a href="/masterskaya/sonya-slovo-i-prisutstvie/">Соня читает о Лазаре у Достоевского</a></div></section>
 <section class="perspective"><div><p class="eyebrow">Основа проекта</p><h2>Внимание к слову.<br>Внимание к человеку.</h2></div><div><p>Православная традиция задаёт вопросы о совести, свободе, милосердии и покаянии. В книгах этот выбор перестаёт быть отвлечённым: мы видим человека, его страх, надежду и последствия поступка.</p><p>Здесь можно размышлять, возражать и искать собственную формулировку. Хороший ответ помогает вернуться к книге и увидеть, откуда возникла эта мысль.</p><a href="/o-proekte/">Как устроена мастерская</a></div></section>
 <section class="for-whom" aria-label="Кому подойдут занятия"><div><h3>Ученику</h3><p>Потренируйтесь на одном небольшом разборе. Напишите ответ, проверьте доказательства и скачайте свой черновик.</p></div><div><h3>Учителю</h3><p>Используйте вопросы для урока или обсуждения. В конце каждого занятия есть методическая заметка.</p></div><div><h3>Родителям</h3><p>Читайте вместе и обсуждайте поступки героев. Вопросы не требуют личных признаний или единственного общего мнения.</p></div></section></div>'''
 page('/',TITLE,f'Литература и чтение для 1–11 классов в диалоге с православной мыслью. Занятий: {len(LESSONS)}. Карта курса, основное и дополнительное чтение.',home,active='workshop')

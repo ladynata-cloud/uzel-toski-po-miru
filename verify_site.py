@@ -7,7 +7,8 @@ import json
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from site_config import SITE_URL, BASE_PATH
+from site_config import SITE_URL, BASE_PATH, site_path
+from seo_metadata import HOMEPAGE_ANALYSES, PAGE_METADATA
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / 'dist'
@@ -25,8 +26,16 @@ class Page(HTMLParser):
         self.quote_depth = 0
         self.canonicals = []
         self.og_urls = []
+        self.titles = []
+        self.descriptions = []
+        self.schemas = []
+        self.head_text = None
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
+        if tag == 'title' or (tag == 'script' and a.get('type') == 'application/ld+json'):
+            self.head_text = []
+        if tag == 'meta' and a.get('name') == 'description':
+            self.descriptions.append(a.get('content', ''))
         if 'id' in a: self.ids.append(a['id'])
         if tag == 'h1': self.h1 += 1
         if tag == 'a' and a.get('href'):
@@ -40,7 +49,14 @@ class Page(HTMLParser):
         if tag == 'img': self.images.append(a)
         if tag == 'input' and a.get('type') == 'radio': self.radio += 1
         if tag == 'blockquote' and 'sourced-quote' in a.get('class', '').split(): self.quote_depth += 1
+    def handle_data(self, data):
+        if self.head_text is not None:
+            self.head_text.append(data)
     def handle_endtag(self, tag):
+        if self.head_text is not None and tag in ('title', 'script'):
+            target = self.titles if tag == 'title' else self.schemas
+            target.append(''.join(self.head_text))
+            self.head_text = None
         if tag == 'blockquote' and self.quote_depth: self.quote_depth -= 1
 
 def verify():
@@ -52,6 +68,21 @@ def verify():
         p = Page(); p.feed(file.read_text()); pages[route] = p
         if p.canonicals != [SITE_URL + route]: errors.append((route, 'canonical mismatch', p.canonicals))
         if p.og_urls != [SITE_URL + route]: errors.append((route, 'og:url mismatch', p.og_urls))
+        if len(p.titles) != 1 or not p.titles[0].strip():
+            errors.append((route, 'expected one nonempty title'))
+        if len(p.descriptions) != 1 or not p.descriptions[0].strip():
+            errors.append((route, 'expected one nonempty description'))
+        if route in PAGE_METADATA:
+            title, description = PAGE_METADATA[route]
+            if p.titles != [title] or p.descriptions != [description]:
+                errors.append((route, 'editorial search metadata mismatch'))
+        try:
+            schema = json.loads(p.schemas[0]) if len(p.schemas) == 1 else {}
+        except ValueError:
+            schema = {}
+        expected_type = 'WebSite' if route == '/' else 'WebPage'
+        if not isinstance(schema, dict) or schema.get('@type') != expected_type or schema.get('url') != SITE_URL + route:
+            errors.append((route, 'invalid page structured data'))
         if p.h1 != 1: errors.append((route, 'h1 count', p.h1))
         if len(p.ids) != len(set(p.ids)): errors.append((route, 'duplicate ids'))
         if p.radio: errors.append((route, 'multiple-choice input'))
@@ -60,6 +91,10 @@ def verify():
         for target in p.quote_links:
             if not target.startswith('http://www.biblioteka3.ru/biblioteka/citaty/txt'):
                 errors.append((route, 'spiritual quote link', target))
+    homepage = pages.get('/')
+    for route in HOMEPAGE_ANALYSES:
+        if route not in pages or homepage is None or site_path(route) not in homepage.links:
+            errors.append((route, 'missing priority page or homepage link'))
     sitemap_urls = [node.text for node in ET.parse(OUT/'sitemap.xml').iter() if node.tag.endswith('loc')]
     declared = set(sitemap_urls)
     expected = {SITE_URL + route for route in pages}
