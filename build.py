@@ -24,7 +24,7 @@ from reading_lists import publish_reading_lists
 from extra_reading import publish_extra_reading
 from caucasus_reading import home_card as caucasus_home, navigation as caucasus_nav
 from site_config import SITE_URL, deployment_links, write_domain_file
-from seo_metadata import GOOGLE_SITE_VERIFICATION, PAGE_METADATA
+from seo_metadata import PAGE_METADATA, SEARCH_VERIFICATION
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / 'dist'
@@ -164,11 +164,12 @@ def page(path, title, description, body, active='', structured=None):
     name, description = PAGE_METADATA.get(path, (title + ' — ' + TITLE, description))
     canonical = ORIGIN + path
     website_id = ORIGIN + '/#website'
-    verification_tag = ''
+    verification_tags = ''
     if path == '/':
-        verification = GOOGLE_SITE_VERIFICATION.get(ORIGIN)
-        if verification:
-            verification_tag = f'<meta name="google-site-verification" content="{esc(verification, quote=True)}">\n'
+        verification_tags = ''.join(
+            f'<meta name="{esc(engine, quote=True)}" content="{esc(value, quote=True)}">\n'
+            for engine, value in SEARCH_VERIFICATION.get(ORIGIN, {}).items()
+        )
         schema = {
             '@context': 'https://schema.org', '@type': 'WebSite', '@id': website_id,
             'name': TITLE, 'url': canonical, 'description': description, 'inLanguage': 'ru',
@@ -188,7 +189,7 @@ def page(path, title, description, body, active='', structured=None):
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{esc(name)}</title>
 <meta name="description" content="{esc(description,quote=True)}"><meta name="theme-color" content="#132b40"><link rel="canonical" href="{canonical}">
 <meta property="og:title" content="{esc(name,quote=True)}"><meta property="og:description" content="{esc(description,quote=True)}"><meta property="og:type" content="{'website' if path=='/' else 'article'}"><meta property="og:url" content="{canonical}"><meta property="og:locale" content="ru_RU">
-{verification_tag}<link rel="icon" type="image/png" href="/assets/favicon.png"><link rel="stylesheet" href="/assets/style.css"><script defer src="/assets/app.js"></script><script type="application/ld+json">{schema_json}</script></head>
+{verification_tags}<link rel="icon" type="image/png" href="/assets/favicon.png"><link rel="stylesheet" href="/assets/style.css"><script defer src="/assets/app.js"></script><script type="application/ld+json">{schema_json}</script></head>
 <body><a class="skip" href="#main">Перейти к содержанию</a><header class="site-head"><div class="wrap head-inner"><a class="brand" href="/" aria-label="Узел тоски по миру — главная">{LOGO}<span>Узел тоски<br>по миру</span></a><nav class="site-nav" aria-label="Главная навигация">{nav}</nav></div></header>
 <main id="main">{body}</main><footer class="footer"><div class="wrap footer-inner"><div><p><strong>Узел тоски по миру</strong> · Литературная мастерская</p><p>Литература, православная мысль и самостоятельное письмо.</p></div><div class="footer-links"><a href="/o-proekte/#principles">Принципы</a><a href="/tsitaty/">Проверенные цитаты</a><a href="/uchebniki/">Учебные линии</a><a href="/kurs/">Тематические маршруты</a><a href="/k-sochineniyu/materialy/">Материалы к экзаменам</a></div></div></footer></body></html>'''
     destination=OUT / path.strip('/') / 'index.html' if path!='/' else OUT / 'index.html'

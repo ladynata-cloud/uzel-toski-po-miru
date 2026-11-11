@@ -1,7 +1,10 @@
 """Search titles and descriptions for selected pages of the literary workshop."""
 
-GOOGLE_SITE_VERIFICATION = {
-    'https://usel-toski-po-miru.art': '-4QZJrrh9noyBFyS-h7_F0Lm9oFNKT7BKpmev74u8vU',
+SEARCH_VERIFICATION = {
+    'https://usel-toski-po-miru.art': {
+        'google-site-verification': '-4QZJrrh9noyBFyS-h7_F0Lm9oFNKT7BKpmev74u8vU',
+        'yandex-verification': '3104173b398c3ec0',
+    },
 }
 
 PAGE_METADATA = {
