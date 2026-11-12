@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ${{ inputs.use_arm_runner && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    runs-on: ${{ (github.event_name == 'push' || inputs.use_arm_runner) && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     steps:
       - name: Download repository
         uses: actions/checkout@v6
@@ -40,7 +40,7 @@ jobs:
           path: dist
   deploy:
     needs: build
-    runs-on: ${{ inputs.use_arm_runner && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    runs-on: ${{ (github.event_name == 'push' || inputs.use_arm_runner) && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     permissions:
       pages: write
       id-token: write
