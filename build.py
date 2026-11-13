@@ -185,14 +185,17 @@ def page(path, title, description, body, active='', structured=None):
             schema['mainEntity'] = {key: value for key, value in structured.items() if key != '@context'}
             schema['mainEntity']['description'] = description
     schema_json = json.dumps(schema, ensure_ascii=False).replace('<', '\\u003c')
+    home_style = '<link rel="stylesheet" href="/assets/home.css">' if path == '/' else ''
+    home_class = ' class="literary-home"' if path == '/' else ''
+    main_focus = ' tabindex="-1"' if path == '/' else ''
     nav = ''.join(f'<a href="{href}"'+(' aria-current="page"' if key==active else '')+f'>{label}</a>' for key,href,label in [('school','/shkola/','1–11 классы'),('reading','/chtenie/','Что читать'),('workshop','/masterskaya/','Занятия'),('philosophy','/filosofiya/','Философия'),('art','/iskusstvo/','Искусство'),('music','/muzyka/','Музыка'),('exam','/k-sochineniyu/','К экзаменам'),('about','/o-proekte/','О проекте')])
     html=f'''<!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{esc(name)}</title>
 <meta name="description" content="{esc(description,quote=True)}"><meta name="theme-color" content="#132b40"><link rel="canonical" href="{canonical}">
 <meta property="og:title" content="{esc(name,quote=True)}"><meta property="og:description" content="{esc(description,quote=True)}"><meta property="og:type" content="{'website' if path=='/' else 'article'}"><meta property="og:url" content="{canonical}"><meta property="og:locale" content="ru_RU">
-{verification_tags}<link rel="icon" type="image/png" href="/assets/favicon.png"><link rel="stylesheet" href="/assets/style.css"><script defer src="/assets/app.js"></script><script type="application/ld+json">{schema_json}</script></head>
-<body><a class="skip" href="#main">Перейти к содержанию</a><header class="site-head"><div class="wrap head-inner"><a class="brand" href="/" aria-label="Узел тоски по миру — главная">{LOGO}<span>Узел тоски<br>по миру</span></a><nav class="site-nav" aria-label="Главная навигация">{nav}</nav></div></header>
-<main id="main">{body}</main><footer class="footer"><div class="wrap footer-inner"><div><p><strong>Узел тоски по миру</strong> · Литературная мастерская</p><p>Литература, православная мысль и самостоятельное письмо.</p></div><div class="footer-links"><a href="/o-proekte/#principles">Принципы</a><a href="/tsitaty/">Проверенные цитаты</a><a href="/uchebniki/">Учебные линии</a><a href="/kurs/">Тематические маршруты</a><a href="/k-sochineniyu/materialy/">Материалы к экзаменам</a></div></div></footer></body></html>'''
+{verification_tags}<link rel="icon" type="image/png" href="/assets/favicon.png"><link rel="stylesheet" href="/assets/style.css">{home_style}<script defer src="/assets/app.js"></script><script type="application/ld+json">{schema_json}</script></head>
+<body{home_class}><a class="skip" href="#main">Перейти к содержанию</a><header class="site-head"><div class="wrap head-inner"><a class="brand" href="/" aria-label="Узел тоски по миру — главная">{LOGO}<span>Узел тоски<br>по миру</span></a><nav class="site-nav" aria-label="Главная навигация">{nav}</nav></div></header>
+<main id="main"{main_focus}>{body}</main><footer class="footer"><div class="wrap footer-inner"><div><p><strong>Узел тоски по миру</strong> · Литературная мастерская</p><p>Литература, православная мысль и самостоятельное письмо.</p></div><div class="footer-links"><a href="/o-proekte/#principles">Принципы</a><a href="/tsitaty/">Проверенные цитаты</a><a href="/uchebniki/">Учебные линии</a><a href="/kurs/">Тематические маршруты</a><a href="/k-sochineniyu/materialy/">Материалы к экзаменам</a></div></div></footer></body></html>'''
     destination=OUT / path.strip('/') / 'index.html' if path!='/' else OUT / 'index.html'
     destination.parent.mkdir(parents=True,exist_ok=True)
     destination.write_text(deployment_links(open_sources_separately(html)),encoding='utf-8')
@@ -202,19 +205,69 @@ def lesson_row(d):
 
 GRADES = load_grades()
 ARTICLES = load_articles()
-SCHOOL_COUNT = sum(len(g['units']) for g in GRADES.values())
-GRADE_LINKS = ''.join(f'<a href="/shkola/{n}/"><strong>{n}</strong><span>класс</span></a>' for n in GRADES)
+GRADE_LINKS = ''.join(f'<li><a href="/shkola/{n}/" aria-label="{n} класс">{n}</a></li>' for n in GRADES)
+FEATURED_LINKS = ''.join(
+    f'<li><a href="/masterskaya/{d["slug"]}/"><strong>«{esc(d["work"])}»</strong>'
+    f'<span>{esc(d["author"])}</span></a></li>' for d in FEATURED
+)
 
-home=f'''<div class="wrap"><section class="hero"><div><p class="eyebrow">Литературная мастерская</p><h1>Узел тоски<br>по миру</h1><p class="intro">Почему добро сильнее зла? Как не потерять надежду и услышать другого человека? Читаем школьную литературу, размышляем вместе со святыми отцами и учимся писать о том, что действительно волнует.</p><div class="hero-actions"><a class="button" href="/shkola/">Выбрать класс</a><a class="text-link" href="#masterskaya">Выбрать занятие</a></div></div>{hero_artwork()}</section>
-<div class="welcome-note"><p><strong>Пользование сайтом и проверка работ сейчас бесплатны.</strong> Написанный ответ можно отправить на проверку в литературную мастерскую.</p><p>Для учеников 1–11 классов, учителей и родителей. Можно готовиться к сочинению, а можно просто читать вместе.</p><p>Устная речь · Изложение · Сочинение · Литературный анализ</p></div>
-<section class="school-home section"><div class="section-top"><div><p class="eyebrow">Курс по школьной программе</p><h2>От первой книги<br>к самостоятельной мысли</h2></div><p>{SCHOOL_COUNT} страниц чтения и анализа для 1–11 классов: литературные разборы, точные духовные цитаты и самостоятельное рассуждение. Рядом — {len(LESSONS)} подробных занятий.</p></div><nav class="grade-chooser" aria-label="Выберите класс">{GRADE_LINKS}</nav><div class="home-paths"><a href="/chtenie/vneklassnoe/">Внеклассное чтение 1–11 классов</a><a href="/chtenie/">Что читать для экзаменов и творческих работ</a><a href="/uchebniki/">Несколько учебных линий</a><a href="/iskusstvo/">Живопись, иконы и книжная графика</a><a href="/k-sochineniyu/">Творческая часть ОГЭ, ЕГЭ и итоговое сочинение</a></div></section>
+home = f'''<div class="wrap home-wrap">
+<header class="home-opening">
+  <div class="home-intro">
+    <p class="home-kicker">Литературная мастерская</p>
+    <h1>Узел тоски<br>по миру</h1>
+    <p class="home-lead">Читаем литературу в диалоге с православной мыслью. Возвращаемся к реплике, детали или поступку героя, чтобы понять, на чём держится наше прочтение.</p>
+    <div class="home-entry-links"><a href="/shkola/">Литература по классам</a><a href="#masterskaya">Выбрать занятие</a></div>
+  </div>
+  {hero_artwork()}
+</header>
+<div class="home-desk home-section">
+  {home_articles(ARTICLES)}
+  {caucasus_home()}
+</div>
+<section class="home-school home-section" aria-labelledby="home-school-title">
+  <h2 id="home-school-title">Школьное чтение</h2>
+  <nav aria-label="Выберите класс"><ul class="home-grades">{GRADE_LINKS}</ul></nav>
+  <ul class="home-index-links">
+    <li><a href="/chtenie/vneklassnoe/">Внеклассное чтение</a></li>
+    <li><a href="/chtenie/">Чтение для экзаменов и творческих работ</a></li>
+    <li><a href="/uchebniki/">Разборы по учебникам</a></li>
+  </ul>
+</section>
+<div class="home-desk home-section">
+  <section id="masterskaya" aria-labelledby="home-lessons-title">
+    <h2 id="home-lessons-title">Дом, разлука, милосердие</h2>
+    <p>От возвращения Дуни к дому смотрителя до ночного визита доктора к Мерцаловым. Выберите произведение для подробного занятия.</p>
+    <ul class="home-works">{FEATURED_LINKS}</ul>
+    <ul class="home-index-links">
+      <li><a href="/masterskaya/">Все занятия</a></li>
+      <li><a href="/kurs/">Карта чтения</a></li>
+      <li><a href="/masterskaya/sonya-slovo-i-prisutstvie/">Соня читает о Лазаре</a></li>
+    </ul>
+  </section>
+  <section class="home-essays" aria-labelledby="home-essays-title">
+    <h2 id="home-essays-title">Философская мастерская</h2>
+    <p>Как говорить о победе добра, если помощь приходит не ко всем вовремя? Этим вопросом начинается статья, рядом с которой мы поместили «Философов» Нестерова.</p>
+    <ul>
+      <li><a href="/filosofiya/pochemu-dobro-pobedit-zlo/">Почему добро победит зло</a></li>
+      <li><a href="/filosofiya/obrazovanie-i-dobrota/">Делает ли образование человека добрее?</a></li>
+      <li><a href="/filosofiya/dobro-i-zhestokost/">Как защищать добро и не привыкнуть к жестокости</a></li>
+      <li><a href="/filosofiya/toska-po-miru/">Чего нам не хватает, когда мы тоскуем по миру</a></li>
+    </ul>
+    <a class="home-index-link" href="/filosofiya/">Все философские статьи</a>
+  </section>
+</div>
 {exam_home()}
-{caucasus_home()}
-{home_articles(ARTICLES)}
-<section class="philosophy-home section"><div><p class="eyebrow">Философская мастерская</p><h2>Почему добро<br>сильнее зла?</h2></div><div><p>Статьи о добре, свободе, надежде, прощении и мире. Христианская мысль встречается с вопросами математики и физики, живописью и музыкой.</p><p>Начинаем с общего вопроса. Затем ищем литературную опору для собственного сочинения.</p><div class="home-paths"><a href="/filosofiya/">Все философские статьи</a><a href="/filosofiya/pochemu-dobro-pobedit-zlo/">«Почему добро победит зло» и «Философы» Нестерова</a><a href="/filosofiya/obrazovanie-i-dobrota/">Делает ли образование человека добрее?</a><a href="/filosofiya/dobro-i-zhestokost/">Как защищать добро и не привыкнуть к жестокости</a><a href="/filosofiya/toska-po-miru/">Чего нам не хватает, когда мы тоскуем по миру</a></div></div></section><section class="section" id="masterskaya"><div class="section-top"><div><p class="eyebrow">Новый круг чтения</p><h2>Дом, разлука, милосердие</h2></div><p>Восемь встреч с текстами о привязанности, заботе и сопротивлении жестокости. Начните с обновлённых разборов «Матрёниного двора» и «Кавказского пленника». Можно пройти круг по порядку или выбрать одно произведение.</p></div><div class="lesson-list">{''.join(lesson_row(d) for d in FEATURED)}</div><div class="hero-actions"><a class="button" href="/masterskaya/">Все занятия ({len(LESSONS)})</a><a href="/kurs/">Карта основного и дополнительного чтения</a><a href="/masterskaya/sonya-slovo-i-prisutstvie/">Соня читает о Лазаре у Достоевского</a></div></section>
-<section class="perspective"><div><p class="eyebrow">Основа проекта</p><h2>Внимание к слову.<br>Внимание к человеку.</h2></div><div><p>Православная традиция задаёт вопросы о совести, свободе, милосердии и покаянии. В книгах этот выбор перестаёт быть отвлечённым: мы видим человека, его страх, надежду и последствия поступка.</p><p>Здесь можно размышлять, возражать и искать собственную формулировку. Хороший ответ помогает вернуться к книге и увидеть, откуда возникла эта мысль.</p><a href="/o-proekte/">Как устроена мастерская</a></div></section>
-<section class="for-whom" aria-label="Кому подойдут занятия"><div><h3>Ученику</h3><p>Потренируйтесь на одном небольшом разборе. Напишите ответ, проверьте доказательства и скачайте свой черновик.</p></div><div><h3>Учителю</h3><p>Используйте вопросы для урока или обсуждения. В конце каждого занятия есть методическая заметка.</p></div><div><h3>Родителям</h3><p>Читайте вместе и обсуждайте поступки героев. Вопросы не требуют личных признаний или единственного общего мнения.</p></div></section></div>'''
-page('/',TITLE,f'Литература и чтение для 1–11 классов в диалоге с православной мыслью. Занятий: {len(LESSONS)}. Карта курса, основное и дополнительное чтение.',home,active='workshop')
+<section class="home-colophon home-section" aria-labelledby="home-about-title">
+  <h2 id="home-about-title">О мастерской</h2>
+  <p>Занятия открыты для самостоятельного, классного и семейного чтения. С сайта можно отправить свою работу на бесплатную проверку.</p>
+  <ul class="home-index-links">
+    <li><a href="/o-proekte/">Принципы, источники и авторство</a></li>
+    <li><a href="/iskusstvo/">Живопись, иконы и книжная графика</a></li>
+  </ul>
+</section>
+</div>'''
+page('/', TITLE, 'Литературная мастерская для 1–11 классов в диалоге с православной мыслью.', home)
 
 for index,d in enumerate(LESSONS):
     options=''.join(f'<option value="{i}" data-prompt="{esc(p,quote=True)}">{esc(t)}</option>' for i,(t,p) in enumerate(d['prompts']))

@@ -28,10 +28,21 @@ def links(items):
 
 
 def home_articles(articles):
-    entries = [{'title': article['title'], 'url': article['path']} for article in articles[:3]]
+    latest = ''
+    if articles:
+        article = articles[0]
+        published = article['date']
+        latest = (
+            '<article class="home-latest">'
+            f'<time datetime="{published.isoformat()}">{published:%d.%m.%Y}</time>'
+            f'<h3><a href="{article["path"]}">{escape(article["title"])}</a></h3>'
+            f'<p>{escape(article["lead"])}</p></article>'
+        )
+    entries = [{'title': article['title'], 'url': article['path']} for article in articles[1:3]]
     return (
-        '<section class="section"><div class="section-top"><h2>Новые статьи о литературе</h2>'
-        f'<a href="{ARTICLES_PATH}">Все статьи</a></div>{links(entries)}</section>'
+        '<section class="home-journal" id="novye-stati"><h2>Новые разборы</h2>'
+        f'{latest}{links(entries) if entries else ""}'
+        f'<a class="home-index-link" href="{ARTICLES_PATH}">Все статьи о литературе</a></section>'
     )
 
 
