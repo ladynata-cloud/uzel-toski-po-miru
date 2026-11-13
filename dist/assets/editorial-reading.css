@@ -1,0 +1,190 @@
+/* Loaded only by the five pages in build.py:EDITORIAL_LAYOUTS. */
+.editorial-page:not(.editorial-home) .page-title {
+  max-width: 48rem;
+  margin-inline: auto;
+  padding: .5rem 0 1.3rem;
+}
+.editorial-page:not(.editorial-home) .page-title h1 {
+  font-size: clamp(2.15rem, 3.6vw, 3.35rem);
+  line-height: 1.15;
+  letter-spacing: -.02em;
+  margin-bottom: 1rem;
+  text-wrap: balance;
+}
+.editorial-page:not(.editorial-home) .page-title .lead {
+  font-size: 1.22rem;
+  line-height: 1.55;
+  margin-bottom: .8rem;
+}
+.editorial-page .reading-layout,
+.editorial-page .prose {
+  display: block;
+  max-width: 48rem;
+  margin-inline: auto;
+}
+.editorial-page .article p,
+.editorial-page .prose p {
+  max-width: 70ch;
+}
+.editorial-page .article,
+.editorial-page .prose {
+  font-size: 1.125rem;
+  line-height: 1.7;
+}
+.editorial-page .reading-nav {
+  position: static;
+  border: 0;
+  padding: 0;
+  margin: 0 0 1.7rem;
+  display: block;
+}
+.editorial-page .editorial-contents {
+  padding: .35rem 0;
+}
+.editorial-page .editorial-contents summary,
+.editorial-page .reading-help summary,
+.editorial-page .editorial-exercise summary {
+  min-height: 44px;
+  padding-block: .6rem;
+  line-height: 1.5;
+}
+.editorial-page .reading-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .15rem 1.3rem;
+  padding-bottom: .5rem;
+}
+.editorial-page .reading-links a {
+  font-size: .9375rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.editorial-page .article h2,
+.editorial-page .prose h2 {
+  font-size: clamp(1.65rem, 2.5vw, 2.15rem);
+  line-height: 1.25;
+}
+.editorial-page .article h3 {
+  font-size: 1.45rem;
+  line-height: 1.3;
+}
+.editorial-page .article section {
+  margin-bottom: 2.6rem;
+}
+.editorial-page .fine,
+.editorial-page .quote cite,
+.editorial-page .sources,
+.editorial-page .artwork figcaption,
+.editorial-page .artwork-credit,
+.editorial-page .source-purpose {
+  font-size: .9375rem !important;
+  line-height: 1.6;
+}
+.editorial-page .primary-reading-links {
+  font-size: 1rem;
+  line-height: 1.8;
+  margin-block: 1rem 1.7rem;
+}
+.editorial-page .primary-reading-links a {
+  display: inline;
+}
+.editorial-page .reading-help {
+  margin-block: 1.2rem;
+}
+.editorial-page .reading-help > p,
+.editorial-page .editorial-exercise > p:not(.fine) {
+  font-size: inherit;
+}
+.editorial-page .reading-help section {
+  margin-bottom: 1.2rem;
+}
+.editorial-page .reading-help h2 {
+  font-size: 1.35rem;
+}
+.editorial-essay .thought-lens {
+  margin-bottom: .3rem;
+}
+.editorial-essay .thought-picture {
+  max-width: 40rem;
+  margin-inline: auto;
+}
+.editorial-essay .thought-picture img {
+  max-height: 28rem;
+  height: auto;
+  object-fit: contain;
+}
+.editorial-essay .editorial-exercise {
+  border-top: 0;
+  padding-top: 0;
+}
+.editorial-home .hero {
+  padding-block: 3rem 2.5rem;
+}
+.editorial-home .hero .intro {
+  max-width: 31rem;
+}
+.editorial-home .home-reading {
+  padding-block: 2.5rem;
+}
+.editorial-home .home-reading .section-top {
+  margin-bottom: 1.3rem;
+}
+.editorial-home .home-reading-item {
+  max-width: 52rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1.3rem;
+}
+.editorial-home .home-reading-item + .home-reading-item {
+  margin-top: 1.5rem;
+}
+.editorial-home .home-reading-item h3 {
+  font-size: clamp(1.6rem, 2.4vw, 2.15rem);
+  line-height: 1.25;
+  margin-bottom: .75rem;
+}
+.editorial-home .home-reading-item p {
+  max-width: 68ch;
+  color: var(--muted);
+}
+@media (max-width: 760px) {
+  .editorial-page .article,
+  .editorial-page .prose {
+    font-size: 1.0625rem;
+  }
+  .editorial-page:not(.editorial-home) .page-title h1 {
+    font-size: clamp(1.95rem, 6.8vw, 2.3rem);
+  }
+  .editorial-page:not(.editorial-home) .page-title .lead {
+    font-size: 1.1rem;
+  }
+  .editorial-page .reading-nav {
+    margin-bottom: 1.35rem;
+  }
+  .editorial-page .article h3 {
+    font-size: 1.3rem;
+  }
+  .editorial-page .article section {
+    margin-bottom: 2.2rem;
+  }
+  .editorial-home .hero {
+    padding-block: 1.8rem;
+    gap: 1.6rem;
+  }
+  .editorial-home .home-reading {
+    padding-block: 2rem;
+  }
+}
+@media print {
+  .editorial-page .article,
+  .editorial-page .prose {
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+  .editorial-page:not(.editorial-home) .page-title h1 {
+    font-size: 26pt;
+  }
+  .editorial-page .reading-nav {
+    display: none;
+  }
+}

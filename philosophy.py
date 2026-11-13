@@ -19,7 +19,8 @@ def publish_philosophy(page):
         path = f'/filosofiya/{a["slug"]}/'
         paths.append(path)
         cards.append(f'''<article class="thought-card"><p class="eyebrow">{index:02d} · {e(a['theme'])}</p><h2><a href="{path}">{e(a['title'])}</a></h2><p>{e(a['lead'])}</p><p class="fine">{e(a['lens'])}</p><a href="{path}">Читать статью</a></article>''')
-        sections = ''.join(f'<section id="part-{n}"><h2>{e(title)}</h2>{text}</section>' for n, (title, text) in enumerate(a['sections'], 1))
+        section_parts = [f'<section id="part-{n}"><h2>{e(title)}</h2>{text}</section>' for n, (title, text) in enumerate(a['sections'], 1)]
+        sections = ''.join(section_parts)
         nav = ''.join(f'<a href="#part-{n}">{e(title)}</a>' for n, (title, _) in enumerate(a['sections'], 1))
         listens = []
         for mid, question in a['music']:
@@ -33,14 +34,25 @@ def publish_philosophy(page):
         sources_note = e(a.get('sources_note', 'Первоначальные источники проверены 2 октября 2026 года; новые материалы и дальнейшее чтение добавлены 9 октября.'))
         nxt = ESSAYS[index % len(ESSAYS)]
         art = {**ART_LIBRARY[a['art']], 'relation': ''}
+        navigation = f'<nav class="reading-nav" aria-label="В этой статье"><p class="eyebrow">В этой статье</p><a href="#picture">Встреча с картиной</a>{nav}<a href="#listening">Слушать</a><a href="#writing">От вопроса к сочинению</a><a href="#sources">Источники</a></nav>'
+        preface = '<p class="fine">Комментарий мастерской. Авторское рассуждение проекта; научные сведения, условные модели и христианское прочтение обозначены отдельно.</p>'
+        picture = f'<section id="picture" class="thought-picture">{figure(art)}<h2>{e(a["art_title"])}</h2>{a["art_text"]}</section>'
+        reading = picture + '\n        ' + sections
+        exam_note = 'Это тренировочная тема, а не объявленная тема экзамена. В <a href="/k-sochineniyu/itogovoe/">итоговом сочинении</a> нужен собственный ответ на выбранную тему с литературной аргументацией. В <a href="/k-sochineniyu/ege-russkiy/">ЕГЭ по русскому</a> работа начинается с предложенного текста и позиции его автора: философская статья не заменяет комментарий к нему. В <a href="/k-sochineniyu/ege-literatura/">ЕГЭ по литературе</a> определяющим остаётся анализ произведения. Картина, музыка и формула не заменяют обязательную литературную или текстовую опору.'
+        writing = f'<section id="writing" class="thought-writing"><p class="eyebrow">Творческая работа</p><h2>От вопроса к сочинению</h2><p><strong>Тема мастерской:</strong> {e(a["prompt"])}</p><p>{e(a["writing"])}</p><h3>Две литературные опоры</h3><ul>{books}</ul><p class="fine">{exam_note}</p></section>'
+        if a['slug'] == 'zachem-delat-dobro-bez-oglaski':
+            preface = '<p class="fine">Комментарий мастерской</p>'
+            reading = section_parts[0] + '\n        ' + picture + '\n        ' + ''.join(section_parts[1:])
+            navigation = f'<nav class="reading-nav" aria-label="В этой статье"><details class="editorial-contents"><summary>В этой статье</summary><div class="reading-links">{nav}<a href="#picture">Картина Перова</a><a href="#listening">Слушать</a><a href="#writing">Написать свой ответ</a><a href="#sources">Источники</a></div></details></nav>'
+            exam_note = 'Это тема мастерской для самостоятельной работы. В <a href="/k-sochineniyu/itogovoe/">итоговом сочинении</a> нужна литературная аргументация. На <a href="/k-sochineniyu/ege-russkiy/">ЕГЭ по русскому</a> работа строится по предложенному тексту, на <a href="/k-sochineniyu/ege-literatura/">ЕГЭ по литературе</a> — на анализе произведения. Упражнение не заменяет условий конкретного экзаменационного задания.'
+            writing = f'<section id="writing" class="thought-writing"><details class="editorial-exercise"><summary>Написать свой ответ (по желанию)</summary><p><strong>Тема мастерской:</strong> {e(a["prompt"])}</p><p>{e(a["writing"])}</p><h3>Две литературные опоры</h3><ul>{books}</ul><p class="fine">{exam_note}</p></details></section>'
         body = f'''<div class="wrap"><div class="breadcrumb"><a href="/">Главная</a><span>/</span><a href="/filosofiya/">Философская мастерская</a></div><header class="page-title"><p class="eyebrow">{e(a['theme'])} · Статья {index:02d}</p><h1>{e(a['title'])}</h1><p class="lead">{e(a['lead'])}</p><p class="thought-lens">{e(a['lens'])}</p></header>
-        <div class="reading-layout"><nav class="reading-nav" aria-label="В этой статье"><p class="eyebrow">В этой статье</p><a href="#picture">Встреча с картиной</a>{nav}<a href="#listening">Слушать</a><a href="#writing">От вопроса к сочинению</a><a href="#sources">Источники</a></nav><article class="article thought-article">
-        <p class="fine">Комментарий мастерской. Авторское рассуждение проекта; научные сведения, условные модели и христианское прочтение обозначены отдельно.</p>
-        <section id="picture" class="thought-picture">{figure(art)}<h2>{e(a['art_title'])}</h2>{a['art_text']}</section>
-        {sections}
+        <div class="reading-layout">{navigation}<article class="article thought-article">
+        {preface}
+        {reading}
         <aside class="school-dialogue"><h2>Рядом со святоотеческой мыслью</h2>{quote_block(a['quote'])}<p><strong>Комментарий мастерской.</strong> {e(a['quote_comment'])}</p>{extra_quotes}</aside>
         <section id="listening"><h2>Музыкальная иллюстрация</h2>{''.join(listens)}<p class="fine">Музыка сопровождает чтение. Записи созданы людьми и открываются на страницах исполнителей и музыкальных проектов.</p></section>
-        <section id="writing" class="thought-writing"><p class="eyebrow">Творческая работа</p><h2>От вопроса к сочинению</h2><p><strong>Тема мастерской:</strong> {e(a['prompt'])}</p><p>{e(a['writing'])}</p><h3>Две литературные опоры</h3><ul>{books}</ul><p class="fine">Это тренировочная тема, а не объявленная тема экзамена. В <a href="/k-sochineniyu/itogovoe/">итоговом сочинении</a> нужен собственный ответ на выбранную тему с литературной аргументацией. В <a href="/k-sochineniyu/ege-russkiy/">ЕГЭ по русскому</a> работа начинается с предложенного текста и позиции его автора: философская статья не заменяет комментарий к нему. В <a href="/k-sochineniyu/ege-literatura/">ЕГЭ по литературе</a> определяющим остаётся анализ произведения. Картина, музыка и формула не заменяют обязательную литературную или текстовую опору.</p></section>
+        {writing}
         {further_html}<section id="sources"><h2>Источники и границы прочтения</h2><ol class="sources thought-sources">{sources}</ol><p class="fine">{sources_note} Подпись к изображению содержит источник репродукции и атрибуции. Все духовные цитаты проекта берутся только из <a href="/tsitaty/">выбранной подборки</a>; библейские тексты указаны отдельно. Материалы подготовлены с помощью ИИ; иллюстрации и музыка не генерировались.</p></section>
         <nav class="next-lesson" aria-label="Продолжить чтение"><a href="/filosofiya/">Все философские статьи</a><a href="/filosofiya/{nxt['slug']}/">Далее: {e(nxt['title'])}</a></nav>
         </article></div></div>'''

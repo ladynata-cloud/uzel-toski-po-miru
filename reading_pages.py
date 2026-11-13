@@ -3,6 +3,7 @@ from html import escape as e
 from reading_lists import references_for_unit
 from extra_reading import related_for_unit
 from reading_depth import load_depth
+from reading_revisions import READING_REVISIONS
 from school_data import load_grades
 from quote_sources import quote_block, COLLECTION
 from quote_dialogues import additional_dialogue
@@ -32,7 +33,21 @@ def publish_reading_pages(page, lessons, art_library):
     for position, (n, u) in enumerate(all_units):
         path = reading_path(n, u)
         paths.append(path)
+        revision = READING_REVISIONS.get((n, u['id']))
         paragraphs = ''.join(f'<p>{e(p)}</p>' for p in depth[(n, u['id'])])
+        analysis = f'<p>{e(u["analysis"])}</p>{paragraphs}'
+        lead = grades[n]['focus']
+        reading_links = ''
+        if revision:
+            lead = revision['lead']
+            analysis = ''.join(
+                f'<h3>{e(title)}</h3>' + ''.join(f'<p>{e(p)}</p>' for p in text)
+                for title, text in revision['sections']
+            )
+            reading_links = '<p class="primary-reading-links">' + ' · '.join(
+                f'<a href="{e(url, quote=True)}">{e(label)}</a>'
+                for url, label in revision['primary_sources']
+            ) + '</p>'
         lesson = by_slug.get(u['lesson'])
         art = ''
         if u['art']:
@@ -44,12 +59,19 @@ def publish_reading_pages(page, lessons, art_library):
             links = ''.join(f'<li><a href="/muzyka/#{m["id"]}">{e(m["composer"])}. {e(m["title"])}</a></li>' for m in music)
             listening = f'<section id="listening"><h2>Продолжить слушанием</h2><ul>{links}</ul><p>Музыка сопровождает чтение. По ссылке указаны исполнители, источник записи и её связь с темой.</p></section>'
         source_items = []
+        if revision:
+            source_items.extend(
+                f'<li><a href="{e(url, quote=True)}">{e(label)}</a></li>'
+                for url, label in revision['primary_sources']
+            )
         if (n, u['id']) in TEXT_LINKS:
             url, label = TEXT_LINKS[(n, u['id'])]
             source_items.append(f'<li><a href="{e(url, quote=True)}">{e(label)}</a></li>')
         if lesson:
             for url, label in lesson['sources']:
                 if url.startswith('http') and 'biblioteka3' not in url:
+                    if revision and url in {url for url, _ in revision['primary_sources']}:
+                        continue
                     source_items.append(f'<li><a href="{e(url, quote=True)}">{e(label)}</a></li>')
         sources = f'<ul class="sources">{"".join(source_items)}</ul>' if source_items else ''
         workshop = f'<p><a class="button secondary" href="/masterskaya/{u["lesson"]}/">Занятие с вопросами и черновиком</a></p>' if lesson else ''
@@ -71,12 +93,26 @@ def publish_reading_pages(page, lessons, art_library):
             bridge_label = 'Декабрьское итоговое сочинение и литературная аргументация'
         next_n, next_u = all_units[(position + 1) % len(all_units)]
         nav = f'<a href="#analysis">Литературный разбор</a><a href="#tradition">Духовное сопоставление</a>' + ('<a href="#art">Искусство</a>' if art else '') + ('<a href="#listening">Слушание</a>' if listening else '') + '<a href="#writing">Собственный ответ</a><a href="#sources">Тексты и источники</a>'
-        body = f'''<div class="wrap"><div class="breadcrumb"><a href="/shkola/">Курс по классам</a><span>/</span><a href="/shkola/{n}/">{n} класс</a><span>/</span>Чтение и анализ</div><header class="page-title"><p class="eyebrow">{n} класс · Тема {u['id'][5:]} · Дополнительный курс</p><h1>{e(u['title'])}</h1><p class="lead">{e(grades[n]['focus'])}</p></header><div class="reading-layout"><nav class="reading-nav" aria-label="В разборе"><p class="eyebrow">В разборе</p>{nav}</nav><article class="article reading-detail">
-        <section id="analysis"><h2>Литературный разбор</h2><p class="reading-selection"><strong>Круг чтения.</strong> {e(u['reading'])}</p><p>{e(u['analysis'])}</p>{paragraphs}</section>
-        <section id="tradition"><h2>Встреча со святоотеческой мыслью</h2>{quote_block(u['quote'])}<div class="school-dialogue"><h3>Комментарий мастерской</h3><p>{e(u['dialogue'])}</p></div>{additional_dialogue(str(n)+'-'+u['id'])}<p class="fine">Цитата и подпись сохранены по выбранной подборке; знак […] обозначает пропущенное продолжение. Нажатие на цитату или имя автора открывает соответствующую страницу biblioteka3.ru. Литературное сопоставление принадлежит мастерской.</p></section>
+        navigation = f'<nav class="reading-nav" aria-label="В разборе"><p class="eyebrow">В разборе</p>{nav}</nav>'
+        tradition_note = '<p class="fine">Цитата и подпись сохранены по выбранной подборке; знак […] обозначает пропущенное продолжение. Нажатие на цитату или имя автора открывает соответствующую страницу biblioteka3.ru. Литературное сопоставление принадлежит мастерской.</p>'
+        writing_help = f'<p>{writing}</p>'
+        practice = u['practice']
+        connections = references_for_unit(n, u['id']) + related_for_unit(n, u['id'])
+        source_scope = 'Разбор рассчитан на чтение названных произведений или указанных фрагментов в вашем издании. Если внутри блока предложен выбор, произведения не объявляются дополнительным обязательным списком. Обсуждение одного эпизода не заменяет чтения книги.'
+        if revision:
+            navigation = f'<nav class="reading-nav" aria-label="В разборе"><details class="editorial-contents"><summary>В этом разборе</summary><div class="reading-links">{nav}</div></details></nav>'
+            tradition_note = '<p class="fine">Литературное сопоставление принадлежит мастерской. <a href="/tsitaty/">О подписях, источниках и сокращениях цитат</a>.</p>'
+            practice = revision['practice']
+            writing_help = f'<details class="reading-help"><summary>Опора для самостоятельного ответа</summary><p>{e(revision["writing"])}</p></details>'
+            if connections:
+                connections = f'<details class="reading-help"><summary>Экзаменационные перечни и дальнейшее чтение</summary>{connections}</details>'
+            source_scope = revision['scope']
+        body = f'''<div class="wrap"><div class="breadcrumb"><a href="/shkola/">Курс по классам</a><span>/</span><a href="/shkola/{n}/">{n} класс</a><span>/</span>Чтение и анализ</div><header class="page-title"><p class="eyebrow">{n} класс · Тема {u['id'][5:]} · Дополнительный курс</p><h1>{e(u['title'])}</h1><p class="lead">{e(lead)}</p></header><div class="reading-layout">{navigation}<article class="article reading-detail">
+        <section id="analysis"><h2>Литературный разбор</h2><p class="reading-selection"><strong>Круг чтения.</strong> {e(u['reading'])}</p>{reading_links}{analysis}</section>
+        <section id="tradition"><h2>Встреча со святоотеческой мыслью</h2>{quote_block(u['quote'])}<div class="school-dialogue"><h3>Комментарий мастерской</h3><p>{e(u['dialogue'])}</p></div>{additional_dialogue(str(n)+'-'+u['id'])}{tradition_note}</section>
         {art}{listening}
-        <section id="writing"><h2>От чтения к собственной мысли</h2><p class="reading-prompt">{e(u['practice'])}</p><p>{writing}</p>{workshop}<p><a href="{bridge}">{bridge_label}</a> · <a href="/filosofiya/">Общие вопросы о добре, свободе и надежде</a></p></section>
-        {references_for_unit(n,u["id"])}{related_for_unit(n,u["id"])}<section id="sources"><h2>Тексты и источники</h2>{sources}<p>Разбор рассчитан на чтение названных произведений или указанных фрагментов в вашем издании. Если внутри блока предложен выбор, произведения не объявляются дополнительным обязательным списком. Обсуждение одного эпизода не заменяет чтения книги.</p><p><a href="{COLLECTION}">Единственный источник духовных цитат: подборка biblioteka3.ru</a> · <a href="/tsitaty/">Примечания к цитатам</a> · <a href="/uchebniki/">Учебные линии и доступные фрагменты</a> · <a href="/shkola/#approach">Основания курса</a></p><p class="fine">Аналитические тексты подготовлены мастерской с помощью ИИ. Ученик может предложить другое прочтение, если обоснует его произведением. Религиозное согласие не является критерием оценки.</p></section>
+        <section id="writing"><h2>От чтения к собственной мысли</h2><p class="reading-prompt">{e(practice)}</p>{writing_help}{workshop}<p><a href="{bridge}">{bridge_label}</a> · <a href="/filosofiya/">Общие вопросы о добре, свободе и надежде</a></p></section>
+        {connections}<section id="sources"><h2>Тексты и источники</h2>{sources}<p>{e(source_scope)}</p><p><a href="{COLLECTION}">Единственный источник духовных цитат: подборка biblioteka3.ru</a> · <a href="/tsitaty/">Примечания к цитатам</a> · <a href="/uchebniki/">Учебные линии и доступные фрагменты</a> · <a href="/shkola/#approach">Основания курса</a></p><p class="fine">Аналитические тексты подготовлены мастерской с помощью ИИ. Ученик может предложить другое прочтение, если обоснует его произведением. Религиозное согласие не является критерием оценки.</p></section>
         <nav class="next-lesson" aria-label="Продолжить курс"><a href="/shkola/{n}/#topics">Все темы {n} класса</a><a href="{reading_path(next_n, next_u)}">Далее: {e(next_u['title'])}</a></nav></article></div></div>'''
         subject = 'Литературное чтение' if n < 5 else 'Литература'
         description = f'{subject}, {n} класс. {u["reading"]} {u["practice"]}'

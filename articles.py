@@ -28,10 +28,16 @@ def links(items):
 
 
 def home_articles(articles):
-    entries = [{'title': article['title'], 'url': article['path']} for article in articles[:3]]
+    entries = ''.join(
+        '<article class="home-reading-item">'
+        f'<h3><a href="{article["path"]}">{escape(article["title"])}</a></h3>'
+        f'<p>{escape(article["description"])}</p></article>'
+        for article in articles[:3]
+    )
     return (
-        '<section class="section"><div class="section-top"><h2>Новые статьи о литературе</h2>'
-        f'<a href="{ARTICLES_PATH}">Все статьи</a></div>{links(entries)}</section>'
+        '<section class="section home-reading" aria-labelledby="recent-reading">'
+        '<div class="section-top"><h2 id="recent-reading">Новые статьи о литературе</h2>'
+        f'<a href="{ARTICLES_PATH}">Все статьи</a></div>{entries}</section>'
     )
 
 
