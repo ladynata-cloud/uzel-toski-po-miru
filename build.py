@@ -19,7 +19,7 @@ from textbooks import publish_textbooks
 from exams import publish_exams
 from exam_tracks import home_section as exam_home
 from philosophy import publish_philosophy
-from reading_pages import publish_reading_pages
+from reading_pages import publish_reading_pages, reading_path
 from reading_lists import publish_reading_lists
 from extra_reading import publish_extra_reading
 from articles import home_articles, load_articles, publish_articles
@@ -270,6 +270,13 @@ home = f'''<div class="wrap home-wrap">
 page('/', TITLE, 'Литературная мастерская для 1–11 классов в диалоге с православной мыслью.', home)
 
 for index,d in enumerate(LESSONS):
+    school_topics = [
+        f'<li><a href="{reading_path(n, unit)}">{n} класс · {esc(unit["title"])}</a></li>'
+        for n, grade in GRADES.items()
+        for unit in grade['units']
+        if unit['lesson'] == d['slug']
+    ]
+    school_links = f'<ul>{"".join(school_topics)}</ul>' if school_topics else ''
     options=''.join(f'<option value="{i}" data-prompt="{esc(p,quote=True)}">{esc(t)}</option>' for i,(t,p) in enumerate(d['prompts']))
     choices=''.join(f'<label class="choice"><input type="radio" name="answer" value="{i}" data-correct="{str(ok).lower()}" data-explanation="{esc(exp,quote=True)}"><span>{esc(text)}</span></label>' for i,(text,ok,exp) in enumerate(d['choices']))
     checklist=''.join(f'<li><label><input type="checkbox"><span>{esc(c)}</span></label></li>' for c in d['checks'])
@@ -279,7 +286,7 @@ for index,d in enumerate(LESSONS):
     if d.get('reception'): sections.insert(3, ('reception', 'Разные прочтения'))
     if d.get('village'): sections.insert(3, ('village-perspective', 'Взгляд жителей аула'))
     nav=''.join(f'<a href="#{s}">{t}</a>' for s,t in sections)
-    body=f'''<div class="wrap"><div class="breadcrumb"><a href="/">Главная</a><span>/</span><a href="/masterskaya/">Мастерская</a><span>/</span>{d['number']}</div><header class="page-title"><p class="eyebrow">Занятие {d['number']} · {d['author']} · «{d['work']}»</p><h1>{d['title']}</h1><p class="lead">{d['lead']}</p><div class="meta"><span>{d['time']} после чтения</span><span>{d['skill']}</span><span>{d['stage']}</span><span>{d['form']}</span></div></header>
+    body=f'''<div class="wrap"><div class="breadcrumb"><a href="/">Главная</a><span>/</span><a href="/masterskaya/">Мастерская</a><span>/</span>{d['number']}</div><header class="page-title"><p class="eyebrow">Занятие {d['number']} · {d['author']} · «{d['work']}»</p><h1>{d['title']}</h1><p class="lead">{d['lead']}</p>{school_links}<div class="meta"><span>{d['time']} после чтения</span><span>{d['skill']}</span><span>{d['stage']}</span><span>{d['form']}</span></div></header>
 <div class="reading-layout"><nav class="reading-nav" aria-label="Разделы занятия"><p class="eyebrow">В этом занятии</p>{nav}<p class="nav-note">Можно возвращаться к тексту на любом шаге. Сначала запишите свою мысль, затем открывайте подсказку.</p></nav><article class="article">
 <p class="fine">{d['circle']}. Возрастной диапазон — ориентир для выбора сложности. Вариант письменного задания можно выбрать ниже.</p><section id="question"><span class="section-no">01 · Начните с вопроса</span><h2>{d['lead']}</h2><p>{d['start']}</p></section>
 <section id="reading"><span class="section-no">02 · Прочитайте</span><h2>Сначала — сам текст</h2>{d['reading']}{lesson_artwork(d['slug'])}<div class="prompt-box"><h3>Вопросы к чтению</h3><ol class="questions">{''.join('<li>'+q+'</li>' for q in d['questions'])}</ol></div></section>

@@ -19,11 +19,12 @@ def load_articles():
     return sorted(articles, key=lambda article: (article['date'], article['path']), reverse=True)
 
 
+def article_link(item):
+    return f'<a href="{escape(item["url"], quote=True)}">{escape(item["title"])}</a>'
+
+
 def links(items):
-    entries = ''.join(
-        f'<li><a href="{escape(item["url"], quote=True)}">{escape(item["title"])}</a></li>'
-        for item in items
-    )
+    entries = ''.join(f'<li>{article_link(item)}</li>' for item in items)
     return f'<ul>{entries}</ul>'
 
 
@@ -67,12 +68,14 @@ def publish_articles(page, articles):
             paragraphs = ''.join(f'<p>{escape(text)}</p>' for text in section['paragraphs'])
             parts.append(f'<section><h2>{escape(section["heading"])}</h2>{paragraphs}</section>')
         published = article['date']
+        school_topic = article.get('school_topic')
+        school_link = f'<p>{article_link(school_topic)}</p>' if school_topic else ''
         body = (
             f'<div class="wrap"><div class="breadcrumb"><a href="/">Главная</a><span>/</span>'
             f'<a href="{ARTICLES_PATH}">Статьи о литературе</a></div>'
             f'<header class="page-title"><time class="fine" datetime="{published.isoformat()}">'
             f'{published:%d.%m.%Y}</time><h1>{escape(article["title"])}</h1>'
-            f'<p class="lead">{escape(article["lead"])}</p></header>'
+            f'<p class="lead">{escape(article["lead"])}</p>{school_link}</header>'
             f'<article class="prose">{"".join(parts)}'
             f'<section><h2>Самостоятельная работа</h2><p>{escape(article["task"])}</p></section>'
             f'<section><h2>Первичный текст</h2>{links(article["sources"])}</section>'
