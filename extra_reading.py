@@ -190,10 +190,10 @@ def essay_body(x):
     else:
         body += quote_block(x['quote']) + '<p>' + e(x['reflection']) + '</p>'
     body += '<h2>Иллюстрация к тексту</h2>' + figure(art)
-    body += f'<h2>Музыкальное сопровождение</h2><p><a href="/muzyka/#{x["music"]}">{e(music["composer"])}. {e(music["title"])}</a></p><p>{e(x["music_note"])}</p><p>По ссылке указаны исполнители и источник записи. Музыка включается только по вашему выбору.</p>'
+    body += f'<h2>Музыкальное сопровождение</h2><p><a href="/muzyka/#{x["music"]}">{e(music["composer"])}. {e(music["title"])}</a></p><p>{e(x["music_note"])}</p><p class="fine">Слушать по желанию. Исполнители и источник записи — по ссылке.</p>'
     if x.get('questions'):
         body += '<h2>Вопросы для разговора</h2><ol>' + ''.join('<li>' + e(q) + '</li>' for q in x['questions']) + '</ol>'
-    body += '<h2>Собственный ответ</h2><p class="reading-prompt">' + e(x['task']) + '</p><p>Начните с одного тезиса. Подберите две точные детали, объясните их роль и проверьте, отвечает ли вывод на поставленный вопрос. Для младшего читателя возможен устный ответ; взрослый помогает вернуться к тексту.</p>'
+    body += '<h2>Собственный ответ</h2><p class="reading-prompt">' + e(x['task']) + '</p><details><summary>Как построить ответ</summary><p>Выскажите свою мысль, подтвердите её двумя деталями из текста и объясните свой выбор. Младший читатель может ответить устно и обсудить ответ со взрослым.</p></details>'
     if x.get('note'):
         body += f'<aside class="context-note"><h2>Исторический текст и современные знания</h2><p>{e(x["note"])}</p><p><a href="{x["note_url"]}">Проверить справку ВОЗ</a></p></aside>'
     sources = x.get('sources', [(x['source'], x['source_label'])])

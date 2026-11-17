@@ -3,6 +3,7 @@ from datetime import date
 from html import escape
 import json
 from pathlib import Path
+from quote_dialogues import article_dialogue
 
 
 ARTICLES_PATH = '/stati/'
@@ -63,6 +64,7 @@ def publish_articles(page, articles):
             f'{published:%d.%m.%Y}</time><h1>{escape(article["title"])}</h1>'
             f'<p class="lead">{escape(article["lead"])}</p></header>'
             f'<article class="prose">{"".join(parts)}'
+            f'{article_dialogue(article["path"])}'
             f'<section><h2>Самостоятельная работа</h2><p>{escape(article["task"])}</p></section>'
             f'<section><h2>Первичный текст</h2>{links(article["sources"])}</section>'
             f'<section><h2>Продолжить чтение</h2>{links(article["related"])}</section>'
