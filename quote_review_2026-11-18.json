@@ -1,0 +1,247 @@
+{
+  "checked_on": "2026-11-18",
+  "method": "Read the eight original HTTP topic pages; normalize HTML markup and whitespace only; compare every quotation, attribution and work link.",
+  "sources": [
+    {
+      "url": "http://www.biblioteka3.ru/biblioteka/citaty/txt01.html",
+      "sha256": "e07f6404d11ffe7fe66d8e2ec8c6fbdb429ab52ca24839818388e44340c33159"
+    },
+    {
+      "url": "http://www.biblioteka3.ru/biblioteka/citaty/txt02.html",
+      "sha256": "959ae152a26e60a8a784c6178c4092e315c078e246009c3358a428f6e46aede0"
+    },
+    {
+      "url": "http://www.biblioteka3.ru/biblioteka/citaty/txt03.html",
+      "sha256": "726546c91bc95eba69da9870b9d7f9a16b8224816ceb9c3ed9f6fe901fd3b601"
+    },
+    {
+      "url": "http://www.biblioteka3.ru/biblioteka/citaty/txt04.html",
+      "sha256": "2c0c4f2e67388678bc960b937d3d708ec524379bc0c2ad9e25ca3246754731f0"
+    },
+    {
+      "url": "http://www.biblioteka3.ru/biblioteka/citaty/txt05.html",
+      "sha256": "e56494aac53b3086539312c6f7417c2e799c325d33768ce6a0a177dfdb8ffc98"
+    },
+    {
+      "url": "http://www.biblioteka3.ru/biblioteka/citaty/txt06.html",
+      "sha256": "db4bb3aa07150e658cbbbd0a5c6383565c2abc00e9eec469823fc4cf27dc756e"
+    },
+    {
+      "url": "http://www.biblioteka3.ru/biblioteka/citaty/txt07.html",
+      "sha256": "9c093ad86bc257377b08c7d5695d92ace6fe0938128456fa8d5be3b3f96f4e82"
+    },
+    {
+      "url": "http://www.biblioteka3.ru/biblioteka/citaty/txt08.html",
+      "sha256": "da02df8c1ec66ccb606eb531ff83c73b26b0cf2342f2d4b37f50f7f91bf53abf"
+    }
+  ],
+  "quotes": [
+    {
+      "id": "nadezhda",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt01.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "srebrolubie",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt02.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "vnimanie",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt04.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "smirenie",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt06.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "skorbi",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt05.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "molitva",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt04.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "darenie",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt06.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "pristrastie",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt02.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "peremena",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt06.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "blagodarenie",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt05.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "darit-bez-pechali",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt02.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "bednost-i-bogatstvo",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt02.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "sosredotochennaya-molitva",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt04.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "serdechnaya-molitva",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt04.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "volya-i-molitva",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt04.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "blagodarnost-v-molitve",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt04.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "mir-pered-molitvoy",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt04.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "nachat-s-molitvy",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt04.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "smysl-molitvy",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt04.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "ne-teriat-nadezhdy",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt05.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "radost-pashi",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt05.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "pamyat-o-slabosti",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt06.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "smirenie-protiv-gordosti",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt06.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "angely-i-svoboda",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt08.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "angelskoe-rukovodstvo",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt08.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "angel-hranitel",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt08.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "ne-unizhat",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt06.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "tishina-v-molitve",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt04.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    },
+    {
+      "id": "lyubov-i-dengi",
+      "page": "http://www.biblioteka3.ru/biblioteka/citaty/txt02.html",
+      "text_matches": true,
+      "attribution_matches": true,
+      "work_link_matches": true
+    }
+  ],
+  "limits": [
+    "Verification is against the owner-selected web collection, not a critical print edition.",
+    "Only the 24 listed workshop/article additions and two school analyses received individual editorial revision; no claim of line-by-line revision of all 549 pages."
+  ]
+}

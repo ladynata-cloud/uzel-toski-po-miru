@@ -3,6 +3,7 @@ from datetime import date
 from html import escape
 import json
 from pathlib import Path
+from quote_sources import quote_block
 
 
 ARTICLES_PATH = '/stati/'
@@ -55,6 +56,14 @@ def publish_articles(page, articles):
         for section in article['sections']:
             paragraphs = ''.join(f'<p>{escape(text)}</p>' for text in section['paragraphs'])
             parts.append(f'<section><h2>{escape(section["heading"])}</h2>{paragraphs}</section>')
+        if article.get('spiritual'):
+            reflection = article['spiritual']
+            parts.append(
+                '<section><h2>Встреча с духовной мыслью</h2>'
+                + quote_block(reflection['quote'])
+                + '<p><strong>Комментарий мастерской.</strong> '
+                + escape(reflection['comment']) + '</p></section>'
+            )
         published = article['date']
         body = (
             f'<div class="wrap"><div class="breadcrumb"><a href="/">Главная</a><span>/</span>'
