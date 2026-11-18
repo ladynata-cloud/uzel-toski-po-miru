@@ -22,6 +22,7 @@ from philosophy import publish_philosophy
 from reading_pages import publish_reading_pages, reading_path
 from reading_lists import publish_reading_lists
 from extra_reading import publish_extra_reading
+from reader_catalogue import DATA_PATH, SEARCH_PATH, publish_reader_catalogue
 from articles import home_articles, load_articles, publish_articles
 from caucasus_reading import home_card as caucasus_home, navigation as caucasus_nav
 from site_config import SITE_URL, deployment_links, write_domain_file
@@ -186,6 +187,8 @@ def page(path, title, description, body, active='', structured=None):
             schema['mainEntity']['description'] = description
     schema_json = json.dumps(schema, ensure_ascii=False).replace('<', '\\u003c')
     home_style = '<link rel="stylesheet" href="/assets/home.css">' if path == '/' else ''
+    reader_data = (f'<link rel="alternate" type="application/json" href="{DATA_PATH}before-reading.json" '
+                   'title="Карточки для первого чтения">' if path == SEARCH_PATH else '')
     home_class = ' class="literary-home"' if path == '/' else ''
     main_focus = ' tabindex="-1"' if path == '/' else ''
     nav = ''.join(f'<a href="{href}"'+(' aria-current="page"' if key==active else '')+f'>{label}</a>' for key,href,label in [('school','/shkola/','1–11 классы'),('reading','/chtenie/','Что читать'),('workshop','/masterskaya/','Занятия'),('philosophy','/filosofiya/','Философия'),('art','/iskusstvo/','Искусство'),('music','/muzyka/','Музыка'),('exam','/k-sochineniyu/','К экзаменам'),('about','/o-proekte/','О проекте')])
@@ -193,7 +196,7 @@ def page(path, title, description, body, active='', structured=None):
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{esc(name)}</title>
 <meta name="description" content="{esc(description,quote=True)}"><meta name="theme-color" content="#132b40"><link rel="canonical" href="{canonical}">
 <meta property="og:title" content="{esc(name,quote=True)}"><meta property="og:description" content="{esc(description,quote=True)}"><meta property="og:type" content="{'website' if path=='/' else 'article'}"><meta property="og:url" content="{canonical}"><meta property="og:locale" content="ru_RU">
-{verification_tags}<link rel="icon" type="image/png" href="/assets/favicon.png"><link rel="stylesheet" href="/assets/style.css">{home_style}<script defer src="/assets/app.js"></script><script type="application/ld+json">{schema_json}</script></head>
+{verification_tags}<link rel="icon" type="image/png" href="/assets/favicon.png"><link rel="stylesheet" href="/assets/style.css">{home_style}{reader_data}<script defer src="/assets/app.js"></script><script type="application/ld+json">{schema_json}</script></head>
 <body{home_class}><a class="skip" href="#main">Перейти к содержанию</a><header class="site-head"><div class="wrap head-inner"><a class="brand" href="/" aria-label="Узел тоски по миру — главная">{LOGO}<span>Узел тоски<br>по миру</span></a><nav class="site-nav" aria-label="Главная навигация">{nav}</nav></div></header>
 <main id="main"{main_focus}>{body}</main><footer class="footer"><div class="wrap footer-inner"><div><p><strong>Узел тоски по миру</strong> · Литературная мастерская</p><p>Литература, православная мысль и самостоятельное письмо.</p></div><div class="footer-links"><a href="/o-proekte/#principles">Принципы</a><a href="/tsitaty/">Проверенные цитаты</a><a href="/uchebniki/">Учебные линии</a><a href="/kurs/">Тематические маршруты</a><a href="/k-sochineniyu/materialy/">Материалы к экзаменам</a></div></div></footer></body></html>'''
     destination=OUT / path.strip('/') / 'index.html' if path!='/' else OUT / 'index.html'
@@ -229,6 +232,7 @@ home = f'''<div class="wrap home-wrap">
   <h2 id="home-school-title">Школьное чтение</h2>
   <nav aria-label="Выберите класс"><ul class="home-grades">{GRADE_LINKS}</ul></nav>
   <ul class="home-index-links">
+    <li><a href="{SEARCH_PATH}">Найти произведение по памяти</a></li>
     <li><a href="/chtenie/vneklassnoe/">Внеклассное чтение</a></li>
     <li><a href="/chtenie/">Чтение для экзаменов и творческих работ</a></li>
     <li><a href="/uchebniki/">Разборы по учебникам</a></li>
@@ -328,6 +332,7 @@ article_paths = publish_articles(page, ARTICLES)
 
 paths=['/','/o-proekte/','/k-sochineniyu/','/masterskaya/','/kurs/','/chtenie-i-tradiciya/','/tsitaty/','/muzyka/']+['/masterskaya/'+d['slug']+'/' for d in LESSONS]+school_paths+exam_paths+philosophy_paths+reading_paths+reading_list_paths+extra_reading_paths+['/iskusstvo/','/uchebniki/']
 paths.extend(article_paths)
+paths.append(publish_reader_catalogue(page, OUT, LESSONS))
 (OUT/'sitemap.xml').write_text('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+''.join('<url><loc>'+ORIGIN+p+'</loc></url>' for p in paths)+'</urlset>',encoding='utf-8')
 (OUT/'robots.txt').write_text('User-agent: *\nAllow: /\nSitemap: '+ORIGIN+'/sitemap.xml\n',encoding='utf-8')
 write_domain_file(OUT)

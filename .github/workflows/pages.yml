@@ -34,6 +34,8 @@ jobs:
           python3 verify_site.py
           node --check dist/assets/app.js
           node --check dist/assets/exam-practice.js
+          node --check dist/assets/reader-search.js
+          node --test tests/reader-search.test.cjs
       - name: Upload site
         uses: actions/upload-pages-artifact@v4
         with:
