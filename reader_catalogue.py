@@ -53,9 +53,21 @@ def publish_reader_catalogue(page, output, lessons):
         safe = {k: v for k, v in card.items() if k in SAFE_FIELDS | OPTIONAL_FIELDS}
         safe['url'] = SITE_URL + SEARCH_PATH + '#' + card['id']
         first_reading.append(safe)
+    after_reading = after_reading_records(cards, lessons)
+    details = directory / 'after-reading'
+    details.mkdir(exist_ok=True)
+    expected_packets = {card['id'] for card in cards}
+    for old in details.glob('work-*.json'):
+        if old.stem not in expected_packets:
+            old.unlink()
+    for record in after_reading:
+        if 'card_id' in record:
+            packet = {'version': 1, 'mode': 'after_reading', 'record': record}
+            (details / (record['card_id'] + '.json')).write_text(
+                json.dumps(packet, ensure_ascii=False) + '\n', encoding='utf-8')
     for filename, mode, records in [
         ('before-reading.json', 'before_reading', first_reading),
-        ('after-reading.json', 'after_reading', after_reading_records(cards, lessons)),
+        ('after-reading.json', 'after_reading', after_reading),
     ]:
         catalogue = {'version': 1, 'mode': mode, 'language': 'ru', 'records': records}
         (directory / filename).write_text(json.dumps(catalogue, ensure_ascii=False, indent=2) + '\n',
