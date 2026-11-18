@@ -66,3 +66,21 @@ def write_domain_file(output):
         cname.unlink(missing_ok=True)
     else:
         cname.write_text(_url.hostname + '\n', encoding='utf-8')
+
+
+def assistant_origin(value):
+    """Optional origin of the public, first-party dialogue transport."""
+    if not value or not value.strip():
+        return ''
+    url = urlsplit(value.strip())
+    if (not url.hostname or url.username is not None or url.password is not None
+            or url.query or url.fragment or url.path not in ('', '/')
+            or not re.fullmatch(r'(?:[A-Za-z0-9.-]+|\[[0-9A-Fa-f:]+\])(?::[0-9]+)?', url.netloc)
+            or url.scheme not in ('https', 'http')
+            or (url.scheme == 'http' and url.hostname not in ('localhost', '127.0.0.1', '::1'))):
+        raise ValueError('SITE_ASSISTANT_ORIGIN must be an HTTPS origin or local HTTP origin')
+    _ = url.port  # reject malformed and out-of-range ports
+    return url.scheme + '://' + url.netloc
+
+
+SITE_ASSISTANT_ORIGIN = assistant_origin(os.environ.get('SITE_ASSISTANT_ORIGIN', ''))

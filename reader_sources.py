@@ -1,6 +1,7 @@
 """Bounded, after-reading material from the sources used to publish the workshop."""
 
 import json
+from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -87,8 +88,39 @@ def catalogue_records():
     return records
 
 
+class AnalysisParagraphs(HTMLParser):
+    """Collect editorial paragraphs from the lesson, excluding quoted source blocks."""
+    def __init__(self):
+        super().__init__()
+        self.paragraphs = []
+        self.current = None
+        self.excluded = 0
+
+    def handle_starttag(self, tag, attrs):
+        if tag in ('aside', 'blockquote', 'figure', 'script', 'style'):
+            self.excluded += 1
+        elif tag == 'p' and not self.excluded:
+            self.current = []
+
+    def handle_data(self, data):
+        if self.current is not None and not self.excluded:
+            self.current.append(data)
+
+    def handle_endtag(self, tag):
+        if tag in ('aside', 'blockquote', 'figure', 'script', 'style'):
+            self.excluded -= 1
+        elif tag == 'p' and self.current is not None and not self.excluded:
+            text = ' '.join(''.join(self.current).split())
+            if text:
+                self.paragraphs.append(text)
+            self.current = None
+
+
 def workshop_record(card, lesson):
     url = card['url']
+    analysis = AnalysisParagraphs()
+    analysis.feed(lesson['analysis'])
+    analysis.close()
     sources = []
     for href, label in lesson['sources']:
         if href.startswith('/tsitaty/') or urlsplit(href).path.rstrip('/') == '/biblia':
@@ -100,7 +132,8 @@ def workshop_record(card, lesson):
         'url': url, 'author': lesson['author'], 'title': lesson['work'],
         'analysis_title': lesson['title'], 'scope': 'Эпизоды и вопросы из раздела «Чтение» занятия.',
         'source_status': 'not_recorded', 'sources': sources,
-        'commentary': lesson['lead'], 'reading_task': lesson['questions'][0],
+        'commentary': lesson['lead'], 'commentary_paragraphs': analysis.paragraphs,
+        'reading_task': lesson['questions'][0],
         'sections': [
             {'label': label, 'url': url + '#' + section}
             for section, label in [('reading', 'Чтение'), ('analysis', 'Разбор мастерской'),

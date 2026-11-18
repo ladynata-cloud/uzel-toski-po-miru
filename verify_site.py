@@ -102,7 +102,13 @@ def verify_reader_data(pages, check_target, catalogue, reviews):
     assert {r['id'] for r in after.values() if r['kind'] == 'catalogue_entry'} == {r['id'] for r in catalogue}
     linked = {r['card_id']: r for r in after.values() if 'card_id' in r}
     assert linked.keys() == before.keys() and sum('card_id' in r for r in after.values()) == len(linked)
+    details = directory / 'after-reading'
+    assert {path.stem for path in details.glob('*.json')} == before.keys()
     for key, record in before.items():
+        packet = json.loads((details / (key + '.json')).read_text(encoding='utf-8'))
+        assert packet == {'version': 1, 'mode': 'after_reading', 'record': linked[key]}
+        if linked[key]['kind'] == 'workshop':
+            assert linked[key]['commentary_paragraphs'], key
         assert SAFE_FIELDS | {'url'} <= record.keys() <= SAFE_FIELDS | OPTIONAL_FIELDS | {'url'}
         assert record['url'] == SITE_URL + SEARCH_PATH + '#' + key
         assert linked[key]['url'] == cards[key]['url']
