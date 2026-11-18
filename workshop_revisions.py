@@ -70,3 +70,5 @@ def revise_workshops(lessons):
     for lesson in lessons:
         if lesson['slug'] in REVISIONS:
             lesson.update(REVISIONS[lesson['slug']])
+    from workshop_quotes import revise_workshop_quotes
+    revise_workshop_quotes(lessons)

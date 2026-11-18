@@ -163,17 +163,25 @@ def catalogue(band, data):
 def essay_body(x):
     if 'catalogue' in x:
         band = x['catalogue'].rsplit('-', 1)[0]
-        origin = f'<a href="{ROOT}{band}/#{x["catalogue"]}">Официальный рекомендательный перечень: {BANDS[band][0]}, соответствующая позиция</a>'
+        origin_path = f'{ROOT}{band}/#{x["catalogue"]}'
+        origin_label = f'Официальный рекомендательный перечень: {BANDS[band][0]}, соответствующая позиция'
     elif 'textbook' in x:
         source = SOURCES[x['textbook'].rsplit('-', 1)[0]]
-        origin = f'<a href="{TEXTBOOKS}{x["textbook"].rsplit("-", 1)[0]}/#{x["textbook"]}">{e(source["title"])}, {source["year"]}: рекомендация к самостоятельному чтению</a>'
+        origin_path = f'{TEXTBOOKS}{x["textbook"].rsplit("-", 1)[0]}/#{x["textbook"]}'
+        origin_label = f'{source["title"]}, {source["year"]}: рекомендация к самостоятельному чтению'
     else:
-        origin = f'<a href="{CAUCASUS_ROOT}">Авторский маршрут мастерской «Толстой: Кавказ и человек»</a>'
+        origin_path = CAUCASUS_ROOT
+        origin_label = 'Авторский маршрут мастерской «Толстой: Кавказ и человек»'
     art = {**ART_LIBRARY[x['art']], 'relation': x['art_note']}
     music = next(m for m in MUSIC if m['id'] == x['music'])
     scope = x.get('scope', 'Полный текст произведения, указанного в заглавии.')
-    body = caucasus_nav(x['slug']) if x.get('editorial_route') == CAUCASUS_ROOT else ''
+    on_caucasus_route = x.get('editorial_route') == CAUCASUS_ROOT
+    origin_in_navigation = on_caucasus_route and origin_path == CAUCASUS_ROOT
+    body = caucasus_nav(x['slug']) if on_caucasus_route else ''
     body += f'<p><strong>Читаем:</strong> {e(x["author"])}. <a href="{e(x["source"], quote=True)}">{e(x["source_label"])}</a>.</p><p class="context-note"><strong>Объём разбора:</strong> {e(scope)}</p>'
+    origin_note = f'<p><a href="{e(origin_path, quote=True)}">{e(origin_label)}</a>.</p>'
+    if not origin_in_navigation:
+        body += origin_note
     headings = {h['before']: h['title'] for h in x.get('section_headings', [])}
     if not headings:
         body += '<h2>Литературный разбор</h2>'
@@ -193,12 +201,14 @@ def essay_body(x):
     body += f'<h2>Музыкальное сопровождение</h2><p><a href="/muzyka/#{x["music"]}">{e(music["composer"])}. {e(music["title"])}</a></p><p>{e(x["music_note"])}</p><p>По ссылке указаны исполнители и источник записи. Музыка включается только по вашему выбору.</p>'
     if x.get('questions'):
         body += '<h2>Вопросы для разговора</h2><ol>' + ''.join('<li>' + e(q) + '</li>' for q in x['questions']) + '</ol>'
-    body += '<h2>Собственный ответ</h2><p class="reading-prompt">' + e(x['task']) + '</p><p>Начните с одного тезиса. Подберите две точные детали, объясните их роль и проверьте, отвечает ли вывод на поставленный вопрос. Для младшего читателя возможен устный ответ; взрослый помогает вернуться к тексту.</p>'
+    body += '<h2>Собственный ответ</h2><p class="reading-prompt">' + e(x['task']) + '</p><p>Подтвердите свой ответ двумя деталями из текста. Можно ответить устно; младшему читателю поможет взрослый.</p>'
     if x.get('note'):
         body += f'<aside class="context-note"><h2>Исторический текст и современные знания</h2><p>{e(x["note"])}</p><p><a href="{x["note_url"]}">Проверить справку ВОЗ</a></p></aside>'
     sources = x.get('sources', [(x['source'], x['source_label'])])
     body += '<h2>Тексты и источники разбора</h2><ul>' + ''.join(f'<li><a href="{e(url, quote=True)}">{e(label)}</a></li>' for url, label in sources) + '</ul>'
-    body += f'<h2>Откуда выбрано произведение</h2><p>{origin}.</p><p class="fine">Разбор и вопросы подготовлены мастерской с помощью ИИ. Цитата и имя духовного автора ведут к источнику пользователя; наш комментарий не приписывается этому автору. Иллюстрации и музыка созданы людьми. Обоснованное другое прочтение допустимо; религиозное согласие не оценивается.</p><p><a href="{ROOT}">Вернуться к дополнительному чтению</a></p>'
+    if origin_in_navigation:
+        body += '<h2>Откуда выбрано произведение</h2>' + origin_note
+    body += f'<p class="fine">Разбор и вопросы подготовлены мастерской с помощью ИИ. Цитата и имя духовного автора ведут к источнику пользователя; наш комментарий не приписывается этому автору. Иллюстрации и музыка созданы людьми. Обоснованное другое прочтение допустимо; религиозное согласие не оценивается.</p><p><a href="{ROOT}">Вернуться к дополнительному чтению</a></p>'
     return body
 
 def publish_extra_reading(page):

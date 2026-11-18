@@ -4,6 +4,7 @@ from html import escape
 import json
 from pathlib import Path
 from quote_sources import quote_block
+from site_config import SITE_URL
 
 
 ARTICLES_PATH = '/stati/'
@@ -20,19 +21,31 @@ def load_articles():
     return sorted(articles, key=lambda article: (article['date'], article['path']), reverse=True)
 
 
+def article_link(item):
+    return f'<a href="{escape(item["url"], quote=True)}">{escape(item["title"])}</a>'
+
+
 def links(items):
-    entries = ''.join(
-        f'<li><a href="{escape(item["url"], quote=True)}">{escape(item["title"])}</a></li>'
-        for item in items
-    )
+    entries = ''.join(f'<li>{article_link(item)}</li>' for item in items)
     return f'<ul>{entries}</ul>'
 
 
 def home_articles(articles):
-    entries = [{'title': article['title'], 'url': article['path']} for article in articles[:3]]
+    latest = ''
+    if articles:
+        article = articles[0]
+        published = article['date']
+        latest = (
+            '<article class="home-latest">'
+            f'<time datetime="{published.isoformat()}">{published:%d.%m.%Y}</time>'
+            f'<h3><a href="{article["path"]}">{escape(article["title"])}</a></h3>'
+            f'<p>{escape(article["lead"])}</p></article>'
+        )
+    entries = [{'title': article['title'], 'url': article['path']} for article in articles[1:3]]
     return (
-        '<section class="section"><div class="section-top"><h2>Новые статьи о литературе</h2>'
-        f'<a href="{ARTICLES_PATH}">Все статьи</a></div>{links(entries)}</section>'
+        '<section class="home-journal" id="novye-stati"><h2>Новые разборы</h2>'
+        f'{latest}{links(entries) if entries else ""}'
+        f'<a class="home-index-link" href="{ARTICLES_PATH}">Все статьи о литературе</a></section>'
     )
 
 
@@ -65,12 +78,14 @@ def publish_articles(page, articles):
                 + escape(reflection['comment']) + '</p></section>'
             )
         published = article['date']
+        school_topic = article.get('school_topic')
+        school_link = f'<p>{article_link(school_topic)}</p>' if school_topic else ''
         body = (
             f'<div class="wrap"><div class="breadcrumb"><a href="/">Главная</a><span>/</span>'
             f'<a href="{ARTICLES_PATH}">Статьи о литературе</a></div>'
             f'<header class="page-title"><time class="fine" datetime="{published.isoformat()}">'
             f'{published:%d.%m.%Y}</time><h1>{escape(article["title"])}</h1>'
-            f'<p class="lead">{escape(article["lead"])}</p></header>'
+            f'<p class="lead">{escape(article["lead"])}</p>{school_link}</header>'
             f'<article class="prose">{"".join(parts)}'
             f'<section><h2>Самостоятельная работа</h2><p>{escape(article["task"])}</p></section>'
             f'<section><h2>Первичный текст</h2>{links(article["sources"])}</section>'
@@ -78,5 +93,16 @@ def publish_articles(page, articles):
             '<p class="fine">Разбор подготовлен литературной мастерской с помощью ИИ.</p>'
             '</article></div>'
         )
-        page(article['path'], article['title'], article['description'], body, active='reading')
+        page(
+            article['path'], article['title'], article['description'], body, active='reading',
+            structured={
+                '@type': 'Article',
+                'headline': article['title'],
+                'datePublished': published.isoformat(),
+                'url': SITE_URL + article['path'],
+                'mainEntityOfPage': SITE_URL + article['path'],
+                'inLanguage': 'ru',
+                'isAccessibleForFree': True,
+            },
+        )
     return [ARTICLES_PATH, *(article['path'] for article in articles)]
