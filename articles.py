@@ -4,6 +4,7 @@ from html import escape
 import json
 from pathlib import Path
 from quote_sources import quote_block
+from site_config import SITE_URL
 
 
 ARTICLES_PATH = '/stati/'
@@ -78,5 +79,16 @@ def publish_articles(page, articles):
             '<p class="fine">Разбор подготовлен литературной мастерской с помощью ИИ.</p>'
             '</article></div>'
         )
-        page(article['path'], article['title'], article['description'], body, active='reading')
+        page(
+            article['path'], article['title'], article['description'], body, active='reading',
+            structured={
+                '@type': 'Article',
+                'headline': article['title'],
+                'datePublished': published.isoformat(),
+                'url': SITE_URL + article['path'],
+                'mainEntityOfPage': SITE_URL + article['path'],
+                'inLanguage': 'ru',
+                'isAccessibleForFree': True,
+            },
+        )
     return [ARTICLES_PATH, *(article['path'] for article in articles)]

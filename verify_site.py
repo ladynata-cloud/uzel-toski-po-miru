@@ -5,10 +5,11 @@ from urllib.parse import urlsplit, urljoin, unquote
 from collections import Counter
 import json
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import date, datetime
 from zoneinfo import ZoneInfo
 from site_config import SITE_URL, BASE_PATH, site_path
 from seo_metadata import HOMEPAGE_ANALYSES, PAGE_METADATA, SEARCH_VERIFICATION
+from articles import load_articles
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / 'dist'
@@ -31,6 +32,11 @@ class Page(HTMLParser):
         self.search_verification = []
         self.schemas = []
         self.head_text = None
+        self.h1_texts = []
+        self.h1_text = None
+        self.times = []
+        self.time_text = None
+        self.time_datetime = None
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
         if tag == 'title' or (tag == 'script' and a.get('type') == 'application/ld+json'):
@@ -40,7 +46,12 @@ class Page(HTMLParser):
         if tag == 'meta' and a.get('name') in ('google-site-verification', 'yandex-verification'):
             self.search_verification.append((a['name'], a.get('content', '')))
         if 'id' in a: self.ids.append(a['id'])
-        if tag == 'h1': self.h1 += 1
+        if tag == 'h1':
+            self.h1 += 1
+            self.h1_text = []
+        if tag == 'time':
+            self.time_text = []
+            self.time_datetime = a.get('datetime', '')
         if tag == 'a' and a.get('href'):
             self.links.append(a['href'])
             if self.quote_depth: self.quote_links.append(a['href'])
@@ -55,7 +66,18 @@ class Page(HTMLParser):
     def handle_data(self, data):
         if self.head_text is not None:
             self.head_text.append(data)
+        if self.h1_text is not None:
+            self.h1_text.append(data)
+        if self.time_text is not None:
+            self.time_text.append(data)
     def handle_endtag(self, tag):
+        if tag == 'h1' and self.h1_text is not None:
+            self.h1_texts.append(''.join(self.h1_text).strip())
+            self.h1_text = None
+        if tag == 'time' and self.time_text is not None:
+            self.times.append((self.time_datetime, ''.join(self.time_text).strip()))
+            self.time_text = None
+            self.time_datetime = None
         if self.head_text is not None and tag in ('title', 'script'):
             target = self.titles if tag == 'title' else self.schemas
             target.append(''.join(self.head_text))
@@ -65,6 +87,7 @@ class Page(HTMLParser):
 def verify():
     pages = {}
     errors = []
+    article_routes = {article['path'] for article in load_articles()}
     for file in OUT.rglob('index.html'):
         route = '/' + str(file.relative_to(OUT).parent).replace('\\', '/') + '/'
         if route == '/./': route = '/'
@@ -89,6 +112,23 @@ def verify():
         expected_type = 'WebSite' if route == '/' else 'WebPage'
         if not isinstance(schema, dict) or schema.get('@type') != expected_type or schema.get('url') != SITE_URL + route:
             errors.append((route, 'invalid page structured data'))
+        if route in article_routes:
+            article_schema = schema.get('mainEntity', {}) if isinstance(schema, dict) else {}
+            if not isinstance(article_schema, dict):
+                article_schema = {}
+            if article_schema.get('@type') != 'Article':
+                errors.append((route, 'missing Article structured data'))
+            if p.h1_texts != [article_schema.get('headline')]:
+                errors.append((route, 'Article headline differs from visible heading'))
+            if any(article_schema.get(key) != SITE_URL + route for key in ('url', 'mainEntityOfPage')):
+                errors.append((route, 'Article URL differs from canonical'))
+            published = article_schema.get('datePublished')
+            try:
+                visible_date = date.fromisoformat(published).strftime('%d.%m.%Y')
+            except (TypeError, ValueError):
+                visible_date = None
+            if not visible_date or (published, visible_date) not in p.times:
+                errors.append((route, 'Article publication date differs from visible date'))
         if p.h1 != 1: errors.append((route, 'h1 count', p.h1))
         if len(p.ids) != len(set(p.ids)): errors.append((route, 'duplicate ids'))
         if p.radio: errors.append((route, 'multiple-choice input'))
