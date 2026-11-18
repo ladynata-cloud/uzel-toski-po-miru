@@ -35,7 +35,18 @@ def cards():
 
 
 def home_section():
-    return '<section class="section exam-home"><div class="section-top"><div><p class="eyebrow">От чтения к самостоятельному ответу</p><h2>Готовимся к экзаменам</h2></div><p>Шесть веток подготовки: учимся говорить, сжимать текст, разбирать эпизод и доказывать свою мысль. В каждой — шесть занятий и итоговая тренировка.</p></div>' + cards() + f'<p><a class="button secondary" href="{RESOURCES}">Материалы ФИПИ и задания «Решу»</a></p><p><a href="{GUIDE}">Как православное прочтение помогает аргументации</a></p></section>'
+    groups = []
+    for grade, slugs in [(9, ORDER[:3]), (11, ORDER[3:])]:
+        entries = ''.join(f'<li><a href="/k-sochineniyu/{slug}/#lessons">{LABELS[slug]}</a></li>' for slug in slugs)
+        groups.append(f'<div><h3>{grade} класс</h3><ul>{entries}</ul></div>')
+    return f'''<section class="home-exams home-section">
+    <h2>Подготовка к экзаменам</h2>
+    <div class="home-exam-routes">{''.join(groups)}</div>
+    <ul class="home-index-links">
+      <li><a href="/k-sochineniyu/">Обзор экзаменационных маршрутов</a></li>
+      <li><a href="{RESOURCES}">Материалы ФИПИ и задания «Решу»</a></li>
+      <li><a href="{GUIDE}">Как православное прочтение помогает аргументации</a></li>
+    </ul></section>'''
 
 
 def lessons_html(track):

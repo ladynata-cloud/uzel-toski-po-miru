@@ -78,8 +78,8 @@ def hub_body():
     return body
 
 def home_card():
-    return ('<section class="section"><div class="section-top"><div><p class="eyebrow">Новый маршрут чтения</p>'
-            '<h2>Толстой: Кавказ и человек</h2></div><p>Шесть произведений — от «Кавказского пленника» '
-            'и ранних военных рассказов до «Казаков» и «Хаджи-Мурата». '
-            'Читаем о храбрости, чужой боли, семье и способности увидеть человека.</p></div>'
-            f'<div class="hero-actions"><a class="button" href="{ROOT}">Открыть кавказский маршрут</a></div></section>')
+    return ('<aside class="home-route" aria-labelledby="home-route-title">'
+            '<h2 id="home-route-title">Толстой на Кавказе</h2>'
+            '<p>Как меняется взгляд Толстого на войну и на людей по обе стороны? '
+            'Шесть произведений для чтения рядом, от ранних рассказов до «Хаджи-Мурата».</p>'
+            f'<a href="{ROOT}">Открыть кавказский маршрут</a></aside>')
