@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 from site_config import SITE_URL, BASE_PATH, site_path
 from seo_metadata import HOMEPAGE_ANALYSES, PAGE_METADATA, SEARCH_VERIFICATION
 from articles import load_articles
+from reader_catalogue import DATA_PATH, SAFE_FIELDS, OPTIONAL_FIELDS, SEARCH_PATH, load_cards
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / 'dist'
@@ -83,6 +84,52 @@ class Page(HTMLParser):
             target.append(''.join(self.head_text))
             self.head_text = None
         if tag == 'blockquote' and self.quote_depth: self.quote_depth -= 1
+
+def verify_reader_data(pages, check_target, catalogue, reviews):
+    directory = OUT / DATA_PATH.strip('/')
+    def read_mode(mode):
+        payload = json.loads((directory / (mode.replace('_', '-') + '.json')).read_text(encoding='utf-8'))
+        assert (payload['version'], payload['language'], payload['mode']) == (1, 'ru', mode)
+        records = {entry['id']: entry for entry in payload['records']}
+        assert len(records) == len(payload['records'])
+        return records
+
+    before = read_mode('before_reading')
+    after = read_mode('after_reading')
+    cards = {card['id']: card for card in load_cards()}
+    assert before.keys() == cards.keys()
+    assert site_path(SEARCH_PATH) in pages['/'].links and site_path(SEARCH_PATH) in pages['/chtenie/'].links
+    assert {r['id'] for r in after.values() if r['kind'] == 'catalogue_entry'} == {r['id'] for r in catalogue}
+    linked = {r['card_id']: r for r in after.values() if 'card_id' in r}
+    assert linked.keys() == before.keys() and sum('card_id' in r for r in after.values()) == len(linked)
+    for key, record in before.items():
+        assert SAFE_FIELDS | {'url'} <= record.keys() <= SAFE_FIELDS | OPTIONAL_FIELDS | {'url'}
+        assert record['url'] == SITE_URL + SEARCH_PATH + '#' + key
+        assert linked[key]['url'] == cards[key]['url']
+        check_target(SEARCH_PATH, record['url'])
+
+    statuses = {review['id']: review['source_status'] for review in reviews}
+    for key, record in after.items():
+        assert record['scope'] and record['source_status'] == statuses.get(key, 'not_recorded')
+        if record['source_status'] == 'blocked':
+            assert record['url'] == record['catalogue_url'] and 'commentary' not in record
+        local = [record['url'], *(s['url'] for s in record.get('sections', []))]
+        if 'catalogue_url' in record:
+            local.append(record['catalogue_url'])
+        for url in local:
+            assert url.startswith(SITE_URL + '/'), (key, url)
+            check_target(SEARCH_PATH, url)
+        for source in record['sources']:
+            assert source['label'] and source['kind'] and urlsplit(source['url']).scheme in ('http', 'https')
+            check_target(SEARCH_PATH, source['url'])
+
+    modes = {'before_reading': before, 'after_reading': after}
+    cases = json.loads((ROOT / 'docs/reader-assistant-evals.json').read_text(encoding='utf-8'))
+    assert cases and len(cases) == len({case['id'] for case in cases})
+    for case in cases:
+        assert case['turns'] and case['required_behavior'] and set(case['expected_ids']) <= modes[case['mode']].keys()
+    return {'first_reading_cards': len(before), 'after_reading_records': len(after), 'evaluation_cases': len(cases)}
+
 
 def verify():
     pages = {}
@@ -210,7 +257,8 @@ def verify():
         assert all(f'lesson-{i}' in exam_page.ids for i in range(1, 7))
         assert {'practice', 'worked-case', 'sources', 'lens', 'repair'} <= set(exam_page.ids)
         assert track['sources'] and track['final_practice']['checks']
-    report = dict(checked_on=datetime.now(ZoneInfo('Asia/Novosibirsk')).date().isoformat(), site_url=SITE_URL+'/', base_path=BASE_PATH,
+    reader_data = verify_reader_data(pages, check_target, catalogue, DATA)
+    report = dict(reader_data=reader_data, checked_on=datetime.now(ZoneInfo('Asia/Novosibirsk')).date().isoformat(), site_url=SITE_URL+'/', base_path=BASE_PATH,
                   pages=len(pages), internal_links_and_assets=internal,
                   supplementary_articles=len(ESSAYS)+len(CATALOGUE_ESSAYS)+len(INDEPENDENT_ESSAYS),
                   catalogue_positions_with_scoped_analysis=len(complete),
