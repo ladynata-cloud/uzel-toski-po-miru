@@ -83,6 +83,8 @@ def catalogue_records():
             if key == 'middle-093':
                 for source in sources:
                     source['kind'] = FOREST_SOURCE_ROLES.get(source['url'], 'cited_source')
+                    if source['kind'] == 'primary_fragment':
+                        source['pages'] = [9]
                 # The last paragraph distinguishes the children's observations from a guess.
                 record['commentary'] += '\n\n' + essay['paragraphs'][-1]
         records.append(record)

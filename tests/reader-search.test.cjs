@@ -170,3 +170,29 @@ test('after-reading replies stay within the selected source and identify editori
   const opening = afterReadingReply(yushka, 'Что разбирает мастерская?');
   assert.equal(afterReadingReply(yushka, 'А дальше?', opening.paragraph).paragraph, opening.paragraph + 1);
 });
+
+test('a corrected title reopens the catalogue while ordinary clarifications keep their context', () => {
+  const found = firstReadingReply(urls, catalog, [], '«Тоска» Чехова');
+  const changed = firstReadingReply(urls, catalog, found.indices, 'Я ошиблась, ищу не «Тоску», а «Куст сирени».');
+  assert.deepEqual(changed.links.map(item => item.id), ['work-kust-sireni']);
+  const requested = firstReadingReply(urls, catalog, found.indices, 'А теперь найди «Куст сирени»');
+  assert.deepEqual(requested.links.map(item => item.id), ['work-kust-sireni']);
+  const missing = firstReadingReply(urls, catalog, changed.indices, 'Я имела в виду «Каштанка» Чехова.');
+  assert.equal(missing.matched, false);
+  assert.deepEqual(missing.indices, []);
+  assert.deepEqual(missing.links, []);
+});
+
+test('unsupported page requests give the source boundary first and link to the actual fragment', () => {
+  const forest = require('../dist/assistant/v1/after-reading/work-potaennyy-les.json').record;
+  for (const q of ['Что ребята услышали на 11-й странице?', 'Выпишите слова со стр. 9–12.', 'Что там сказано на страницах 9 и 10?', 'Кто говорил у костра на странице №12?', 'А кто на стр 12?', 'Кто у костра на двенадцатой странице?']) {
+    const response = afterReadingReply(forest, q);
+    assert.match(response.text, /^Эта страница выходит за пределы проверенного фрагмента/u);
+    assert.equal(response.links.length, 1);
+    assert.equal(response.links[0].kind, 'primary_fragment');
+  }
+  const known = afterReadingReply(forest, 'Что ребята слышат у костра на странице 9?');
+  assert.match(known.text, /Енисей/u);
+  const source = afterReadingReply(forest, 'Где посмотреть разворот?');
+  assert.equal(source.links[0].kind, 'primary_fragment');
+});
