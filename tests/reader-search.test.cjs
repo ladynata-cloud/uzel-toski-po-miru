@@ -24,7 +24,7 @@ test('a shared detail leaves both candidates, a name resolves the ambiguity', ()
 
 test('matches title and author across case and ё, leaves unknown questions unanswered', () => {
   assert.deepEqual(matches('ПОТАЕННЫЙ ЛЕС'), ['work-potaennyy-les']);
-  assert.deepEqual(matches('рассказ Чехова'), ['work-student']);
+  assert.deepEqual(new Set(matches('рассказ Чехова')), new Set(['work-student', 'work-toska']));
   assert.deepEqual(matches('ТЮТЧЕВ'), ['work-silentium']);
   assert.deepEqual(matches('метеорит на Андромеде'), []);
   assert.deepEqual(matches('Не помню название рассказа'), []);
@@ -36,6 +36,90 @@ const path = require('node:path');
 const urls = cards.map(c => ({...c, url: 'https://reader.example/poisk-po-pamyati/#' + c.id}));
 const cases = require('../docs/reader-assistant-evals.json');
 const byId = id => cases.find(c => c.id === id);
+
+test('an existing title and author select the requested work rather than another by that author', () => {
+  for (const id of ['exact-toska', 'exact-kust-sireni']) {
+    const example = byId(id);
+    const result = firstReadingReply(urls, catalog, [], example.turns[0]);
+    assert.equal(result.matched, true);
+    assert.deepEqual(result.links.map(link => link.id), example.expected_ids);
+  }
+  assert.deepEqual(matches('Расскажи о «Тоске» Антона Чехова'), ['work-toska']);
+  assert.deepEqual(matches('«Куст сирени» А. И. Куприна'), ['work-kust-sireni']);
+  assert.deepEqual(matches('Иван Великопольский'), ['work-student']);
+});
+
+test('an author alone cannot substitute for an unknown or contradictory title', () => {
+  for (const query of [
+    byId('unknown-title-known-author').turns[0],
+    byId('unknown-quoted-title').turns[0],
+    '«Неизвестный доктор» Куприна',
+    'Неизвестная планета Куприна',
+    'Юшка Чехова',
+    'Куст сирени Чехова',
+  ]) {
+    const result = firstReadingReply(urls, catalog, [], query);
+    assert.equal(result.matched, false, query);
+    assert.deepEqual(result.links, [], query);
+    assert.deepEqual(result.indices, [], query);
+  }
+});
+
+test('an author query keeps alternatives and the next detail identifies the work', () => {
+  const chekhov = firstReadingReply(urls, catalog, [], 'рассказ Чехова');
+  assert.deepEqual(new Set(chekhov.links.map(link => link.id)), new Set(['work-toska', 'work-student']));
+  assert.deepEqual(new Set(matches('Какие рассказы Чехова у вас есть в подборке?')), new Set(['work-toska', 'work-student']));
+  const iona = firstReadingReply(urls, catalog, chekhov.indices, byId('author-followup-toska').turns[1]);
+  assert.deepEqual(iona.links.map(link => link.id), ['work-toska']);
+  const kuprin = firstReadingReply(urls, catalog, [], 'Куприн');
+  assert.deepEqual(new Set(kuprin.links.map(link => link.id)), new Set(['work-kust-sireni', 'work-chudesnyy-doktor']));
+  const drawing = firstReadingReply(urls, catalog, kuprin.indices, 'Помню пятно на чертеже');
+  assert.deepEqual(drawing.links.map(link => link.id), ['work-kust-sireni']);
+  const unknown = firstReadingReply(urls, catalog, chekhov.indices, 'Каштанка Чехова');
+  assert.equal(unknown.matched, false);
+  assert.deepEqual(unknown.links, []);
+  assert.deepEqual(unknown.indices, chekhov.indices);
+  assert.match(unknown.text, /уточнить пока не получается/);
+});
+
+test('the new first-reading cards and replies keep the ending out even when asked for it', () => {
+  const before = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../dist/assistant/v1/before-reading.json'), 'utf8'));
+  for (const [id, query, forbidden] of [
+    ['work-toska', 'Чем заканчивается «Тоска» Чехова?', /конюшн|кобыл|лошад|рассказывает ей всё/iu],
+    ['work-kust-sireni', 'Какой финал у «Куста сирени» Куприна?', /посад|сажают|садовник|ломбард|драгоценност|извинил|уловка удалась/iu],
+  ]) {
+    const record = before.records.find(entry => entry.id === id);
+    assert.ok(record);
+    assert.deepEqual(Object.keys(record).sort(), ['author', 'cues', 'id', 'teaser', 'title', 'url']);
+    assert.doesNotMatch(JSON.stringify(record), forbidden);
+    const reply = firstReadingReply(urls, catalog, [], query);
+    assert.deepEqual(reply.links.map(link => link.id), [id]);
+    assert.doesNotMatch(reply.text, forbidden);
+  }
+});
+
+test('article discussion packets reuse the published commentary and primary links', () => {
+  for (const [id, slug] of [
+    ['work-toska', 'chekhov-toska-temp-finala'],
+    ['work-kust-sireni', 'kuprin-kust-sireni-dva-vzglyada'],
+  ]) {
+    const article = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../article_data/' + slug + '.json'), 'utf8'));
+    const packet = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../dist/assistant/v1/after-reading/' + id + '.json'), 'utf8'));
+    const record = packet.record;
+    assert.equal(packet.version, 1);
+    assert.equal(packet.mode, 'after_reading');
+    assert.equal(record.kind, 'article');
+    assert.equal(record.card_id, id);
+    assert.equal(record.source_status, 'not_recorded');
+    assert.equal(record.source_note, article.sources_note);
+    assert.deepEqual(record.commentary_paragraphs, article.sections.flatMap(section => section.paragraphs));
+    assert.deepEqual(record.sources.map(source => source.url), article.sources.map(source => source.url));
+    assert.equal(record.reading_task, article.task);
+    const answer = afterReadingReply(record, 'Где сверить точную цитату?');
+    assert.match(answer.text, /комментарий мастерской/);
+    assert.ok(answer.links.some(link => link.url === article.sources[0].url));
+  }
+});
 
 // Exercise the real prepared questions against the same card IDs used by the page.
 test('a second detail narrows the same books and respects an unfinished reading', () => {

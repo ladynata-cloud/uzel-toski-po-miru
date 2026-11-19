@@ -107,7 +107,7 @@ def verify_reader_data(pages, check_target, catalogue, reviews):
     for key, record in before.items():
         packet = json.loads((details / (key + '.json')).read_text(encoding='utf-8'))
         assert packet == {'version': 1, 'mode': 'after_reading', 'record': linked[key]}
-        if linked[key]['kind'] == 'workshop':
+        if linked[key]['kind'] in ('workshop', 'article'):
             assert linked[key]['commentary_paragraphs'], key
         assert SAFE_FIELDS | {'url'} <= record.keys() <= SAFE_FIELDS | OPTIONAL_FIELDS | {'url'}
         assert record['url'] == SITE_URL + SEARCH_PATH + '#' + key
