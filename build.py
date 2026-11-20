@@ -23,6 +23,7 @@ from reading_pages import publish_reading_pages, reading_path
 from reading_lists import publish_reading_lists
 from extra_reading import publish_extra_reading
 from reader_catalogue import DATA_PATH, SEARCH_PATH, publish_reader_catalogue
+from reading_practice import publish_reading_practice
 from articles import home_articles, load_articles, publish_articles
 from caucasus_reading import home_card as caucasus_home, navigation as caucasus_nav
 from site_config import SITE_URL, deployment_links, write_domain_file
@@ -358,6 +359,7 @@ article_paths = publish_articles(page, ARTICLES)
 paths=['/','/o-proekte/','/k-sochineniyu/','/masterskaya/','/kurs/','/chtenie-i-tradiciya/','/tsitaty/','/muzyka/']+['/masterskaya/'+d['slug']+'/' for d in LESSONS]+school_paths+exam_paths+philosophy_paths+reading_paths+reading_list_paths+extra_reading_paths+['/iskusstvo/','/uchebniki/']
 paths.extend(article_paths)
 paths.append(publish_reader_catalogue(page, OUT, LESSONS))
+paths.append(publish_reading_practice(page, OUT))
 (OUT/'sitemap.xml').write_text('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+''.join('<url><loc>'+ORIGIN+p+'</loc></url>' for p in paths)+'</urlset>',encoding='utf-8')
 (OUT/'robots.txt').write_text('User-agent: *\nAllow: /\nSitemap: '+ORIGIN+'/sitemap.xml\n',encoding='utf-8')
 write_domain_file(OUT)
