@@ -120,6 +120,7 @@
       '<label for="ew-reading">Что прочитать?</label><select id="ew-reading">'+options(catalog.readings.map(x=>catalog.works.find(w=>w.id===x.id)),r.id)+'</select>'+
       '<div class="ew-text-card"><p>'+h(r.context)+'</p><p class="ew-topic">«'+h(r.quote)+'»</p><p><a target="_blank" rel="noopener noreferrer" href="'+h(w.url)+'">Прочитать '+h(w.title)+' ↗</a></p></div>'+
       '<p>'+h(r[state.mode])+'</p>'+field('reading','Что я заметил в тексте?',state.readingNotes[r.id]||'')+
+      answerControls('reading',state.readingNotes[r.id]||'')+
       actions(button('reading-apply','Взять сцену для аргумента',true))+'<p class="ew-small" id="ew-reading-status" role="status"></p>';
   }
   function bookTopics() {
@@ -150,6 +151,105 @@
   }
   function sourceField(stage) {
     return panel.querySelector('#ew-write-'+stage);
+  }
+  function answerKey(stage) {
+    if(stage==='reading') return JSON.stringify([stage,state.reading]);
+    if(stage==='drill') return JSON.stringify([stage,state.exercise]);
+    return JSON.stringify([stage,topic().id,(stage==='episode'||stage==='link')?note().work:'']);
+  }
+  function answerBook(stage) {
+    if(stage==='reading'||stage==='drill') return '';
+    return JSON.stringify([note().work,note().work==='own'?(note().own||'').trim().toLowerCase():'']);
+  }
+  function inspectAnswer(stage,text) {
+    if(stage==='drill') {
+      const drill=catalog.drills.find(item=>item.id===state.exercise);
+      return EssayAnswerFeedback.inspect({stage,text,drill});
+    }
+    if(stage==='reading') {
+      const reading=catalog.readings.find(item=>item.id===state.reading);
+      const work=catalog.works.find(item=>item.id===reading.id);
+      const title=catalog.topics.find(item=>item.id===reading.topic)?.title||'';
+      return EssayAnswerFeedback.inspect({stage,text,reading,work,topic:title,mode:state.mode});
+    }
+    return EssayAnswerFeedback.inspect({...context(stage),text});
+  }
+  function changedPassages(before,after) {
+    if(before.trim().replace(/\s+/gu,' ')===after.trim().replace(/\s+/gu,' ')) return {spacing:true};
+    let start=0, tail=0;
+    const limit=Math.min(before.length,after.length);
+    while(start<limit && before[start]===after[start]) start++;
+    while(tail<limit-start && before[before.length-1-tail]===after[after.length-1-tail]) tail++;
+    const excerpt=value=>{
+      const from=Math.max(0,start-45);
+      const to=Math.min(value.length,start+170,value.length-tail+55);
+      return (from?'…':'')+value.slice(from,to)+(to<value.length?'…':'');
+    };
+    return {before:excerpt(before),after:excerpt(after)};
+  }
+  function answerContent(stage,text) {
+    const record=state.answerChecks?.[answerKey(stage)];
+    const checked=record?.book===answerBook(stage);
+    const stale=checked && record.beforeEdit!==undefined;
+    const label=stale?'Сравнить с прошлой записью':stage==='drill'?'Проверить мою правку':'Получить отклик на мою запись';
+    let result='';
+    if(stale) result='<p class="ew-small" data-answer-stale>Запись изменилась. Можно проверить её ещё раз и сравнить формулировки.</p>';
+    else if(checked && text.trim()) {
+      const reply=inspectAnswer(stage,text), change=record.change;
+      result='<div class="ew-answer-card">'+(reply.excerpt?'<p class="ew-note" data-answer-excerpt>«'+h(reply.excerpt)+'»</p>':'')+
+        '<p data-answer-observation>'+h(reply.observation)+'</p><p data-answer-next><strong>Попробуй сейчас.</strong> '+h(reply.next)+'</p></div>';
+      if(change?.spacing) result+='<p class="ew-small">Изменились пробелы или переносы строк.</p>';
+      else if(change) result+='<div class="ew-answer-change"><p><strong>До правки</strong><br><span class="ew-note" data-answer-before>'+h(change.before)+'</span></p>'+
+        '<p><strong>После правки</strong><br><span class="ew-note" data-answer-after>'+h(change.after)+'</span></p></div>';
+    }
+    return {label,result};
+  }
+  function answerControls(stage,text) {
+    const {label,result}=answerContent(stage,text);
+    return '<div id="ew-answer-tools" data-answer-stage="'+stage+'">'+
+      actions(button(stage==='drill'?'drill-check':'answer-check',label,stage==='drill'))+
+      '<div data-answer-result id="'+(stage==='drill'?'ew-drill-feedback':'ew-answer-feedback')+'" role="status">'+result+'</div></div>';
+  }
+  function refreshAnswer(stage,value) {
+    const tools=panel.querySelector('#ew-answer-tools');
+    if(tools?.dataset.answerStage!==stage) return;
+    const {label,result}=answerContent(stage,value);
+    tools.querySelector('button').textContent=label;
+    tools.querySelector('[data-answer-result]').innerHTML=result;
+  }
+  // Keep the checked text only while the learner is editing it. The stored
+  // comparison needs just the two excerpts surrounding the change.
+  function trackAnswerEdit(stage,oldValue,value) {
+    if(oldValue===value) return;
+    const key=answerKey(stage), record=state.answerChecks?.[key];
+    if(record && record.book!==answerBook(stage)) {
+      delete state.answerChecks[key];
+      refreshAnswer(stage,value);
+      return;
+    }
+    if(!record) {
+      if(panel.querySelector('[data-answer-empty]')) refreshAnswer(stage,value);
+      return;
+    }
+    const wasStale=record.beforeEdit!==undefined;
+    if(!wasStale) record.beforeEdit=oldValue;
+    if(record.beforeEdit===value) delete record.beforeEdit;
+    if(wasStale!==(record.beforeEdit!==undefined) || panel.querySelector('[data-answer-empty]')) refreshAnswer(stage,value);
+  }
+  function checkAnswer() {
+    const stage=panel.querySelector('#ew-answer-tools').dataset.answerStage;
+    const editor=sourceField(stage==='drill'?'exercise':stage), text=editor.value;
+    const result=panel.querySelector('[data-answer-result]');
+    if(!text.trim()){
+      result.innerHTML='<p class="ew-small" data-answer-empty>'+h(inspectAnswer(stage,text).next)+'</p>';
+      editor.focus();return;
+    }
+    state.answerChecks ||= {};
+    const key=answerKey(stage), book=answerBook(stage), prior=state.answerChecks[key];
+    const sameBook=prior?.book===book;
+    const change=sameBook && prior.beforeEdit!==undefined ? changedPassages(prior.beforeEdit,text) : sameBook && prior.change;
+    state.answerChecks[key]=change?{book,change}:{book};
+    save();refreshAnswer(stage,text);
   }
   function closeOnlineReview() {
     root.dispatchEvent(new CustomEvent('ew-revision-close'));
@@ -222,8 +322,10 @@
     if (stage==='draft' && value!==current.draft && current.evidence) {
       for (const mark of Object.values(current.evidence)) mark.stale=true;
     }
-    if (stage==='episode' || stage==='link') argument()[stage]=value;
-    else note()[stage]=value;
+    const holder=stage==='episode' || stage==='link'?argument():current;
+    const oldValue=holder[stage];
+    holder[stage]=value;
+    trackAnswerEdit(stage,oldValue,value);
     if (stage==='draft') {
       note().checks={};
       updateCounter();
@@ -320,6 +422,7 @@
       (stage==='episode'?workPicker()+readerQuestion:'')+previous+
       (stage==='draft'?'<details><summary>Книга для подсказок · '+h(selectedTitle())+'</summary><div>'+workPicker()+'</div></details>'+outline()+readerQuestion:'')+
       field(stage,copy[2],copy[3],stage==='draft'?12:4)+
+      answerControls(stage,copy[3])+
       (stage==='draft'?'<p class="ew-counter" id="ew-count"></p>'+countOptions()+actions(button('snapshot','Сохранить версию перед правкой'))+'<p id="ew-snapshot-status" class="ew-small" role="status">'+(n.before!==null?'Первая версия сохранена. Сравнение доступно в самопроверке.':'')+'</p>':'')+
       '<div id="ew-revision"></div>'+actions(nav)+coach(stage);
   }
@@ -442,7 +545,8 @@
     return heading('Потренируй одну правку','Выбери трудность, исправь фрагмент своими словами и сравни свою версию с вопросом для самопроверки.')+
       '<label for="ew-drill">Что потренировать?</label><select id="ew-drill">'+options(catalog.drills,d.id)+'</select><p class="ew-topic">'+h(d.example)+'</p><p>'+h(d.task)+'</p>'+
       '<details><summary>Нужна подсказка</summary><div>'+h(d.hint)+'</div></details>'+
-      field('exercise','Моя редакция',v)+actions(button('drill-check','Проверить мою правку',true))+'<p id="ew-drill-feedback" class="ew-tip" role="status"></p>'+actions(button('page-start','К выбору маршрута'));
+      EssayDrillContrast.render(d,state.drillChoices?.[d.id])+
+      field('exercise','Моя редакция',v)+answerControls('drill',v)+actions(button('page-start','К выбору маршрута'));
   }
   function reviewRehearsal({title,draft,attemptId}) {
     const id='rehearsal-'+attemptId;
@@ -513,8 +617,13 @@
       return;
     }
     if(!key) return;
-    if(key==='reading') state.readingNotes[state.reading]=el.value;
-    else if(key==='exercise') state.exercises[state.exercise]=el.value;
+    if(key==='reading') {
+      trackAnswerEdit('reading',state.readingNotes[state.reading]||'',el.value);
+      state.readingNotes[state.reading]=el.value;
+    } else if(key==='exercise') {
+      trackAnswerEdit('drill',state.exercises[state.exercise]||'',el.value);
+      state.exercises[state.exercise]=el.value;
+    }
     else if(key==='readerQuestion') argument()[readerQuestionKey()]=el.value;
     else if (['thesis','episode','link','draft'].includes(key)) {
       updateEditor(key,el.value);
@@ -527,6 +636,7 @@
     } else {
       note()[key]=el.value;
       if (key==='own'){
+        if(sourceField(state.page)) refreshAnswer(state.page,sourceField(state.page).value);
         const question=sourceField('readerQuestion');
         if (question) question.value=argument()[readerQuestionKey()]||'';
         if (panel.querySelector('#ew-revision') && revisionRecord(state.page).session) showRevision(state.page);
@@ -586,6 +696,15 @@
   root.addEventListener('click',event=>{
     const b=event.target.closest('button[data-act]');if(!b)return;
     const action=b.dataset.act;
+    if(action==='answer-check' || action==='drill-check'){checkAnswer();return;}
+    if(action==='drill-contrast-0' || action==='drill-contrast-1'){
+      const drill=catalog.drills.find(item=>item.id===state.exercise), selected=Number(action.slice(-1));
+      (state.drillChoices ||= {})[drill.id]=selected;
+      const card=panel.querySelector('[data-drill-contrast]');
+      card.outerHTML=EssayDrillContrast.render(drill,selected);
+      panel.querySelector('#ew-contrast-feedback').focus({preventScroll:true});
+      save();return;
+    }
     if(action.startsWith('evidence-')){handleEvidence(action);return;}
     if(action==='use-from-book'){
       note().work=panel.querySelector('#ew-from-book').value;
@@ -611,7 +730,7 @@
       if(!detail){panel.querySelector('#ew-reading-status').textContent='Запиши хотя бы одну деталь в поле выше.';return;}
       state.active=r.topic;state.route='quick';note().work=r.id;
       const a=argument();
-      if(!a.episode.includes(detail)) a.episode=[a.episode,detail].filter(Boolean).join('\n');
+      if(!a.episode.includes(detail)) updateEditor('episode',[a.episode,detail].filter(Boolean).join('\n'));
       go('thesis');return;
     }
     if(action.startsWith('pick-')){state.active=action.slice(5);go(state.route==='edit'?'draft':'thesis');return;}
@@ -628,10 +747,6 @@
     if(action==='forward-topic'){go(state.route==='edit'?'draft':'thesis');return;}
     if(action==='finish-argument'){state.reviewKind='argument';go('review');return;}
     if(action==='download'||action==='download-prompt'){exportText(action==='download-prompt');return;}
-    if(action==='drill-check'){
-      const d=catalog.drills.find(x=>x.id===state.exercise);
-      panel.querySelector('#ew-drill-feedback').textContent=state.exercises[d.id]?.trim()?d.check:'Напиши хотя бы одну свою фразу, затем открой вопрос для сверки.';return;
-    }
     if(action==='snapshot'){
       const n=note(), status=panel.querySelector('#ew-snapshot-status');
       if(!n.draft.trim()){status.textContent='Сначала вставь или напиши текст.';return;}
@@ -639,5 +754,15 @@
       n.before=n.draft;save();status.textContent='Первая версия сохранена. Теперь внеси правку. Сравнить тексты можно в самопроверке.';
     }
   });
-  render();save();
+  // A shared exercise opens with the learner's own saved answer for that card.
+  function openLinkedExercise() {
+    const drill=catalog.drills.find(d=>location.hash==='#uprazhnenie-'+d.id);
+    if (!drill) return false;
+    state.exercise=drill.id;
+    go('drills');
+    try { window.history.replaceState(window.history.state,'',location.href.split('#')[0]); } catch {}
+    return true;
+  }
+  window.addEventListener('hashchange',openLinkedExercise);
+  if (!openLinkedExercise()) {render();save();}
 })();
