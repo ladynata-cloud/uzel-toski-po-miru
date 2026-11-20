@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "origin": "MathExam_Uzel experiment, reviewed public pilot9 export, 2026-11-20",
+  "kind": "approved_public_reader_cards",
+  "files": [
+    {
+      "card_id": "kb-reader-doctor-opening-after",
+      "path": "kb-reader-doctor-opening-after.json",
+      "sha256": "ec744fa3d8c97a8973a41eeecbb98b5a084b7d91f21e1e496f7b8283b38d6ed0"
+    },
+    {
+      "card_id": "kb-reader-shinel-opening-after",
+      "path": "kb-reader-shinel-opening-after.json",
+      "sha256": "361678fc6899289fe6a913043096a7b9784a66c06b557ab70de759dc33697645"
+    },
+    {
+      "card_id": "kb-reader-student-opening-before",
+      "path": "kb-reader-student-opening-before.json",
+      "sha256": "93be25fa474c7ed453ca93bb8d5b04fb43ec99daca9a5eda06ed30aa7b62e8a8"
+    },
+    {
+      "card_id": "kb-reader-vorona-full-during",
+      "path": "kb-reader-vorona-full-during.json",
+      "sha256": "b01c01e7870da1ce88c74b42b0291676a257cc27eeb2fb0fb19733badeb02100"
+    }
+  ],
+  "private_data_included": false
+}

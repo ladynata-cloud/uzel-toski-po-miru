@@ -1,0 +1,97 @@
+name: Check reader workspace
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reader-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  reader-checks:
+    name: Reader checks (${{ matrix.site_url }})
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        site_url:
+          - https://usel-toski-po-miru.art
+          - https://ladynata-cloud.github.io/uzel-toski-po-miru
+    steps:
+      - name: Download pull request
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Build and verify the reader site
+        env:
+          SITE_URL: ${{ matrix.site_url }}
+          SITE_ASSISTANT_ORIGIN: ''
+        run: |
+          python3 build.py
+          python3 verify_site.py
+          node --check dist/assets/app.js
+          node --check dist/assets/exam-practice.js
+          node --check dist/assets/reader-search.js
+          node --check dist/assets/reader-workshop.js
+          node --test tests/reader-search.test.cjs tests/reader-workshop.test.cjs
+
+  reader-browser:
+    name: Reader browser smoke (Chromium)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Download pull request
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Install the pinned browser test dependency
+        run: |
+          # Same Playwright pin as MathExam public-navigator.yml.
+          npm install --prefix "$RUNNER_TEMP/reader-browser-deps" --no-save --no-package-lock --ignore-scripts playwright@1.62.1
+          "$RUNNER_TEMP/reader-browser-deps/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Build a local site with the optional assistant configured
+        env:
+          SITE_URL: http://127.0.0.1:8074
+          SITE_ASSISTANT_ORIGIN: https://assistant.invalid
+        run: |
+          python3 build.py
+          python3 verify_site.py
+          node --check tests/reader-browser-smoke.cjs
+      - name: Check actual reader pages and capture screenshots
+        env:
+          READER_BASE_URL: http://127.0.0.1:8074
+        run: |
+          mkdir -p "$RUNNER_TEMP/reader-browser"
+          python3 -m http.server 8074 --bind 127.0.0.1 --directory dist > "$RUNNER_TEMP/reader-browser/server.log" 2>&1 &
+          reader_server_pid=$!
+          trap 'kill "$reader_server_pid" 2>/dev/null || true' EXIT
+          python3 - <<'PY'
+          import time
+          import urllib.request
+          deadline = time.monotonic() + 30
+          while True:
+              try:
+                  with urllib.request.urlopen('http://127.0.0.1:8074/poisk-po-pamyati/', timeout=1) as response:
+                      assert response.status == 200
+                  break
+              except (OSError, AssertionError):
+                  if time.monotonic() >= deadline:
+                      raise
+                  time.sleep(0.2)
+          PY
+          NODE_PATH="$RUNNER_TEMP/reader-browser-deps/node_modules" READER_ARTIFACT_DIR="$RUNNER_TEMP/reader-browser" node tests/reader-browser-smoke.cjs
+      - name: Save browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reader-browser-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/reader-browser
+          if-no-files-found: error
+          retention-days: 14

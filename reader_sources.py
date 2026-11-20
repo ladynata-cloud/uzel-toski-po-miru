@@ -5,6 +5,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from articles import load_articles
 from catalogue_continued import DATA
 from extra_reading import CATALOGUE_ESSAYS, CATALOGUE_READINGS, ESSAYS, ROOT, essay_path
 from site_config import SITE_URL
@@ -82,6 +83,8 @@ def catalogue_records():
             if key == 'middle-093':
                 for source in sources:
                     source['kind'] = FOREST_SOURCE_ROLES.get(source['url'], 'cited_source')
+                    if source['kind'] == 'primary_fragment':
+                        source['pages'] = [9]
                 # The last paragraph distinguishes the children's observations from a guess.
                 record['commentary'] += '\n\n' + essay['paragraphs'][-1]
         records.append(record)
@@ -142,11 +145,29 @@ def workshop_record(card, lesson):
     }
 
 
+def article_record(card, article):
+    """Reuse the published analysis without promoting its source-review status."""
+    return {
+        'id': card['id'], 'card_id': card['id'], 'kind': 'article',
+        'url': card['url'], 'author': card['author'], 'title': card['title'],
+        'analysis_title': article['title'],
+        'scope': 'Эпизоды и вопросы из опубликованной статьи мастерской о рассказе.',
+        'source_status': 'not_recorded', 'source_note': article.get('sources_note', ''),
+        'sources': [{'url': source['url'], 'label': source['title'], 'kind': 'work_source'}
+                    for source in article['sources']],
+        'commentary': article['lead'],
+        'commentary_paragraphs': [paragraph for section in article['sections']
+                                 for paragraph in section['paragraphs']],
+        'reading_task': article['task'],
+    }
+
+
 def after_reading_records(cards, lessons):
-    """Return all catalogue entries and explicitly linked pilot workshops, once per source."""
+    """Return catalogue entries and explicitly linked workshops/articles, once per source."""
     records = catalogue_records()
     by_url = {record['url']: record for record in records}
     workshops = {f'{SITE_URL}/masterskaya/{lesson["slug"]}/': lesson for lesson in lessons}
+    articles = {SITE_URL + article['path']: article for article in load_articles()}
     ids = {record['id'] for record in records}
     card_ids = set()
     if len(ids) != len(records):
@@ -163,6 +184,10 @@ def after_reading_records(cards, lessons):
             record['card_id'] = key
         elif url in workshops:
             record = workshop_record(card, workshops[url])
+            records.append(record)
+            by_url[url] = record
+        elif url in articles:
+            record = article_record(card, articles[url])
             records.append(record)
             by_url[url] = record
         else:
