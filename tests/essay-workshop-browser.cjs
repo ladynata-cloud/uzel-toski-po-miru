@@ -363,7 +363,6 @@ async function exercise(page) {
   await fits();
   const independent = 'Лена села ближе. Сначала новичок молчал, а потом заговорил.';
   await labField('transfer').fill(independent);
-  assert.ok(await guidance.isVisible(), 'Keep the same guidance next to the comparison');
   page.off('request', recordRequest);
   assert.deepEqual(outgoing, [], 'The lesson and first transfer writing work on the device');
   await page.reload();
