@@ -23,7 +23,7 @@ LABELS = dict(zip(ORDER, ['Собеседование', 'ОГЭ · русски�
 READING = dict(zip(ORDER, ['sobesedovanie', 'russkiy-yazyk', 'oge-literatura', 'itogovoe', 'russkiy-yazyk', 'ege-literatura']))
 
 
-def essay_workshop_body():
+def essay_workshop_body(personal=False):
     directory = BASE / 'essay_workshop'
 
     def read(name):
@@ -39,7 +39,7 @@ def essay_workshop_body():
         'CATALOG': script_json(catalog),
         'SYSTEM': script_json(read('assistant/system.ru.md')),
         'COACH': read('coach.js'),
-        'ORIGIN': e(assistant_origin(os.environ.get('ESSAY_ASSISTANT_ORIGIN', '')), quote=True),
+        'ORIGIN': 'personal' if personal else e(assistant_origin(os.environ.get('ESSAY_ASSISTANT_ORIGIN', '')), quote=True),
         'REVISION': read('revision.js'),
         'MODELC': read('model-client.js'),
         'INTENTS': read('intent-model.js'),
