@@ -394,7 +394,10 @@ async function exercise(page) {
   await reading.selectOption(selectedReading);
   await action('shelf-capture');
   await action('page-shelf');
-  assert.equal(await panel.locator('[data-shelf-card] .ew-note').textContent(), observation);
+  const savedScene = panel.locator('[data-shelf-card]');
+  assert.equal(await savedScene.locator('p.ew-note').textContent(), observation);
+  await savedScene.getByText('Перечитать отрывок', {exact:true}).click();
+  assert.ok((await savedScene.locator('blockquote').innerText()).trim());
   await action('page-paragraphTrial');
   const trial = panel.locator('[data-paragraph-trial]');
   const firstParagraph = 'Миша просит напечатать поправку. Он хочет, чтобы её увидели читатели газеты.';
