@@ -11,6 +11,12 @@ async function exercise(page) {
   const panel = page.locator('#ew-current');
   const field = name => panel.locator('[data-field="' + name + '"]');
   const action = name => panel.locator('[data-act="' + name + '"]').click();
+  const feedback = panel.locator('[data-answer-result]');
+  const observationText = () => feedback.locator('[data-answer-observation]').innerText();
+  const assertFeedback = async () => {
+    assert.ok((await observationText()).trim(), 'The check must give an observation about this answer');
+    assert.ok((await feedback.locator('[data-answer-next]').innerText()).trim(), 'The check must give a next revision step');
+  };
   const start = () => page.locator('#ew-steps [data-act="page-start"]').click();
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -42,12 +48,20 @@ async function exercise(page) {
   const selectedReading = await reading.inputValue();
   const observation = 'Мне запомнился жест героя.';
   await field('reading').fill(observation);
-  const readCard = await panel.locator('.ew-text-card').textContent();
-  const prompt = panel.locator('.ew-text-card + p');
+  await action('answer-check');
+  await assertFeedback();
+  await reading.selectOption({index:1});
+  assert.equal(await field('reading').inputValue(), '');
+  assert.ok(!(await feedback.innerText()).includes(observation), 'Another reading must not show this answer');
+  await reading.selectOption(selectedReading);
+  assert.equal(await field('reading').inputValue(), observation);
+  const passage = panel.locator('.ew-text-card').filter({has:page.getByRole('link',{name:/Прочитать/u})});
+  const readCard = await passage.textContent();
+  const prompt = panel.locator('.ew-text-card + p').first();
   const secular = await prompt.textContent();
   await page.locator('#ew-mode').selectOption('orthodox');
   assert.notEqual(await prompt.textContent(), secular, 'The reading question changes with the perspective');
-  assert.equal(await panel.locator('.ew-text-card').textContent(), readCard, 'Both perspectives use the same passage');
+  assert.equal(await passage.textContent(), readCard, 'Both perspectives use the same passage');
   await fits();
   await action('reading-apply');
   await action('page-episode');
@@ -65,7 +79,36 @@ async function exercise(page) {
   await panel.locator('#ew-custom').fill(topic);
   await panel.locator('#ew-custom-form button').click();
   assert.equal(await panel.locator('.ew-topic').textContent(), topic, 'Custom topic must become active');
+  const outgoing = [];
+  const recordRequest = request => outgoing.push(request.url());
+  page.on('request', recordRequest);
+  await action('answer-check');
+  assert.ok(await field('thesis').evaluate(el=>el===document.activeElement), 'An empty answer returns focus to the writer');
+  await field('thesis').fill(topic);
+  await action('answer-check');
+  await assertFeedback();
+  const firstObservation = await observationText();
+  await action('answer-check');
+  assert.equal(await feedback.locator('[data-answer-before]:visible').count(), 0, 'Rechecking unchanged text must not simulate a revision');
   await field('thesis').fill(thesis);
+  assert.ok(await feedback.locator('[data-answer-stale]').isVisible(), 'Writing a revision invalidates the earlier feedback');
+  await action('answer-check');
+  await assertFeedback();
+  assert.notEqual(await observationText(), firstObservation, 'A copied question and a proposed thesis need different observations');
+  assert.ok((await feedback.locator('[data-answer-before]').textContent()).includes(topic));
+  assert.ok((await feedback.locator('[data-answer-after]').textContent()).includes(thesis));
+  page.off('request', recordRequest);
+  assert.deepEqual(outgoing, [], 'Checking and revising the thesis works without an outgoing request');
+  const step = name => page.locator('#ew-steps [data-act="page-'+name+'"]').click();
+  const topics = panel.locator('#ew-topic');
+  await step('topic');
+  await topics.selectOption({index:0});
+  await action('forward-topic');
+  assert.ok(!(await panel.innerText()).includes(thesis), 'The previous topic’s words must not appear on a different thesis screen');
+  await step('topic');
+  await topics.selectOption({label:topic});
+  await action('forward-topic');
+  assert.equal(await field('thesis').inputValue(), thesis);
   const message = 'Как уйти от пересказа?';
   await panel.locator('#ew-message').fill(message);
   await panel.locator('#ew-chat button').click();
@@ -81,8 +124,12 @@ async function exercise(page) {
   await panel.locator('#ew-work').selectOption('own');
   await field('own').fill(book);
   await field('episode').fill(episode);
+  await action('answer-check');
+  await assertFeedback();
   await action('page-link');
   await field('link').fill(link);
+  await action('answer-check');
+  await assertFeedback();
   await action('page-draft');
   const count = panel.locator('#ew-count');
   for (const [sample, expected] of [
@@ -118,6 +165,8 @@ async function exercise(page) {
   const revised = original + ' Он сделал это деликатно.';
   const privateQuestion = 'Мой личный вопрос: почему этот момент важен для меня?';
   await field('draft').fill(original);
+  await action('answer-check');
+  await assertFeedback();
   await fits();
   assert.match(await panel.locator('#ew-count').textContent(), /\b3 сл\./u, 'Draft word count follows live input');
   await action('page-review');
@@ -172,9 +221,26 @@ async function exercise(page) {
   assert.equal(await field('draft').inputValue(), revised, 'Quick argument must preserve the full draft');
   await start();
   await action('route-drills');
+  const drill = panel.locator('#ew-drill');
+  const contrast = panel.locator('#ew-contrast-feedback');
+  await drill.selectOption('thesis');
+  await action('drill-contrast-0');
+  assert.equal(await contrast.getAttribute('data-correct'), 'false', 'An unsuitable choice gets specific feedback');
+  const explanation = await contrast.innerText();
+  assert.ok(explanation.trim());
+  await action('drill-contrast-1');
+  assert.equal(await contrast.getAttribute('data-correct'), 'true');
+  assert.notEqual(await contrast.innerText(), explanation, 'The two choices need distinct explanations');
+  assert.equal(await field('exercise').inputValue(), '', 'The comparison must leave the student to write their own answer');
   await field('exercise').fill('Моя редакция учебного фрагмента.');
   await action('drill-check');
-  assert.ok((await panel.locator('#ew-drill-feedback').textContent()).trim(), 'A submitted revision receives a self-check');
+  await assertFeedback();
+  await drill.selectOption('observation');
+  assert.equal(await field('exercise').inputValue(), '');
+  assert.equal(await contrast.getAttribute('data-correct'), null, 'A fresh exercise must not inherit another choice');
+  await drill.selectOption('thesis');
+  assert.equal(await field('exercise').inputValue(), 'Моя редакция учебного фрагмента.');
+  assert.equal(await contrast.getAttribute('data-correct'), 'true');
 
   await page.locator('#ew-steps [data-act="page-draft"]').click();
   await field('draft').fill('  ');
@@ -226,7 +292,6 @@ async function exercise(page) {
   assert.equal(await finding('detail').locator('.ew-note').textContent(),'«'+detail+'»');
 
   const previousDraft = await source.inputValue();
-  const step = name => page.locator('#ew-steps [data-act="page-'+name+'"]').click();
   const rehearsal = name => panel.locator('[data-rehearsal="'+name+'"]').click();
   await start();
   await action('route-rehearsal');
@@ -238,6 +303,7 @@ async function exercise(page) {
   const examTopic = await panel.locator('[data-r-title]').textContent();
   const examDraft = '\nГерой мог пройти мимо, но остановился и выслушал незнакомого человека.';
   await panel.locator('#ew-r-draft').fill(examDraft);
+  assert.equal(await panel.locator('[data-act="answer-check"], [data-answer-result], [data-drill-contrast]').count(), 0, 'Independent writing must stay free of coaching');
   await fits();
   await page.reload();
   assert.equal(await panel.locator('#ew-r-draft').inputValue(), examDraft, 'Reload restores the exact independent draft');
@@ -258,6 +324,11 @@ async function exercise(page) {
   await panel.locator('#ew-topic').selectOption({label:topic});
   await step('draft');
   assert.equal(await field('draft').inputValue(), previousDraft, 'The earlier training draft is independent of the rehearsal');
+  await page.goto(base);
+  await page.goto(url+'#uprazhnenie-observation');
+  assert.equal(await drill.inputValue(),'observation', 'The link shared with a pupil must open the named exercise');
+  assert.ok(await panel.locator('[data-drill-contrast]').isVisible());
+  await fits();
   assert.deepEqual(errors, [], 'The workshop raised an uncaught browser error');
 }
 

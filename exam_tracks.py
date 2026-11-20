@@ -43,6 +43,8 @@ def essay_workshop_body(personal=False):
         'REVISION': read('revision.js'),
         'MODELC': read('model-client.js'),
         'REHEARSAL': read('rehearsal.js'),
+        'ANSWER_FEEDBACK': read('answer-feedback.js'),
+        'DRILL_CONTRAST': read('drill-contrast.js'),
         'INTENTS': read('intent-model.js'),
         'APP': read('workshop.js'),
     }
