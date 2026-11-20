@@ -1,9 +1,17 @@
 const EssayCoach = (() => {
-  function countWords(text = '') {
+  function firstDraftLine(text) {
+    return String(text ?? '').trimStart().split(/[\r\n]/u, 1)[0].trimEnd();
+  }
+
+  function countWords(text = '', draftHeading = '') {
+    let input = String(text ?? '').trimStart();
+    // An explicitly marked topic heading is separate from the essay. The same
+    // words in a paragraph and words in quotations still count.
+    if (draftHeading && firstDraftLine(input) === draftHeading) input = input.slice(draftHeading.length);
+    input = input.normalize('NFC').replace(/\u00ad/gu, '');
     // Combine initials and a surname before tokenizing. Either order is common.
-    const initials = String.raw`(?:\p{Lu}\.\s*){1,3}`;
-    const surname = String.raw`\p{Lu}\p{Ll}+(?:[-‐‑]\p{Lu}\p{Ll}+)*`;
-    let input = String(text ?? '').normalize('NFC');
+    const initials = String.raw`(?:\p{Lu}\.(?:[-‐‑]\p{Lu}\.)?\s*){1,3}`;
+    const surname = String.raw`\p{Lu}(?:[-‐‑’']?[\p{L}\p{M}])+`;
     input = input.replace(new RegExp(`(?<!\\p{L})${initials}(${surname})(?!\\p{L})`, 'gu'), '$1');
     input = input.replace(new RegExp(`(?<!\\p{L})(${surname})\\s+${initials}(?!\\p{L})`, 'gu'), '$1 ');
     return (input.match(/\p{L}[\p{L}\p{M}]*(?:[-‐‑’']\p{L}[\p{L}\p{M}]*)*/gu) || []).length;
@@ -99,8 +107,8 @@ const EssayCoach = (() => {
     return 'Проверь переход между эпизодом и мыслью. Если бы персонаж в той же сцене поступил иначе, изменился бы твой вывод? Объясни почему.';
   }
 
-  function draftHint({draft, topic, reason}) {
-    const total = countWords(draft);
+  function draftHint({draft, topic, reason, draftHeading}) {
+    const total = countWords(draft, draftHeading);
     if (!total) {
       return 'Открой свои записи о тезисе и эпизоде. Запиши начало сочинения своими словами, затем перейди к сцене, которая помогла тебе так ответить.';
     }
@@ -191,22 +199,63 @@ const EssayCoach = (() => {
     }
   }
 
-  function reply(context = {}, message = '', previousTurn = null) {
+  function examGuidance(context, words, previousTurn) {
+    const wantsDraft = /(?:напиши|пришли|сочини|покажи|дай|выдай|сгенерируй|сделай|нужен|нужно|нужна) (?:(?:мне|за меня|пожалуйста|целиком|целое|полное|свое|свой|готов[а-я]+|итоговое|пример|образец) )*(?:сочинени[ея]|абзац|вступление|заключение|текст для сдачи|готовый (?:текст|ответ|тезис))(?= |$)/u.test(words);
+    const borrowed = /(?:списать|спишу|скопирую|скопировать|переписать|перепишу|выуч[а-я]*|перескажу|возьму|взять|зауч[а-я]*|вставлю|перефразир)/u.test(words)
+      && /образец|образца|готов[а-я]* (?:сочинени|текст|ответ|абзац)|чуж[а-я]* (?:текст|фраз|мысл|сочинени|абзац)|(?:из|с) (?:интернет|сайт|сборник)|у (?:друг|подруг)|нейросет|чатбот/u.test(words);
+    const asksIndependence = /плагиат|(?:требование|провер[а-я]*|критерий|что (?:такое|значит)) (?:к |на )?самостоятельност|самостоятельност[а-я]* (?:на экзамене|сочинения|написания|работы)|(?:текст|работа|сочинение) (?:будет |считается |сочтут )?самостоятельн/u.test(words);
+    if (wantsDraft || borrowed || asksIndependence) {
+      const first = 'Сочинение на экзамене пишешь ты. Чужой текст или абзац, списанный или выученный наизусть, нарушает требование самостоятельности.';
+      const question = context.topic ? 'Твоя тема — «' + context.topic + '». Как ты сам ответил бы на неё одной фразой?' : 'Как бы ты сам ответил на вопрос темы?';
+      return first + ' ' + (borrowed ? 'Отложи образец. ' : '') + question;
+    }
+    if (/цитир|цитат/u.test(words) && /указ[а-я]* источник|(?:нужна|нужен|нужно|как) (?:ли )?(?:оформ|ссыл|указ)|сколько|разреш|допуска|можно ли (?:взять|привести|цитировать|использовать|вставить)/u.test(words)) {
+      return 'Можно привести цитату или передать чужие слова косвенно. Укажи источник в свободной форме. Цитирование по объёму не должно превышать твой собственный текст. После заимствованных слов поясни, какую твою мысль они подтверждают.';
+    }
+    if (/пословиц|поговорк|личн[а-я]+ (?:истори|опыт)|случа[яй] из (?:моей )?жизни/u.test(words)
+      && /хватит|достаточно|вместо|подойдет|можно ли|засчитают|только/u.test(words)) {
+      return 'Для литературного аргумента нужен пример из опубликованного произведения. Одной поговорки, пословицы или личной истории для этого мало. Вспомни книгу, где герой столкнулся с похожим выбором. Как он поступил?';
+    }
+
+    const quantity = words.match(/(?:^| )(\d{1,6}) слов(?:о|а)?(?= |$)/u);
+    const followup = previousTurn?.exam === true && /250 слов/u.test(previousTurn.assistant || '')
+      ? words.match(/^(?:а |если |а если |ровно |всего )*(\d{1,6})(?: (?:хватит|достаточно))?$/u) : null;
+    const fragmentOnly = /(?:только|лишь|один|одно) (?:план|тезис|вывод|вступление|абзац|фрагмент)|(?:в плане|в абзаце|в тезисе|в отрывке)|(?:выделил|выделила) (?:только )?(?:вывод|абзац|фразу|фрагмент)|это (?:план|набросок плана)/u.test(words);
+    const asksLength = /сколько (?:нужно |надо |должно быть )?слов|(?:хватит|достаточно|мало) (?:ли |мне )?слов|хватит ли (?:мне )?по объему|миним[а-я]* (?:объем|(?:количество )?слов)|(?:какой|каков|максимальн[а-я]*|рекомендуем[а-я]*|требовани[а-я]* к) объем|объем (?:итогового |моего )?(?:сочинения|текста|работы)|служебные слова|считаются ли (?:союзы|предлоги)/u.test(words);
+    if (!quantity && !followup && !asksLength) return '';
+    if (fragmentOnly) {
+      return 'Для плана или отдельного абзаца минимума нет. Требование относится к полному сочинению: минимум 250 слов, рекомендация ФИПИ — от 350. Продолжи черновик одной собственной мыслью, которую объясняет твой литературный пример.';
+    }
+    const rules = 'Минимум для полного сочинения — 250 слов. ФИПИ рекомендует от 350. Служебные слова тоже считаются.';
+    const number = quantity || followup;
+    const singleCount = !/\d+ (?:слов(?:а|о)? )?(?:или|и) (?:на )?\d+|не хватает|не достает|не дотягива|остал[оаи]сь|еще надо|добрать/u.test(words);
+    const declared = number && singleCount ? Number(number[1]) : null;
+    if (declared !== null && declared < 250) {
+      return 'Если это вся работа и подсчёт верен, по требованию к объёму ставят «незачёт» за всё сочинение. ' + rules + ' Найди в черновике поступок героя и объясни, почему он подтверждает твою мысль.';
+    }
+    if (declared !== null && declared >= 350) {
+      return rules + ' При таком объёме порог пройден. Теперь найди предложение, в котором ты объяснил, почему эпизод подтверждает твой ответ на тему.';
+    }
+    if (declared !== null) {
+      return rules + ' При 250–349 словах требование к объёму выполнено. Для общего результата важны ещё самостоятельность и критерии. Перечитай, как ты связал эпизод с тезисом.';
+    }
+    const size = countWords(context.draft, context.draftHeading);
+    return rules + ' Максимальный объём не установлен.' + (size ? ' В поле черновика сейчас примерно ' + size + ' (по счётчику тренажёра).' : '') + ' Проверь по счётчику весь черновик.';
+  }
+
+  function dialogueReply(context = {}, message = '', previousTurn = null) {
     const raw = String(message ?? '').trim();
     const words = normalized(raw);
     const stage = Object.hasOwn(stages, context.stage) ? context.stage : 'thesis';
     if (!words) return 'Напиши, на чём ты остановился. Можно прислать одну свою фразу или задать вопрос о сочинении.';
+    if (/^(?:привет|здравствуй(?:те)?|добрый (?:день|вечер)|доброе утро)$/u.test(words)) {
+      return 'Привет! Можешь принести одну фразу из своего черновика или спросить о сочинении.';
+    }
 
     const asks = raw.includes('?') || /^(?:а |так |подскажи |скажи )*(?:можно|сколько|надо ли|нужно ли|обязательно ли|хватит|достаточно|правда ли|как|что|кто|почему|где|разве|како)/u.test(words);
     const previousUser = normalized(previousTurn?.user);
     const previousReply = String(previousTurn?.assistant ?? '');
     const repeated = words === previousUser || (previousUser && words === 'все еще ' + previousUser);
-
-    if (/слов|объем|минимум/u.test(words) && (/минимум|сколько слов|объем|порог|250|350/u.test(words) || (asks && /\d+ слов/u.test(words)))) {
-      const size = countWords(context.draft);
-      const detail = size ? ' В твоём черновике по этому счётчику примерно ' + size + '.' : '';
-      return 'Минимум для итогового сочинения — 250 слов. ФИПИ рекомендует писать от 350. При объёме 250–349 слов работу допускают к дальнейшей проверке. Максимальный объём не установлен.' + detail;
-    }
 
     if (/(?:^| )(?:библи[яиюей]|евангел[а-я]*|писани[еяию]|священн[а-я]* писани[а-я]*)(?: |$)/u.test(words) && /аргумент|пример|можно ли|подойдет|достаточно|источник/u.test(words)) {
       return 'По разъяснению ФИПИ Библию можно взять как самостоятельный литературный источник. Выбери эпизод, назови книгу и покажи, как поступок или слова персонажа помогают обосновать твой ответ на тему.';
@@ -214,10 +263,6 @@ const EssayCoach = (() => {
 
     if (/(?:дв[аеух]|два|две|втор|одн|один|количеств|сколько|\d+).*?(?:книг|книж|литературн|аргумент|пример|произведени|текст)|(?:книг|аргумент|произведени|пример).*?(?:дв[аеух]|сколько)/u.test(words) && (asks || /обязательн|требую|нуж(?:но|ны|на)|хватит/u.test(words))) {
       return 'Достаточно одного опубликованного произведения. Выбери из него эпизод, который действительно помогает обосновать твою мысль. ' + (repeated ? 'Какую сцену из этой книги ты лучше всего помнишь?' : 'Как поступок героя связан с темой?');
-    }
-
-    if (/(?:напиши|сделай|пришли|сочини|дай|выдай|сгенерируй|нуж[неаоы]+) (?:.{1,40} )?(?:сочинение|готов[а-я]+ (?:текст|сочинение|абзац|ответ|тезис))|готов[а-я]+ сочинение (?:целиком|за меня)/u.test(words)) {
-      return 'Сочинение на экзамене пишешь ты. Давай начнём с твоей мысли. ' + (repeated ? smallerSteps.thesis : advise({...context, stage:'thesis', reason:'stuck'}));
     }
 
     if (/(?:^| )тем(?:а|е|у|ы|ой)?(?: |$)/u.test(words) && /будут|попад[еу]|настоящие|реальные|заранее|на экзамене/u.test(words) && asks) {
@@ -249,14 +294,23 @@ const EssayCoach = (() => {
     }
 
     // A statement of literary interpretation may be a student's answer, rather than a request.
-    const asksForHelp = asks || /помог|подска|не понимаю|не могу|не получа|застр|хоч|трудно|путаю|повторя|только пересказ|сомнева/u.test(words);
-    const verifiesFact = /звали|зовут|дослов|в (?:какой|которой) главе|кто (?:именно |это )?сказал|не могу вспомнить,? как/u.test(words);
+    const unclearNeed = /^(?:(?:я|а|мне|пока|все еще|вообще|совсем|просто|никак) )*(?:не знаю|не понимаю|не получается|запутал[а-я]*|застрял[а-я]*|помоги|нужна помощь|что дальше|как дальше)(?: |$)/u.test(words);
+    const asksForHelp = asks || unclearNeed || /^(?:покажи|объясни|подскажи|помоги)|помог|подска|не понимаю|не могу|не получа|застр|хоч|трудно|путаю|повторя|только пересказ|сомнева/u.test(words);
+    const verifiesFact = /звали|зовут|дослов|в (?:какой|которой) главе|кто такой|кто такая|кто (?:именно |это )?сказал|не могу вспомнить,? как/u.test(words);
     if (asksForHelp && !verifiesFact && !repeated && typeof EssayIntent !== 'undefined') {
       const hint = intentFeedback(EssayIntent.classify(raw).label, context);
       if (hint && previousReply !== hint) return hint;
     }
 
-    if ((asks || /не (?:помню|уверен|могу вспомнить)|забыл/u.test(words)) && /цитат|дословно|точн[аоя]|сказал|говорит|произнес|звали|зовут|поступил|поступила|пошел|заплакал|назва|действительно ли|правда ли|в (?:какой|которой) главе|^(?:а )?(?:кто|кому|когда|где|куда|зачем|почему|разве)|(?:какой|какая|какую|что) (?:геро|персонаж|автор)/u.test(words)) {
+    const aboutWriting = /черновик|сочинени|аргумент|рассужден|параграф|абзац|запися[хми]|свое[йм] фраз|написанн|моим текст|моем текст|моему текст|мой текст|моей мысл|свою мысл|у меня на листе/u.test(words);
+    const outsideWriting = /расписани|регистрац|пароль|бланк|экзамен|сохран[ияе]|скачать|файл|принтер|где сдавать|оплат|войти|погода/u.test(words);
+    if (asksForHelp && !verifiesFact && !outsideWriting && (aboutWriting || unclearNeed)) {
+      return {assistant:'С чем нужна помощь в сочинении? Выбери одно действие для своей записи.', chooseIntent:true};
+    }
+
+    const recallsScene = asks || /не (?:помню|уверен|могу вспомнить)|забыл/u.test(words);
+    const aboutSceneFact = /цитат|дословно|точн[аоя]|сказал|говорит|произнес|звали|зовут|поступил|поступила|пошел|заплакал|назва|действительно ли|правда ли|в (?:какой|которой) главе|^(?:а )?(?:кто|кому|когда|где|куда|зачем|почему|разве)|(?:какой|какая|какую|что) (?:геро|персонаж|автор)/u.test(words);
+    if (!outsideWriting && (verifiesFact || (recallsScene && aboutSceneFact))) {
       const book = context.work?.title ? 'Открой полный текст произведения ' + excerpt(context.work.title) + '. ' : 'Уточни автора и название и открой полный текст выбранного произведения. ';
       return book + (repeated ? 'Прочитай пару предложений до и после спорного места. К кому относится фраза и что происходит сразу после неё?' : 'Найди нужную сцену, проверь, кому принадлежит реплика или поступок. Можно прислать короткий фрагмент с указанием источника или пересказать сцену своими словами.');
     }
@@ -275,5 +329,16 @@ const EssayCoach = (() => {
     return 'Возьмём твою фразу ' + excerpt(raw) + '. ' + nextStep;
   }
 
-  return Object.freeze({advise, countWords, reply});
+  function respond(context = {}, message = '', previousTurn = null) {
+    const guidance = examGuidance(context, normalized(message), previousTurn);
+    if (guidance) return {assistant:guidance, exam:true};
+    const result = dialogueReply(context, message, previousTurn);
+    return typeof result === 'string' ? {assistant:result} : result;
+  }
+
+  function reply(context, message, previousTurn) {
+    return respond(context, message, previousTurn).assistant;
+  }
+
+  return Object.freeze({advise, countWords, firstDraftLine, intentFeedback, reply, respond});
 })();

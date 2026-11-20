@@ -80,6 +80,36 @@ async function exercise(page) {
   await action('page-link');
   await field('link').fill(link);
   await action('page-draft');
+  const count = panel.locator('#ew-count');
+  for (const [sample, expected] of [
+    ['5 лет, пять лет', 3],
+    ['«Всё-таки» и «всё же»', 4],
+    ['А. С. ПУШКИН и Г.-Х. Андерсен', 3],
+    ['Михаил Юрьевич Лермонтов', 3],
+    ['В 1945 году ему исполнилось 5 лет.', 5],
+    ['Он сказал: «Я всё же вернусь».', 6],
+  ]) {
+    await field('draft').fill(sample);
+    assert.ok((await count.textContent()).includes('подсчёт: ' + expected + ' сл.'), sample);
+  }
+  const underMinimum = 'слово '.repeat(249).trim();
+  const withHeading = topic + '\n' + underMinimum;
+  await field('draft').fill(withHeading);
+  assert.match(await count.textContent(), /253 сл\./u, 'The opening sentence is counted until the writer marks a heading');
+  const headingOption = panel.locator('#ew-draft-heading');
+  await panel.getByText('Как считать слова и убрать заголовок из подсчёта', {exact:true}).click();
+  await headingOption.check();
+  assert.match(await count.textContent(), /249 сл\..*Заголовок исключён/u);
+  await action('page-review');
+  assert.match(await panel.textContent(), /249 сл\..*Заголовок исключён/u);
+  await page.reload();
+  await action('page-draft');
+  assert.ok(await headingOption.isChecked(), 'The heading choice is saved with its draft');
+  await field('draft').fill(withHeading + ' конец');
+  assert.match(await count.textContent(), /250 сл\..*Заголовок исключён/u, 'Editing the body keeps its heading');
+  await field('draft').fill(underMinimum);
+  assert.ok(!await headingOption.isChecked(), 'Deleting the heading must not exclude the new first paragraph');
+  assert.match(await count.textContent(), /249 сл\./u);
   const original = 'Доктор помог семье.';
   const revised = original + ' Он сделал это деликатно.';
   await field('draft').fill(original);

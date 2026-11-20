@@ -13,6 +13,7 @@ def build_personal_package(destination, body):
             '<body><main>' + body + '</main></body></html>')
     assets = {
         'index.html': html.encode('utf-8'),
+        'pamyatka-2026-27.pdf': (HERE / 'pamyatka-2026-27.pdf').read_bytes(),
         'catalog.json': (HERE / 'catalog.json').read_bytes(),
         'system.ru.md': (HERE / 'assistant/system.ru.md').read_bytes(),
     }

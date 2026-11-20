@@ -56,3 +56,5 @@ https://developers.sber.ru/docs/ru/policies/gigachat-agreement/individuals
 условия веб-сервиса требуют согласия и контроля родителя или другого законного
 представителя, который сам принял эти условия.
 https://developers.sber.ru/docs/ru/policies/gigachat/agreement
+
+Для печати откройте файл pamyatka-2026-27.pdf из этой же папки. Он доступен без интернета.
