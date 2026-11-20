@@ -25,7 +25,7 @@ def reader_search_body(cards):
     body = '''<div class="wrap memory-search">
 <div class="breadcrumb"><a href="/">Главная</a><span>/</span><a href="/chtenie/">Что читать</a><span>/</span>Поиск по памяти</div>
 <header class="page-title"><h1>Найти произведение по памяти</h1>
-<p class="lead">Вспомните героя, место или поступок. В карточках можно узнать книгу, сохранив развязку для первого чтения.</p></header>
+<p class="lead">Вспомните героя, место или поступок. В карточках можно узнать книгу, сохранив развязку для первого чтения.</p><p>Для «Студента», «Чудесного доктора», «Шинели» и «Вороны и Лисицы» есть короткое чтение с подсказками. Откройте карточку и выберите «Читать начало вместе, шаг за шагом».</p></header>
 <section id="memory-dialogue" hidden aria-label="Разговор с читательским помощником">
 <p id="memory-mode">Поиск без спойлеров</p>
 <div id="memory-log" role="log" aria-live="polite" aria-relevant="additions" aria-label="Ваш разговор"></div>

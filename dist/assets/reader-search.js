@@ -153,7 +153,7 @@
         !/на (?:этой|проверенной|указанной) странице/u.test(q);
       if (unnamedPage || pageReferences.some(page => !primary?.pages?.includes(page))) {
         return {text: 'Эта страница выходит за пределы проверенного фрагмента. ' + record.scope +
-          ' Для ответа нужен текст этой страницы или фотография разворота.', paragraph: previousParagraph, links: primary ? [primary] : sourceLinks};
+          ' Здесь можно открыть указанный источник или обсудить проверенный фрагмент.', paragraph: previousParagraph, links: primary ? [primary] : sourceLinks};
       }
       if (primary && /источник|фотограф|где (?:сверить|посмотреть)|(?:увидеть|открыть) (?:тот )?(?:разворот|фрагмент)/u.test(q)) {
         return {text: primary.label + '. ' + record.scope, paragraph: previousParagraph, links: [primary]};
