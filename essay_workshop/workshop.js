@@ -11,9 +11,11 @@
   const reasons = {stuck:'Не знаю, с чего начать',clarify:'Уточнить мысль',retell:'Получился пересказ',check:'На что посмотреть?'};
   const intentChoices = {thesis:'Сформулировать свою мысль',scene:'Вспомнить сцену',explain:'Объяснить, что доказывает сцена',wording:'Исправить фразу',counter:'Рассмотреть возражение'};
   steps.push(['read','Первое чтение']);
+  steps.push(['shelf','Моя полка']);
   steps.push(['rehearsal','Репетиция']);
   steps.push(['thesisLab','Уточнить тезис']);
-  const routes = {quick:'Собрать аргумент',full:'Написать сочинение',edit:'Разобрать мой черновик'};
+  steps.push(['draftReader','Разметить черновик'],['paragraphTrial','Абзац на новую тему']);
+  const routes = {quick:'Собрать аргумент',full:'Написать сочинение',edit:'Разобрать мой черновик',draftReader:'Разметить мой черновик'};
   const checklist = [
     ['topic','Тема','Я могу показать фразу, в которой отвечаю на вопрос темы.'],
     ['book','Литературный аргумент','Я назвал произведение, точно передал деталь и объяснил, что она доказывает.'],
@@ -40,8 +42,63 @@
   }
   function argument() {
     const n = note();
-    if (!n.args[n.work]) n.args[n.work] = {episode:'',link:''};
-    return n.args[n.work];
+    const key=argumentKey(n);
+    if (!n.args[key]) n.args[key]={episode:'',link:''};
+    return n.args[key];
+  }
+  function argumentKey(n=note()) { return n.shelfChoice?'shelf:'+n.shelfChoice.id:n.work; }
+  function leaveShelf(n) {
+    if(!n.shelfChoice)return;
+    n.work=n.shelfChoice.previousWork;
+    n.own=n.shelfChoice.previousTitle;
+    delete n.shelfChoice;
+  }
+  function shelfContext() { return {topics:allTopics(),active:topic().id,use:useShelfCard}; }
+  function useShelfCard(card,target) {
+    let t=target.id?allTopics().find(t=>t.id===target.id):allTopics().find(t=>t.title===target.title);
+    if(!t && target.title){
+      t={id:'custom-'+(globalThis.crypto?.randomUUID?.()||Date.now().toString(36)),title:target.title,work:'own'};
+      state.custom.push(t);
+    }
+    if(!t)return;
+    state.active=t.id;
+    state.route='quick';
+    const n=note(), previous=n.shelfChoice;
+    n.shelfChoice={id:card.id,previousWork:previous?previous.previousWork:n.work,previousTitle:previous?previous.previousTitle:n.own};
+    n.work=catalog.works.some(w=>w.id===card.bookId)?card.bookId:'own';
+    if(n.work==='own')n.own=card.title;
+    const a=n.args[argumentKey(n)] ||= {episode:card.observation,link:'',source:card.source};
+    if(card.quote){a.quote=card.quote;a.quoteSource=card.source;}
+    go('link');
+  }
+  function captureShelf() {
+    const first=state.page==='read';
+    const info=first?catalog.works.find(w=>w.id===state.reading):work();
+    const source=first?info?.url:(panel.querySelector('#ew-scene-source')?.value.trim()||info?.url);
+    const quote=first?catalog.readings.find(r=>r.id===state.reading)?.quote:
+      (source===argument().quoteSource?argument().quote:'');
+    const result=EssayShelf.add({bookId:info?.id||'own',title:info?.title||note().own,
+      observation:first?state.readingNotes[state.reading]:argument().episode,quote,source});
+    const status=panel.querySelector('[data-shelf-feedback]');
+    status.textContent=result.message;
+    if(!result.card){
+      if(!(info?.title||note().own)?.trim())panel.querySelector('#ew-own')?.focus();
+      else if(!(first?state.readingNotes[state.reading]:argument().episode)?.trim())sourceField(first?'reading':'episode')?.focus();
+      else panel.querySelector('#ew-scene-source')?.focus();
+    }
+  }
+  function shelfControls(first=false) {
+    const w=first?null:work();
+    const source=first?'':'<div class="ew-field"><label for="ew-scene-source">Где найти сцену в книге?</label>'+
+      '<input id="ew-scene-source" data-shelf-source placeholder="Глава, страница, издание или ссылка" value="'+h(argument().source||w?.url||'')+'"></div>';
+    return source+actions(button('shelf-capture','Сохранить сцену на полку'),button('page-shelf','Открыть мою полку'))+
+      '<p class="ew-small" data-shelf-feedback role="status"></p>';
+  }
+  function shelfCurrent() {
+    if(!note().shelfChoice)return '';
+    const a=argument();
+    return '<p class="ew-small">Сцена с моей полки'+(a.source && !a.quote?' · '+EssayShelf.sourceRef(a.source):'')+'</p>'+
+      EssayShelf.excerpt(a.quote,a.quoteSource||a.source)+actions(button('shelf-return','Вернуться к прежнему эпизоду этой темы'));
   }
   function work() { return catalog.works.find(w => w.id === note().work) || null; }
   function selectedTitle() { return work()?.title || note().own || 'Своё произведение'; }
@@ -70,6 +127,7 @@
   }
   function go(page) {
     if (!steps.some(([id])=>id===page)) page = 'start';
+    if (page==='draftReader') state.route='draftReader';
     state.page = page;
     render(); save();
     document.getElementById('ew-title')?.focus({preventScroll:true});
@@ -79,15 +137,19 @@
     return '<button class="ew-route" type="button" data-act="route-'+id+'"><span><b>'+h(name)+'</b><small>'+h(summary)+'</small></span><em aria-hidden="true">→</em></button>';
   }
   function start() {
-    return heading('С чем нужна помощь?','Выбери задание по тому, что у тебя уже есть.')+'<div class="ew-routes">'+
-      routeButton('read','Пока не знаю, о чём писать','Прочитай короткую сцену и запиши одно наблюдение.')+
-      routeButton('quick','Помню книгу. Как сделать из неё аргумент?','За один короткий подход — от сцены до её объяснения.')+
-      routeButton('thesisLab','Уточнить свой тезис','Начни со своей фразы, подкрепи её деталью и попробуй тот же приём на новой сцене.')+
-      routeButton('full','Хочу написать целое сочинение','Выбери тему, наметь ход мысли и перейди к свободному письму.')+
-      routeButton('rehearsal','Репетиция без подсказок','Открой шесть тем и напиши работу самостоятельно. Таймер включается по желанию.')+
-      routeButton('edit','У меня уже есть черновик','Вставь свой текст, выбери место для правки и сравни две версии.')+
-      routeButton('drills','Хочу потренировать одно трудное место','Шесть коротких упражнений на чужих черновиках.')+'</div>'+
+    return '<div data-ew-entry>'+heading('С чего начнём?')+'<div class="ew-entry-choices">'+
+      routeButton('read','Смутно помню книгу','Прочитай несколько строк у Куприна или Чехова и сохрани сцену, о которой можешь написать.')+
+      routeButton('draftReader','У меня есть черновик','Принеси хотя бы один свой абзац. Отметь событие и свою мысль, затем попробуй одну правку.')+'</div>'+
+      '<div class="ew-entry-return">'+button('page-shelf','Открыть мою полку сцен')+'</div>'+
+      '<h3 class="ew-entry-heading">Другие занятия</h3><div class="ew-entry-tools">'+
+      button('route-quick','Подобрать аргумент к теме')+button('route-thesisLab','Уточнить свой тезис')+
+      button('route-drills','Потренировать отдельную правку')+button('route-edit','Открыть редактор моей работы')+
+      button('route-full','Написать целое сочинение')+button('route-rehearsal','Репетиция без подсказок')+'</div></div>'+
       '<p class="ew-small"><a href="https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/trenazher-gigachat.zip">Для родителей · скачать тренажёр с подключением своего GigaChat API (ZIP)</a></p>';
+  }
+  function pageAfterTopic() {
+    if (state.route==='draftReader') return 'draftReader';
+    return state.route==='edit'?'draft':'thesis';
   }
   function topicScreen() {
     const groups = [...new Set(catalog.topics.map(t=>t.section))];
@@ -111,10 +173,10 @@
       '<label for="ew-topic">Тема сочинения</label><select id="ew-topic">'+opts+'</select><p class="ew-topic">'+h(topic().title)+'</p>'+
       (topic().focus && note().work===topic().work?'<p>'+h(topic().focus)+'</p>':'')+
       (work() && note().work!==topic().work?'<p>Книга для этой темы · '+h(selectedTitle())+'</p>':'')+
-      (note().work==='own'?ownBookField()+(topic().work && topic().work!=='own'?actions(button('restore-topic-book','Вернуться к книге из карточки темы')):''):actions(button('choose-own-book','Взять своё произведение')))+
+      (note().shelfChoice?shelfCurrent():note().work==='own'?ownBookField()+(topic().work && topic().work!=='own'?actions(button('restore-topic-book','Вернуться к книге из карточки темы')):''):actions(button('choose-own-book','Взять своё произведение')))+
       '<details><summary>Начать со знакомой книги</summary><div><label for="ew-from-book">Какую книгу ты помнишь?</label><select id="ew-from-book">'+options(bookChoices,work()?.id||topic().work)+'</select><div id="ew-book-topics"></div></div></details>'+
       '<details><summary>Ввести свою тему</summary><div><form id="ew-custom-form"><label for="ew-custom">Формулировка темы</label><input id="ew-custom" required maxlength="500">'+actions('<button class="ew-primary">Работать с этой темой</button>')+'</form></div></details>'+
-      actions(button('forward-topic',state.route==='edit'?'Перейти к моему черновику':'Перейти к тезису',true));
+      actions(button('forward-topic',pageAfterTopic()==='thesis'?'Перейти к тезису':'Перейти к моему черновику',true));
   }
   function readingScreen() {
     const r=catalog.readings.find(x=>x.id===state.reading)||catalog.readings[0], w=catalog.works.find(x=>x.id===r.id);
@@ -122,7 +184,7 @@
       '<label for="ew-reading">Что прочитать?</label><select id="ew-reading">'+options(catalog.readings.map(x=>catalog.works.find(w=>w.id===x.id)),r.id)+'</select>'+
       '<div class="ew-text-card"><p>'+h(r.context)+'</p><p class="ew-topic">«'+h(r.quote)+'»</p><p><a target="_blank" rel="noopener noreferrer" href="'+h(w.url)+'">Прочитать '+h(w.title)+' ↗</a></p></div>'+
       '<p>'+h(r[state.mode])+'</p>'+field('reading','Что я заметил в тексте?',state.readingNotes[r.id]||'')+
-      answerControls('reading',state.readingNotes[r.id]||'')+
+      answerControls('reading',state.readingNotes[r.id]||'')+shelfControls(true)+
       actions(button('reading-apply','Взять сцену для аргумента',true))+'<p class="ew-small" id="ew-reading-status" role="status"></p>';
   }
   function bookTopics() {
@@ -134,7 +196,7 @@
   function context(stage) {
     return {stage,mode:state.mode,topic:topic().title,work:work() || (note().own?{title:note().own}:null),thesis:note().thesis,episode:argument().episode,link:argument().link,draft:note().draft,draftHeading:note().draftHeading};
   }
-  function conversationKey(stage) { return stage+'|'+((stage==='episode'||stage==='link')?note().work:'')+'|'+state.mode; }
+  function conversationKey(stage) { return stage+'|'+((stage==='episode'||stage==='link')?argumentKey():'')+'|'+state.mode; }
   function turns(stage) { return note().turns[conversationKey(stage)] || []; }
   function history(stage) {
     return turns(stage).map((t,i,list)=>{
@@ -147,7 +209,7 @@
   }
   function revisionRecord(stage) {
     const n = note();
-    const key = (stage === 'episode' || stage === 'link') ? stage+'|'+n.work : stage;
+    const key = (stage === 'episode' || stage === 'link') ? stage+'|'+argumentKey(n) : stage;
     n.revisions ||= {};
     return n.revisions[key] ||= {session:null, last:null};
   }
@@ -157,7 +219,7 @@
   function answerKey(stage) {
     if(stage==='reading') return JSON.stringify([stage,state.reading]);
     if(stage==='drill') return JSON.stringify([stage,state.exercise]);
-    return JSON.stringify([stage,topic().id,(stage==='episode'||stage==='link')?note().work:'']);
+    return JSON.stringify([stage,topic().id,(stage==='episode'||stage==='link')?argumentKey():'']);
   }
   function answerBook(stage) {
     if(stage==='reading'||stage==='drill') return '';
@@ -200,6 +262,11 @@
       const reply=inspectAnswer(stage,text), change=record.change;
       result='<div class="ew-answer-card">'+(reply.excerpt?'<p class="ew-note" data-answer-excerpt>«'+h(reply.excerpt)+'»</p>':'')+
         '<p data-answer-observation>'+h(reply.observation)+'</p><p data-answer-next><strong>Попробуй сейчас.</strong> '+h(reply.next)+'</p></div>';
+      if (stage==='link') {
+        const paths=EssayDraftReader.helpChoices.map(choice=>'<details data-link-help="'+h(choice.id)+'"><summary>'+
+          h(choice.label)+'</summary><p>'+h(choice.hint)+'</p></details>');
+        result+='<div class="ew-link-help"><h3>Что я хочу сделать со своей фразой?</h3>'+paths.join('')+'</div>';
+      }
       if(change?.spacing) result+='<p class="ew-small">Изменились пробелы или переносы строк.</p>';
       else if(change) result+='<div class="ew-answer-change"><p><strong>До правки</strong><br><span class="ew-note" data-answer-before>'+h(change.before)+'</span></p>'+
         '<p><strong>После правки</strong><br><span class="ew-note" data-answer-after>'+h(change.after)+'</span></p></div>';
@@ -330,7 +397,7 @@
     trackAnswerEdit(stage,oldValue,value);
     if (stage==='draft') {
       note().checks={};
-      updateCounter();
+      if (panel.querySelector('#ew-count')) updateCounter();
     }
   }
   function handleRevision(action) {
@@ -400,6 +467,7 @@
   }
   function workPicker() {
     const w=work();
+    if(note().shelfChoice)return '<p class="ew-small">Книга для аргумента · '+h(selectedTitle())+'</p>'+shelfCurrent();
     return '<div class="ew-field"><label for="ew-work">Книга для аргумента</label><select id="ew-work">'+options([...catalog.works,{id:'own',title:'Моё произведение'}],note().work)+'</select></div>'+
       (w?'<div class="ew-text-card"><p><strong>'+h(w.title)+'</strong></p><p><a target="_blank" rel="noopener noreferrer" href="'+h(w.url)+'">Прочитать произведение или главу ↗</a></p><details><summary>Вспомнить сцену и получить вопрос</summary><div><p>'+h(w.fact)+'</p><p>'+h(w[state.mode])+'</p></div></details></div>':
       ownBookField());
@@ -424,7 +492,7 @@
       (stage==='episode'?workPicker()+readerQuestion:'')+previous+
       (stage==='draft'?'<details><summary>Книга для подсказок · '+h(selectedTitle())+'</summary><div>'+workPicker()+'</div></details>'+outline()+readerQuestion:'')+
       field(stage,copy[2],copy[3],stage==='draft'?12:4)+
-      answerControls(stage,copy[3])+
+      answerControls(stage,copy[3])+(stage==='episode'?shelfControls():stage==='link'?shelfCurrent():'')+
       (stage==='thesis'?actions(button('page-thesisLab','Уточнить свой тезис на примере')):'')+
       (stage==='draft'?'<p class="ew-counter" id="ew-count"></p>'+countOptions()+actions(button('snapshot','Сохранить версию перед правкой'))+'<p id="ew-snapshot-status" class="ew-small" role="status">'+(n.before!==null?'Первая версия сохранена. Сравнение доступно в самопроверке.':'')+'</p>':'')+
       '<div id="ew-revision"></div>'+actions(nav)+coach(stage);
@@ -519,7 +587,7 @@
       checklist.map(([key,title,detail])=>'<label class="ew-check"><input type="checkbox" data-check="'+key+'"'+(n.checks[key]?' checked':'')+'><span><strong>'+h(title)+'</strong> · '+h(detail)+'</span></label>').join('')+
       (n.before!==null?'<details><summary>Сравнить версии</summary><div><p><strong>До правки</strong></p><p class="ew-note">'+h(n.before)+'</p><p><strong>После правки</strong></p><p class="ew-note">'+h(n.draft)+'</p></div></details>':'');
     return heading(quick?'Мой литературный аргумент':'Самопроверка',text)+body+
-      actions(button('page-draft',quick?'Перейти к полному сочинению':'Вернуться к правке',true),button('download','Скачать мою работу (.txt)'))+
+      actions(button('page-draft',quick?'Перейти к полному сочинению':'Вернуться к правке',true),button(quick?'page-paragraphTrial':'page-draftReader',quick?'Попробовать абзац на новую тему':'Разметить мой черновик'),button('download','Скачать мою работу (.txt)'))+
       externalPacket();
   }
   function counter(value) {
@@ -569,6 +637,12 @@
     n.thesisLab ||= {};
     return EssayThesisLab.render({record:n.thesisLab,initial:n.thesis,work:work(),ownTitle:n.own});
   }
+  function draftReaderContext() {
+    const n=note();
+    n.draftReader ||= {};
+    return {record:n.draftReader,topicId:topic().id,topicTitle:topic().title,draft:n.draft,mode:state.mode,
+      getDraft:()=>n.draft,applyDraft:text=>updateEditor('draft',text),save,go};
+  }
   function render() {
     EssayRehearsal.unmount();
     closeOnlineReview();
@@ -576,8 +650,13 @@
     menu.innerHTML=steps.map(([id,title],i)=>'<button type="button" data-act="page-'+id+'"'+(state.page===id?' aria-current="step"':'')+'><span aria-hidden="true">'+(i>0&&i<7?i+' ·':'')+'</span>'+title+'</button>').join('');
     mode.value=state.mode==='orthodox'?'orthodox':'secular';
     root.classList.toggle('ew-in-rehearsal',state.page==='rehearsal');
-    const pages={start,topic:topicScreen,review,drills,read:readingScreen,rehearsal:EssayRehearsal.render,thesisLab};
+    const pages={start,topic:topicScreen,review,drills,read:readingScreen,shelf:()=>EssayShelf.render(shelfContext()),rehearsal:EssayRehearsal.render,thesisLab};
+    pages.draftReader=()=>EssayDraftReader.render(draftReaderContext());
+    pages.paragraphTrial=()=>EssayParagraphTrial.render({record:state.paragraphTrial ||= {}});
     panel.innerHTML=pages[state.page]?pages[state.page]():writing(state.page);
+    if (state.page==='draftReader') EssayDraftReader.mount(panel,draftReaderContext());
+    if (state.page==='paragraphTrial') EssayParagraphTrial.mount(panel,{record:state.paragraphTrial,save,go});
+    if (state.page==='shelf') EssayShelf.mount(panel,shelfContext());
     if (state.page==='thesisLab') EssayThesisLab.mount(panel,{record:note().thesisLab,save});
     if (state.page==='rehearsal') EssayRehearsal.mount(panel,catalog,reviewRehearsal);
     if (panel.querySelector('#ew-revision')) showRevision(state.page);
@@ -620,6 +699,7 @@
   }
   root.addEventListener('input',event=>{
     const el=event.target,key=el.dataset.field;
+    if(el.hasAttribute('data-shelf-source')){argument().source=el.value;save();return;}
     if (el.id==='ew-revision-text') {
       const s=revisionRecord(state.page).session;
       if (s) {s.proposal=el.value;save();}
@@ -675,7 +755,7 @@
     if(el.id==='ew-reading') state.reading=el.value;
     else if(el.id==='ew-mode') state.mode=el.value;
     else if(el.id==='ew-topic') state.active=el.value;
-    else if(el.id==='ew-work') note().work=el.value;
+    else if(el.id==='ew-work'){leaveShelf(note());note().work=el.value;}
     else if(el.id==='ew-drill') state.exercise=el.value;
     else if(el.dataset.check){note().checks[el.dataset.check]=el.checked;save();return;}
     else return;
@@ -693,7 +773,7 @@
       const title=panel.querySelector('#ew-custom').value.trim(); if(!title)return;
       let t=allTopics().find(x=>x.title===title);
       if(!t){t={id:'custom-'+Date.now().toString(36),title,work:'own'};state.custom.push(t);}
-      state.active=t.id; go(state.route==='edit'?'draft':'thesis');return;
+      state.active=t.id; go(pageAfterTopic());return;
     }
     if(event.target.id==='ew-chat'){
       const input=panel.querySelector('#ew-message'), message=input.value.trim(); if(!message)return;
@@ -705,6 +785,8 @@
   root.addEventListener('click',event=>{
     const b=event.target.closest('button[data-act]');if(!b)return;
     const action=b.dataset.act;
+    if(action==='shelf-capture'){captureShelf();return;}
+    if(action==='shelf-return'){leaveShelf(note());go('episode');return;}
     if(action==='answer-check' || action==='drill-check'){checkAnswer();return;}
     if(action==='drill-contrast-0' || action==='drill-contrast-1'){
       const drill=catalog.drills.find(item=>item.id===state.exercise), selected=Number(action.slice(-1));
@@ -716,12 +798,12 @@
     }
     if(action.startsWith('evidence-')){handleEvidence(action);return;}
     if(action==='use-from-book'){
-      note().work=panel.querySelector('#ew-from-book').value;
+      leaveShelf(note());note().work=panel.querySelector('#ew-from-book').value;
       render();save();panel.querySelector('#ew-topic').focus({preventScroll:true});return;
     }
     if(action==='choose-own-book'||action==='restore-topic-book'){
       const own=action==='choose-own-book';
-      note().work=own?'own':topic().work;
+      leaveShelf(note());note().work=own?'own':topic().work;
       render();save();panel.querySelector(own?'#ew-own':'[data-act="choose-own-book"]')?.focus({preventScroll:true});return;
     }
     if(action==='focus-writing'){sourceField(state.page)?.focus();return;}
@@ -737,23 +819,23 @@
     if(action==='reading-apply'){
       const r=catalog.readings.find(x=>x.id===state.reading),detail=(state.readingNotes[r.id]||'').trim();
       if(!detail){panel.querySelector('#ew-reading-status').textContent='Запиши хотя бы одну деталь в поле выше.';return;}
-      state.active=r.topic;state.route='quick';note().work=r.id;
+      state.active=r.topic;state.route='quick';leaveShelf(note());note().work=r.id;
       const a=argument();
       if(!a.episode.includes(detail)) updateEditor('episode',[a.episode,detail].filter(Boolean).join('\n'));
       go('thesis');return;
     }
-    if(action.startsWith('pick-')){state.active=action.slice(5);go(state.route==='edit'?'draft':'thesis');return;}
+    if(action.startsWith('pick-')){state.active=action.slice(5);go(pageAfterTopic());return;}
     if(action.startsWith('page-')){if(action==='page-review')state.reviewKind='draft';go(action.slice(5));return;}
     if(action.startsWith('route-')){
       const route=action.slice(6);
-      if(route==='drills'||route==='read'||route==='rehearsal'||route==='thesisLab'){go(route);return;}
+      if(route==='drills'||route==='read'||route==='rehearsal'||route==='thesisLab'||route==='draftReader'){go(route);return;}
       state.route=route;go('topic');return;
     }
     if(action.startsWith('hint-')){
       const stage=panel.querySelector('[data-stage]').dataset.stage, reason=action.slice(5);
       addTurn(stage,reasons[reason],{assistant:EssayCoach.advise({...context(stage),reason})});return;
     }
-    if(action==='forward-topic'){go(state.route==='edit'?'draft':'thesis');return;}
+    if(action==='forward-topic'){go(pageAfterTopic());return;}
     if(action==='finish-argument'){state.reviewKind='argument';go('review');return;}
     if(action==='download'||action==='download-prompt'){exportText(action==='download-prompt');return;}
     if(action==='snapshot'){
@@ -766,9 +848,17 @@
   // A shared exercise opens with the learner's own saved answer for that card.
   function openLinkedExercise() {
     const drill=catalog.drills.find(d=>location.hash==='#uprazhnenie-'+d.id);
-    if (drill) {
+    if (location.hash==='#polka') {
+      go('shelf');
+    } else if (drill) {
       state.exercise=drill.id;
       go('drills');
+    } else if (location.hash==='#razmetka-chernovika') {
+      go('draftReader');
+    } else if (location.hash==='#pervoe-chtenie') {
+      go('read');
+    } else if (location.hash==='#novaya-tema') {
+      go('paragraphTrial');
     } else if (location.hash==='#utochnit-tezis') {
       go('thesisLab');
     } else return false;

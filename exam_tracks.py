@@ -46,6 +46,9 @@ def essay_workshop_body(personal=False):
         'ANSWER_FEEDBACK': read('answer-feedback.js'),
         'DRILL_CONTRAST': read('drill-contrast.js'),
         'THESIS_LAB': read('thesis-lab.js'),
+        'SHELF': read('shelf.js'),
+        'DRAFT_READER': read('draft-reader.js'),
+        'PARAGRAPH_TRIAL': read('paragraph-trial.js'),
         'INTENTS': read('intent-model.js'),
         'APP': read('workshop.js'),
     }

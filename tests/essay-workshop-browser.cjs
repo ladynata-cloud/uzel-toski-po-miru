@@ -387,6 +387,47 @@ async function exercise(page) {
   await action('route-thesisLab');
   assert.equal(await firstTransfer.textContent(), independent, 'Revising an interpretation preserves the unaided first attempt');
   assert.equal(await labField('after').inputValue(), alternativeReading);
+
+  await start();
+  assert.equal(await panel.locator('.ew-entry-choices button').count(), 2);
+  await action('route-read');
+  await reading.selectOption(selectedReading);
+  await action('shelf-capture');
+  await action('page-shelf');
+  const savedScene = panel.locator('[data-shelf-card]');
+  assert.equal(await savedScene.locator('p.ew-note').textContent(), observation);
+  await savedScene.getByText('Перечитать отрывок', {exact:true}).click();
+  assert.ok((await savedScene.locator('blockquote').innerText()).trim());
+  await action('page-paragraphTrial');
+  const trial = panel.locator('[data-paragraph-trial]');
+  const firstParagraph = 'Миша просит напечатать поправку. Он хочет, чтобы её увидели читатели газеты.';
+  assert.equal(await trial.locator('details, [data-pt-first]').count(), 0);
+  await trial.locator('[data-pt="draft"]').fill(firstParagraph);
+  await trial.locator('[data-pt-action="submit"]').click();
+  await trial.locator('[data-pt="notes"]').fill('Устной поправки у стенда было бы мало.');
+  await page.reload();
+  assert.equal(await trial.locator('[data-pt-first]').textContent(), firstParagraph);
+  assert.equal(await trial.locator('[data-pt="draft"]').count(), 0);
+  assert.ok(await trial.locator('summary').isVisible());
+
+  await start();
+  await action('route-draftReader');
+  const markButton = key => panel.locator('[data-dr-action="'+key+'"]');
+  const withConjunction = 'Герой вернулся, потому что забыл ключи.';
+  await panel.locator('[data-dr-field="source"]').fill(withConjunction);
+  await markButton('next').click();
+  await markButton('missing-deed').click();
+  await markButton('missing-idea').click();
+  await markButton('next').click();
+  const branches = panel.locator('[data-dr-field="branch"]');
+  assert.equal(await branches.count(), 4);
+  assert.equal(await panel.locator('[data-dr-field="branch"]:checked').count(), 0, 'A conjunction must not select the pupil’s revision task');
+  await panel.locator('[data-dr-field="branch"][value="guess"]').check();
+  await markButton('next').click();
+  await panel.locator('[data-dr-field="revision"]').fill(withConjunction+' В тексте причина прямо не указана.');
+  await markButton('finish').click();
+  await markButton('trial').click();
+  assert.equal(await trial.locator('[data-pt-first]').textContent(), firstParagraph, 'Both entries return to the same independent writing');
   assert.deepEqual(errors, [], 'The workshop raised an uncaught browser error');
 }
 
