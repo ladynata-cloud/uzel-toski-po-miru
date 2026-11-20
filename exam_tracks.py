@@ -1,8 +1,10 @@
 """Six practical exam branches, built on separately sourced requirements."""
 import json
+import os
 import re
 from pathlib import Path
 from html import escape as e
+from site_config import assistant_origin
 from quote_sources import quote_block
 from exam_cases import exam_case
 from exam_argumentation import PATH as GUIDE, body as guide_body
@@ -37,6 +39,10 @@ def essay_workshop_body():
         'CATALOG': script_json(catalog),
         'SYSTEM': script_json(read('assistant/system.ru.md')),
         'COACH': read('coach.js'),
+        'ORIGIN': e(assistant_origin(os.environ.get('ESSAY_ASSISTANT_ORIGIN', '')), quote=True),
+        'REVISION': read('revision.js'),
+        'MODELC': read('model-client.js'),
+        'INTENTS': read('intent-model.js'),
         'APP': read('workshop.js'),
     }
     return re.sub(r'\{\{ESSAY_(\w+)\}\}', lambda m: assets[m[1]], read('fragment.html'))

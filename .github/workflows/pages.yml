@@ -30,6 +30,7 @@ jobs:
         env:
           SITE_URL: ${{ steps.pages.outputs.base_url }}
           SITE_ASSISTANT_ORIGIN: ${{ vars.SITE_ASSISTANT_ORIGIN }}
+          ESSAY_ASSISTANT_ORIGIN: ${{ vars.ESSAY_ASSISTANT_ORIGIN }}
         run: |
           python3 build.py
           python3 verify_site.py

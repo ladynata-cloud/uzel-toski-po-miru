@@ -112,6 +112,106 @@
   function history(stage) {
     return turns(stage).map(t=>'<div class="ew-turn"><strong>Ты</strong><p>'+h(t.user)+'</p><strong>Помощник</strong><p>'+h(t.assistant)+'</p></div>').join('');
   }
+  function revisionRecord(stage) {
+    const n = note();
+    const key = (stage === 'episode' || stage === 'link') ? stage+'|'+n.work : stage;
+    n.revisions ||= {};
+    return n.revisions[key] ||= {session:null, last:null};
+  }
+  function sourceField(stage) {
+    return panel.querySelector('#ew-write-'+stage);
+  }
+  function closeOnlineReview() {
+    root.dispatchEvent(new CustomEvent('ew-revision-close'));
+  }
+  function showRevision(stage, message='') {
+    const slot=panel.querySelector('#ew-revision');
+    if (!slot) return;
+    closeOnlineReview();
+    const {session,last}=revisionRecord(stage);
+    const source=sourceField(stage).value;
+    const current=EssayRevision.matches(session,source);
+    const canUndo=last && last.after===source;
+    let form='';
+    if (session) {
+      const question=EssayRevision.question({...context(stage), passage:session.passage});
+      const book=work();
+      const sourceLink=book ? '<p class="ew-small"><a href="'+h(book.url)+'" target="_blank" rel="noopener noreferrer">Сверить сцену с текстом · '+h(book.title)+'</a></p>' : '';
+      form='<div class="ew-coach"><h3>Разбор фразы</h3>'+
+        '<p class="ew-topic" id="ew-revision-original">'+h(session.passage)+'</p>'+
+        '<p id="ew-revision-question">'+h(question)+'</p>'+sourceLink+
+        '<div id="ew-model-help"></div><div class="ew-field"><label for="ew-revision-text">Мой вариант после подсказки</label>'+
+        '<textarea id="ew-revision-text" rows="3">'+h(session.proposal)+'</textarea></div>'+
+        actions('<button type="button" class="ew-primary" data-act="rev-apply"'+(current?'':' disabled')+'>Внести мою правку</button>',button('rev-close','Закрыть разбор'))+'</div>';
+      if (!current) message='Исходный текст изменился. Выдели фразу ещё раз, чтобы внести правку в новое место.';
+    }
+    slot.innerHTML=actions(button('rev-open','Разобрать фразу'),...(canUndo?[button('rev-undo','Отменить мою правку')]:[]))+
+      '<p class="ew-small">Выдели фразу или поставь курсор в нужный абзац.</p>'+
+      '<p id="ew-revision-status" class="ew-small" role="status">'+h(message)+'</p>'+form;
+    if (current) {
+      const book=work();
+      root.dispatchEvent(new CustomEvent('ew-revision-open',{detail:{
+        stage,mode:state.mode,topic:topic().title,workId:book?.id||'',workTitle:selectedTitle(),passage:session.passage
+      }}));
+    }
+  }
+  function updateEditor(stage, value) {
+    if (stage==='episode' || stage==='link') argument()[stage]=value;
+    else note()[stage]=value;
+    if (stage==='draft') {
+      note().checks={};
+      panel.querySelector('#ew-count').textContent=counter(value);
+    }
+  }
+  function handleRevision(action) {
+    const stage=state.page, editor=sourceField(stage), record=revisionRecord(stage);
+    if (action==='rev-open') {
+      const selection=EssayRevision.select(editor.value,editor.selectionStart,editor.selectionEnd);
+      if (selection.message) {
+        // Leave a previously typed alternative intact when the new selection is empty.
+        const status=panel.querySelector('#ew-revision-status');
+        status.textContent=selection.message;editor.focus();return;
+      }
+      if (!EssayRevision.matches(record.session,editor.value) || selection.start!==record.session.start || selection.end!==record.session.end) {
+        record.session=selection;
+      }
+      save();showRevision(stage);
+      panel.querySelector('#ew-revision-text').focus({preventScroll:true});
+      panel.querySelector('#ew-revision-original').scrollIntoView({block:'nearest'});
+      return;
+    }
+    if (action==='rev-close') {
+      record.session=null;save();showRevision(stage);
+      panel.querySelector('[data-act="rev-open"]').focus();return;
+    }
+    if (action==='rev-apply') {
+      const s=record.session;
+      if (!EssayRevision.matches(s,editor.value)) {showRevision(stage);return;}
+      const change=EssayRevision.replace(s,editor.value,s.proposal);
+      if (!change) {
+        panel.querySelector('#ew-revision-status').textContent='Впиши собственное изменение в поле «Мой вариант после подсказки».';
+        panel.querySelector('#ew-revision-text').focus();return;
+      }
+      if (stage==='draft' && note().before===null) {
+        note().before=editor.value;
+        panel.querySelector('#ew-snapshot-status').textContent='Первая версия сохранена. Сравнение доступно в самопроверке.';
+      }
+      editor.value=change.after;
+      updateEditor(stage,change.after);
+      record.last=change;record.session=null;
+      save();showRevision(stage,'Твоя правка внесена.');
+      editor.focus({preventScroll:true});editor.setSelectionRange(change.start,change.start+change.revised.length);
+      return;
+    }
+    if (action==='rev-undo') {
+      const last=record.last;
+      const before=EssayRevision.undo(last,editor.value);
+      if (before===null) {showRevision(stage,'Текст уже изменился.');return;}
+      editor.value=before;updateEditor(stage,before);record.last=null;record.session=null;
+      save();showRevision(stage,'Исходная фраза возвращена.');
+      editor.focus({preventScroll:true});editor.setSelectionRange(last.start,last.start+last.original.length);
+    }
+  }
   function coach(stage) {
     return '<div class="ew-coach" data-stage="'+stage+'"><h3>Помощник</h3><p class="ew-small">Подсказки работают на устройстве. Выбери трудность или задай короткий вопрос.</p>'+
       actions(...Object.entries(reasons).map(([id,title])=>button('hint-'+id,title)))+
@@ -146,10 +246,11 @@
     const previous=stage==='link'?'<div class="ew-text-card"><p><strong>Мой тезис</strong><br>'+h(n.thesis||'Тезис можно дописать на шаге выше.')+'</p><p><strong>Мой эпизод</strong><br>'+h(a.episode||'Можно вернуться к сцене после первой попытки.')+'</p></div>':'';
     const nav={thesis:button('page-episode','Выбрать эпизод',true),episode:button('page-link','Объяснить связь',true),link:state.route==='quick'?button('finish-argument','Собрать мои заметки',true):button('page-draft','Написать черновик',true),draft:button('page-review','Проверить работу',true)}[stage];
     return heading(copy[0],copy[1],routes[state.route])+'<p class="ew-topic">'+h(topic().title)+'</p>'+
-      (stage==='episode'?workPicker():'')+previous+(stage==='draft'?outline():'')+
+      (stage==='episode'?workPicker():'')+previous+
+      (stage==='draft'?'<details><summary>Книга для подсказок · '+h(selectedTitle())+'</summary><div>'+workPicker()+'</div></details>'+outline():'')+
       field(stage,copy[2],copy[3],stage==='draft'?12:4)+
       (stage==='draft'?'<p class="ew-counter" id="ew-count"></p>'+actions(button('snapshot','Сохранить версию перед правкой'))+'<p id="ew-snapshot-status" class="ew-small" role="status">'+(n.before!==null?'Первая версия сохранена. Сравнение доступно в самопроверке.':'')+'</p>':'')+
-      actions(nav)+coach(stage);
+      '<div id="ew-revision"></div>'+actions(nav)+coach(stage);
   }
   function review() {
     const n=note(), quick=state.reviewKind==='argument';
@@ -176,11 +277,13 @@
       field('exercise','Моя редакция',v)+actions(button('drill-check','Проверить мою правку',true))+'<p id="ew-drill-feedback" class="ew-tip" role="status"></p>'+actions(button('page-start','К выбору маршрута'));
   }
   function render() {
+    closeOnlineReview();
     if (!steps.some(([id])=>id===state.page)) state.page='start';
     menu.innerHTML=steps.map(([id,title],i)=>'<button type="button" data-act="page-'+id+'"'+(state.page===id?' aria-current="step"':'')+'><span aria-hidden="true">'+(i>0&&i<7?i+' ·':'')+'</span>'+title+'</button>').join('');
     mode.value=state.mode==='orthodox'?'orthodox':'secular';
     const pages={start,topic:topicScreen,review,drills,read:readingScreen};
     panel.innerHTML=pages[state.page]?pages[state.page]():writing(state.page);
+    if (panel.querySelector('#ew-revision')) showRevision(state.page);
     if(state.page==='topic') bookTopics();
     if(state.page==='draft') panel.querySelector('#ew-count').textContent=counter(note().draft);
   }
@@ -194,12 +297,26 @@
   }
   root.addEventListener('input',event=>{
     const el=event.target,key=el.dataset.field;
+    if (el.id==='ew-revision-text') {
+      const s=revisionRecord(state.page).session;
+      if (s) {s.proposal=el.value;save();}
+      return;
+    }
     if(!key) return;
     if(key==='reading') state.readingNotes[state.reading]=el.value;
     else if(key==='exercise') state.exercises[state.exercise]=el.value;
-    else if(key==='episode'||key==='link') argument()[key]=el.value;
-    else note()[key]=el.value;
-    if(key==='draft'){note().checks={};panel.querySelector('#ew-count').textContent=counter(el.value);}
+    else if (['thesis','episode','link','draft'].includes(key)) {
+      updateEditor(key,el.value);
+      const record=revisionRecord(key);
+      if ((record.session && !record.session.stale) || record.last) {
+        if (record.session) record.session.stale=true;
+        record.last=null;
+        showRevision(key);
+      }
+    } else {
+      note()[key]=el.value;
+      if (key==='own' && revisionRecord(state.page).session) showRevision(state.page);
+    }
     save();
   });
   root.addEventListener('change',event=>{
@@ -233,6 +350,7 @@
   root.addEventListener('click',event=>{
     const b=event.target.closest('button[data-act]');if(!b)return;
     const action=b.dataset.act;
+    if(action.startsWith('rev-')) {handleRevision(action);return;}
     if(action==='reading-apply'){
       const r=catalog.readings.find(x=>x.id===state.reading),detail=(state.readingNotes[r.id]||'').trim();
       if(!detail){panel.querySelector('#ew-reading-status').textContent='Запиши хотя бы одну деталь в поле выше.';return;}
