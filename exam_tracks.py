@@ -6,6 +6,7 @@ from pathlib import Path
 from html import escape as e
 from site_config import assistant_origin
 from quote_sources import quote_block
+from essay_workshop.catalogue import load_catalog
 from exam_cases import exam_case
 from exam_argumentation import PATH as GUIDE, body as guide_body
 from exam_resources import PATH as RESOURCES, route_box, hub_callout, publish as publish_resources
@@ -32,7 +33,7 @@ def essay_workshop_body(personal=False):
     def script_json(value):
         return json.dumps(value, ensure_ascii=False).replace('<', r'\u003c')
 
-    catalog = json.loads(read('catalog.json'))
+    catalog = load_catalog()
     catalog['drills'] = json.loads(read('drills.json'))
     assets = {
         'CSS': read('workshop.css') + '\n' + read('rehearsal.css'),
@@ -47,6 +48,7 @@ def essay_workshop_body(personal=False):
         'DRILL_CONTRAST': read('drill-contrast.js'),
         'THESIS_LAB': read('thesis-lab.js'),
         'SHELF': read('shelf.js'),
+        'THEME_ATLAS': read('theme-atlas.js'),
         'DRAFT_READER': read('draft-reader.js'),
         'PARAGRAPH_TRIAL': read('paragraph-trial.js'),
         'INTENTS': read('intent-model.js'),

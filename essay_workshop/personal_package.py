@@ -1,20 +1,26 @@
 """Create a downloadable, self-contained family edition from the same editor sources."""
+import json
 from pathlib import Path
+from .catalogue import load_catalog
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 HERE = Path(__file__).parent
 
 
-def build_personal_package(destination, body):
+def standalone_workshop(body):
     html = ('<!doctype html><html lang="ru"><head><meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width,initial-scale=1">'
             '<title>Итоговое сочинение · Узел тоски по миру</title>'
             '<style>body{margin:0;background:#f8f7f0}</style></head>'
             '<body><main>' + body + '</main></body></html>')
+    return html.encode('utf-8')
+
+
+def build_personal_package(destination, body):
     assets = {
-        'index.html': html.encode('utf-8'),
+        'index.html': standalone_workshop(body),
         'pamyatka-2026-27.pdf': (HERE / 'pamyatka-2026-27.pdf').read_bytes(),
-        'catalog.json': (HERE / 'catalog.json').read_bytes(),
+        'catalog.json': json.dumps(load_catalog(), ensure_ascii=False, separators=(',', ':')).encode('utf-8'),
         'system.ru.md': (HERE / 'assistant/system.ru.md').read_bytes(),
     }
     for name in ('server.py', 'README.txt', 'start-windows.cmd'):
