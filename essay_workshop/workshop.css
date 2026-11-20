@@ -26,3 +26,15 @@
 .ew [data-answer-result]{overflow-wrap:anywhere}
 .ew .ew-answer-card{margin:.6rem 0;padding:.2rem .85rem;border-inline-start:3px solid var(--deep);background:#f2f5ef}
 .ew .ew-answer-change{border-inline-start:3px solid var(--deep);padding-inline-start:.8rem}
+.ew-entry-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem;margin:1.1rem 0 .8rem}
+.ew .ew-entry-choices .ew-route{padding:1.05rem;align-items:flex-start;border-top:3px solid var(--deep);background:#f2f6ee}
+.ew .ew-entry-choices .ew-route:last-child{border-top-color:var(--rust);background:#faf5ec}
+.ew .ew-entry-choices .ew-route:hover{border-color:var(--deep);background:#e9efe5}
+.ew .ew-entry-choices .ew-route b{font-size:1.28rem}.ew .ew-entry-choices .ew-route small{font-size:1rem;line-height:1.45;margin-top:.45rem}
+.ew .ew-entry-choices .ew-route em{display:none}
+.ew .ew-entry-return button,.ew .ew-entry-tools button{min-height:44px}
+.ew .ew-entry-heading{font-size:1.22rem;margin:1.35rem 0 .45rem}
+.ew .ew-entry-tools{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.2rem}
+.ew .ew-link-help{margin:1rem 0}.ew .ew-link-help h3{font-size:1.1rem}.ew .ew-link-help details{margin-top:0}.ew .ew-link-help summary{padding:.5rem 0}.ew .ew-link-help p{padding-bottom:.6rem}
+@media(max-width:760px){.ew-layout:has([data-ew-entry]) .ew-sidenav{order:1}}
+@media(max-width:520px){.ew-entry-choices{grid-template-columns:1fr;gap:.55rem}.ew .ew-entry-choices .ew-route{padding:.8rem}.ew .ew-entry-tools{gap:.35rem}}
