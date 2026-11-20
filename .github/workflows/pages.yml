@@ -38,7 +38,7 @@ jobs:
           node --check dist/assets/exam-practice.js
           node --check dist/assets/reader-search.js
           node --check dist/assets/reader-workshop.js
-          node --test tests/reader-search.test.cjs tests/reader-workshop.test.cjs tests/workshop-draft.test.cjs
+          node --test tests/reader-search.test.cjs tests/reader-workshop.test.cjs tests/workshop-draft.test.cjs tests/essay-workshop-worldview.test.cjs
       - name: Upload site
         uses: actions/upload-pages-artifact@v4
         with:

@@ -1,7 +1,7 @@
 <style>{{ESSAY_CSS}}</style>
 <div class="ew" id="essay-workshop" data-essay-assistant-origin="{{ESSAY_ORIGIN}}">
   <header class="ew-head">
-    <div><p class="ew-kicker">Узел тоски по миру <span> / </span> 11 класс</p><h1>Итоговое сочинение</h1><p>Выбери, с чем нужна помощь сегодня. Можно начать с одной фразы или принести целый черновик.</p></div>
+    <div><p class="ew-kicker">Узел тоски по миру <span> / </span> 11 класс</p><h1>Итоговое сочинение</h1><p>Выбери книгу и предложи своё прочтение. Можно начать с одной фразы или принести целый черновик.</p></div>
     <aside class="ew-date"><strong>2 декабря 2026</strong><span>Основной день · 3 ч 55 мин</span><a href="#ew-exam-guide">Памятка выпускнику</a></aside>
   </header>
   <noscript>Для работы с черновиком включи JavaScript. <a href="https://fipi.ru/itogovoe-sochinenie">Материалы ФИПИ</a> доступны отдельно.</noscript>
@@ -9,8 +9,9 @@
     <aside class="ew-sidenav">
       <h2>Моя работа</h2>
       <nav id="ew-steps" aria-label="Шаги сочинения"></nav>
-      <div class="ew-mode"><label for="ew-mode">Ракурс подсказок</label>
-        <select id="ew-mode"><option value="secular">Светский</option><option value="orthodox">Православный</option></select></div>
+      <div class="ew-mode"><label for="ew-mode">Какие подсказки показывать?</label>
+        <select id="ew-mode" aria-describedby="ew-mode-help"><option value="secular">Литературный разбор</option><option value="orthodox">Православный ракурс</option></select></div>
+      <p id="ew-mode-help" class="ew-small">Православный комментарий мастерской можно включить по желанию. С любой подсказкой можно спорить.</p>
       <p id="ew-save" class="ew-save" role="status"></p>
     </aside>
     <div class="ew-sheet"><div id="ew-current"></div></div>
