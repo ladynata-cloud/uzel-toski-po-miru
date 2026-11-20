@@ -2,6 +2,7 @@
 from html import escape
 
 from site_config import SITE_ASSISTANT_ORIGIN, SITE_URL
+from reader_workshop import WORKS, workshop_markup
 
 
 def reader_search_body(cards):
@@ -10,18 +11,18 @@ def reader_search_body(cards):
         href = card['url'].removeprefix(SITE_URL) if card['url'].startswith(SITE_URL + '/') else card['url']
         hint = card.get('detail_hint', '')
         hint_html = f'<p class="memory-hint">{escape(hint)}</p>' if hint else ''
+        practice = '<button type="button" class="button secondary memory-practice" hidden>Читать начало вместе, шаг за шагом</button>' if card['id'] in WORKS else ''
         rows.append(f'''<article class="memory-card" id="{escape(card['id'], quote=True)}"
  data-cues="{escape(' '.join(card['cues']), quote=True)}">
 <p class="memory-author">{escape(card["author"])}</p>
 <h2>{escape(card["title"])}</h2>
 <p class="memory-teaser">{escape(card["teaser"])}</p>{hint_html}
+{practice}
 <button type="button" class="button secondary memory-discuss" hidden>Я уже прочитал(а). Обсудить «{escape(card['title'])}»</button>
 <a href="{escape(href, quote=True)}" aria-label="{escape('Открыть разбор «' + card['title'] + '» со спойлерами', quote=True)}">Открыть разбор со спойлерами</a>
 </article>''')
 
-    client = (f'<script data-reader-transport async defer src="{escape(SITE_ASSISTANT_ORIGIN, quote=True)}/client.js"></script>'
-              if SITE_ASSISTANT_ORIGIN else '')
-    return '''<div class="wrap memory-search">
+    body = '''<div class="wrap memory-search">
 <div class="breadcrumb"><a href="/">Главная</a><span>/</span><a href="/chtenie/">Что читать</a><span>/</span>Поиск по памяти</div>
 <header class="page-title"><h1>Найти произведение по памяти</h1>
 <p class="lead">Вспомните героя, место или поступок. В карточках можно узнать книгу, сохранив развязку для первого чтения.</p></header>
@@ -29,8 +30,10 @@ def reader_search_body(cards):
 <p id="memory-mode">Поиск без спойлеров</p>
 <div id="memory-log" role="log" aria-live="polite" aria-relevant="additions" aria-label="Ваш разговор"></div>
 </section>
-<p id="memory-transport" hidden>При отправке реплика передаётся серверу читательского помощника. Поиск во время ввода работает в браузере.</p>
-<form id="memory-form" role="search" hidden>
+WORKSHOP_MARKUP
+<form id="memory-form" role="search" data-assistant-origin="ASSISTANT_ORIGIN" hidden>
+<p id="memory-transport" hidden><label><input type="checkbox" id="memory-server-consent">Отправлять мои реплики серверному помощнику</label>
+Без этого выбора поиск и карточки работают в браузере. Режим «Читать начало вместе» всегда работает на сайте без отправки реплик.</p>
 <label id="memory-label" for="memory-query">Что вам запомнилось?</label>
 <div class="memory-controls">
 <input type="search" id="memory-query" maxlength="300" placeholder="Например, разбирали горницу">
@@ -69,5 +72,17 @@ def reader_search_body(cards):
 .memory-author{color:var(--muted);margin:0}
 .memory-teaser,.memory-hint{margin:.5rem 0}
 .memory-card a{display:inline-block;margin-top:.3rem}
+#reader-workshop{max-width:46rem;border:1px solid var(--line);padding:1rem;margin:1rem 0}
+#reader-workshop h2{font-size:clamp(1.45rem,3vw,1.9rem)}
+#reader-workshop button{white-space:normal;text-align:left;min-height:44px}
+#reader-workshop button[aria-pressed="true"]{outline:2px solid currentColor;outline-offset:2px}
+#reading-source-text{white-space:pre-line}
+#reading-note{width:100%;box-sizing:border-box;padding:.7rem;font:inherit;line-height:1.6;color:var(--ink);background:var(--white);border:1px solid var(--muted);resize:vertical}
+#reading-note-help,#reading-saved{font-size:.94rem}
+#reading-prompt{font-size:1.1rem;line-height:1.7}
+#reading-step{border-top:1px solid var(--line);padding-top:.6rem;margin-top:1rem}
+#reader-workshop :focus-visible{outline:3px solid currentColor;outline-offset:3px}
+.memory-practice{display:block}
 </style>
-''' + client + '<script defer src="/assets/reader-search.js"></script>'
+<script defer src="/assets/reader-workshop.js"></script><script defer src="/assets/reader-search.js"></script>'''
+    return body.replace('WORKSHOP_MARKUP', workshop_markup()).replace('ASSISTANT_ORIGIN', escape(SITE_ASSISTANT_ORIGIN, quote=True))

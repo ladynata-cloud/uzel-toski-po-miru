@@ -11,6 +11,7 @@ from site_config import SITE_URL, BASE_PATH, site_path
 from seo_metadata import HOMEPAGE_ANALYSES, PAGE_METADATA, SEARCH_VERIFICATION
 from articles import load_articles
 from reader_catalogue import DATA_PATH, SAFE_FIELDS, OPTIONAL_FIELDS, SEARCH_PATH, load_cards
+from reader_workshop import packets as workshop_packets
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / 'dist'
@@ -134,7 +135,17 @@ def verify_reader_data(pages, check_target, catalogue, reviews):
     assert cases and len(cases) == len({case['id'] for case in cases})
     for case in cases:
         assert case['turns'] and case['required_behavior'] and set(case['expected_ids']) <= modes[case['mode']].keys()
-    return {'first_reading_cards': len(before), 'after_reading_records': len(after), 'evaluation_cases': len(cases)}
+    workshop = workshop_packets(load_cards())
+    expected_paths = set()
+    for packet in workshop:
+        path = directory / 'workshop' / packet['work_id'] / (packet['mode'] + '.json')
+        expected_paths.add(path)
+        assert json.loads(path.read_text(encoding='utf-8')) == packet
+        assert packet['source']['text'] and packet['source']['scope']
+        check_target(SEARCH_PATH, packet['source']['url'])
+    assert set((directory / 'workshop').glob('work-*/*.json')) == expected_paths
+    return {'first_reading_cards': len(before), 'after_reading_records': len(after),
+            'evaluation_cases': len(cases), 'local_workshop_packets': len(workshop)}
 
 
 def verify():

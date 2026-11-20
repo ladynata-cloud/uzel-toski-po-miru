@@ -235,6 +235,8 @@
   const mode = document.getElementById('memory-mode');
   const actions = document.getElementById('memory-actions');
   const send = document.getElementById('memory-send');
+  const consent = document.getElementById('memory-server-consent');
+  const serverOrigin = form.dataset.assistantOrigin || '';
   const rows = Array.from(list.children);
   const cards = rows.map(row => ({
     id: row.id, url: new URL(location.pathname + '#' + row.id, location.origin).href,
@@ -256,6 +258,20 @@
   let serverState = null;
   let serverInSync = true;
   let timer;
+  let clientLoading;
+
+  function serverClient() {
+    if (!serverOrigin || !consent.checked) return Promise.resolve(null);
+    if (window.SiteDialogueClient?.ask) return Promise.resolve(window.SiteDialogueClient);
+    if (!clientLoading) clientLoading = new Promise(resolve => {
+      const script = document.createElement('script');
+      script.src = serverOrigin + '/client.js';
+      script.onload = () => resolve(window.SiteDialogueClient?.ask ? window.SiteDialogueClient : null);
+      script.onerror = () => resolve(null);
+      document.head.appendChild(script);
+    });
+    return clientLoading;
+  }
 
   function show(visible) {
     const selected = new Set(visible);
@@ -293,6 +309,8 @@
 
   function firstMode(keep = []) {
     cancelResponse();
+    window.ReaderWorkshop?.close();
+    form.hidden = false;
     work = null;
     record = null;
     paragraph = -1;
@@ -313,6 +331,8 @@
 
   async function discuss(i) {
     if (work === i && record) { field.focus(); return; }
+    window.ReaderWorkshop?.close();
+    form.hidden = false;
     cancelResponse();
     const token = revision;
     const card = cards[i];
@@ -385,7 +405,9 @@
     const local = message('Читательский помощник', result.text, result.links);
     field.value = '';
     field.focus();
-    const client = window.SiteDialogueClient;
+    if (!serverOrigin || !consent.checked) {serverInSync = false; return;}
+    const client = await serverClient();
+    if (token !== revision || !consent.checked) return;
     if (!client?.ask || !serverInSync) {serverInSync = false; return;}
     const controller = new AbortController();
     request = controller;
@@ -431,9 +453,22 @@
     const button = row.querySelector('.memory-discuss');
     button.hidden = false;
     button.addEventListener('click', () => discuss(i));
+    const practice = row.querySelector('.memory-practice');
+    if (practice && window.ReaderWorkshop) {
+      practice.hidden = false;
+      practice.addEventListener('click', () => {
+        firstMode([i]);
+        form.hidden = true;
+        mode.textContent = 'Читаем фрагмент вместе';
+        status.textContent = '';
+        window.ReaderWorkshop.open({id: cards[i].id, title: cards[i].title});
+      });
+    }
   });
+  document.addEventListener('reader-workshop:exit', () => {firstMode(); field.focus();});
+  consent.addEventListener('change', () => {firstMode(); field.focus();});
   document.getElementById('memory-dialogue').hidden = false;
-  document.getElementById('memory-transport').hidden = !document.querySelector('script[data-reader-transport]');
+  document.getElementById('memory-transport').hidden = !serverOrigin;
   form.hidden = false;
   firstMode();
 })();

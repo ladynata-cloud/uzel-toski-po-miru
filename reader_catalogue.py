@@ -5,6 +5,7 @@ from pathlib import Path
 
 from reader_search import reader_search_body
 from reader_sources import after_reading_records
+from reader_workshop import publish_workshop
 from site_config import SITE_URL
 
 SEARCH_PATH = '/poisk-po-pamyati/'
@@ -43,6 +44,7 @@ def load_cards():
 
 def publish_reader_catalogue(page, output, lessons):
     cards = load_cards()
+    publish_workshop(output, cards)
     page(SEARCH_PATH, 'Найти произведение по памяти',
          'Поиск по герою, месту и поступку. Короткие карточки для первого чтения и ссылки на литературные разборы.',
          reader_search_body(cards), active='reading')
