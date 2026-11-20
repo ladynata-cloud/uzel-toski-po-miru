@@ -1,8 +1,10 @@
 """Six practical exam branches, built on separately sourced requirements."""
 import json
+import os
 import re
 from pathlib import Path
 from html import escape as e
+from site_config import assistant_origin
 from quote_sources import quote_block
 from exam_cases import exam_case
 from exam_argumentation import PATH as GUIDE, body as guide_body
@@ -15,9 +17,35 @@ for item in DATA:
     for lesson in item['lessons']:
         lesson['title'] = re.sub(r'^\d+\.\s*', '', lesson['title'])
 TRACKS = {r['slug']: r for r in DATA}
+ESSAY_WORKSHOP = '/k-sochineniyu/itogovoe/pomoshchnik/'
 ORDER = ['sobesedovanie', 'oge-russkiy', 'oge-literatura', 'itogovoe', 'ege-russkiy', 'ege-literatura']
 LABELS = dict(zip(ORDER, ['Собеседование', 'ОГЭ · русский', 'ОГЭ · литература', 'Итоговое сочинение', 'ЕГЭ · русский', 'ЕГЭ · литература']))
 READING = dict(zip(ORDER, ['sobesedovanie', 'russkiy-yazyk', 'oge-literatura', 'itogovoe', 'russkiy-yazyk', 'ege-literatura']))
+
+
+def essay_workshop_body():
+    directory = BASE / 'essay_workshop'
+
+    def read(name):
+        return (directory / name).read_text(encoding='utf-8')
+
+    def script_json(value):
+        return json.dumps(value, ensure_ascii=False).replace('<', r'\u003c')
+
+    catalog = json.loads(read('catalog.json'))
+    catalog['drills'] = json.loads(read('drills.json'))
+    assets = {
+        'CSS': read('workshop.css'),
+        'CATALOG': script_json(catalog),
+        'SYSTEM': script_json(read('assistant/system.ru.md')),
+        'COACH': read('coach.js'),
+        'ORIGIN': e(assistant_origin(os.environ.get('ESSAY_ASSISTANT_ORIGIN', '')), quote=True),
+        'REVISION': read('revision.js'),
+        'MODELC': read('model-client.js'),
+        'INTENTS': read('intent-model.js'),
+        'APP': read('workshop.js'),
+    }
+    return re.sub(r'\{\{ESSAY_(\w+)\}\}', lambda m: assets[m[1]], read('fragment.html'))
 
 
 def links(items):
@@ -41,6 +69,7 @@ def home_section():
         groups.append(f'<div><h3>{grade} класс</h3><ul>{entries}</ul></div>')
     return f'''<section class="home-exams home-section">
     <h2>Подготовка к экзаменам</h2>
+    <p>Итоговое сочинение в 11 классе · <a class="button" href="{ESSAY_WORKSHOP}">Мне нужно подготовиться</a></p>
     <div class="home-exam-routes">{''.join(groups)}</div>
     <ul class="home-index-links">
       <li><a href="/k-sochineniyu/">Обзор экзаменационных маршрутов</a></li>
@@ -77,7 +106,9 @@ def route_body(route, track):
     pitfalls = ''.join(f'<li>{e(x)}</li>' for x in track['pitfalls'])
     lens, repair = track['lens'], track['repair']
     prayer_note = '<p class="fine">Слова святителя относятся к молитве. С вниманием к тексту мы сопоставляем их по аналогии; это толкование мастерской.</p>' if route['quote'] == 'vnimanie' else ''
-    return f'''<div class="wrap"><div class="breadcrumb"><a href="/k-sochineniyu/">К экзаменам</a><span>/</span>{e(route['stage'])}</div><header class="page-title"><p class="eyebrow">{e(route['stage'])} · 6 занятий и итоговая тренировка</p><h1>{e(route['title'])}</h1><p class="lead">{e(track['summary'])}</p></header>{nav(slug)}<div class="reading-layout"><nav class="reading-nav" aria-label="В этой ветке"><p class="eyebrow">Подготовка</p><a href="#format">Что требуется</a><a href="#materials">Документы и задания</a><a href="#lessons">Шесть занятий</a><a href="#lens">Православное прочтение</a><a href="#repair">Как улучшить ответ</a><a href="#worked-case">Развёрнутый пример</a><a href="#practice">Мой черновик</a><a href="#sources">Источники</a></nav><article class="article exam-article">
+    workshop_link = (f'<p><a class="button" href="{ESSAY_WORKSHOP}">Открыть помощника по итоговому сочинению</a></p>'
+                     if slug == 'itogovoe' else '')
+    return f'''<div class="wrap"><div class="breadcrumb"><a href="/k-sochineniyu/">К экзаменам</a><span>/</span>{e(route['stage'])}</div><header class="page-title"><p class="eyebrow">{e(route['stage'])} · 6 занятий и итоговая тренировка</p><h1>{e(route['title'])}</h1><p class="lead">{e(track['summary'])}</p>{workshop_link}</header>{nav(slug)}<div class="reading-layout"><nav class="reading-nav" aria-label="В этой ветке"><p class="eyebrow">Подготовка</p><a href="#format">Что требуется</a><a href="#materials">Документы и задания</a><a href="#lessons">Шесть занятий</a><a href="#lens">Православное прочтение</a><a href="#repair">Как улучшить ответ</a><a href="#worked-case">Развёрнутый пример</a><a href="#practice">Мой черновик</a><a href="#sources">Источники</a></nav><article class="article exam-article">
 <section id="format"><h2>Что предстоит сделать</h2><p>{e(track['format'])}</p><div class="context-note">{e(track['version_note'])}</div><dl class="exam-facts">{facts}</dl><p><strong>Начните с короткой попытки:</strong> {e(track['lessons'][0]['task'])} Сохраните её и сравните со своей работой после шестого занятия.</p></section>
 {route_box(slug)}
 {lessons_html(track)}
@@ -93,7 +124,10 @@ def route_body(route, track):
 def publish(page, routes):
     by_slug = {r['slug']: r for r in routes}
     page('/k-sochineniyu/', 'Подготовка к экзаменам: шесть веток', 'Собеседование, ОГЭ по русскому и литературе, итоговое сочинение, ЕГЭ по русскому и литературе: 36 занятий с практикой и разбором.', hub(), active='exam')
-    paths = [GUIDE] + publish_resources(page)
+    page(ESSAY_WORKSHOP, 'Помощник по итоговому сочинению',
+         'Тренажёр для 11 класса. Выберите тему, разберите эпизод и проверьте свой черновик. Доступны светское и православное прочтения.',
+         essay_workshop_body(), active='exam')
+    paths = [GUIDE, ESSAY_WORKSHOP] + publish_resources(page)
     for slug in ORDER:
         route = by_slug[slug]
         path = f'/k-sochineniyu/{slug}/'
@@ -104,7 +138,7 @@ def publish(page, routes):
 
 
 def hub():
-    return '''<div class="wrap"><header class="page-title"><p class="eyebrow">9 и 11 классы · Устная речь и письменная работа</p><h1>К экзаменам —<br>через понимание текста</h1><p class="lead">Научиться отвечать по существу, находить доказательства, говорить понятно и редактировать написанное. Выберите свой экзамен: у каждого свой порядок подготовки.</p></header><div class="catalogue-intro"><p>Не нужно начинать с большого сочинения. Сначала попробуем ответить на один вопрос, потом объясним один эпизод и свяжем два наблюдения. Так постепенно появится целая работа, которую вы умеете написать самостоятельно.</p><div class="context-note"><strong>Требования проверены 9 октября 2026 года.</strong> ОГЭ, ЕГЭ и собеседование — по опубликованным ФИПИ проектам 2027 года. Итоговое сочинение — по материалам 2026/27 учебного года. Статус проекта сохранён; после утверждения инструкции могут уточняться.</div></div>''' + hub_callout() + cards() + '''<article class="prose"><section><h2>Где нужно писать сочинение?</h2><div class="table-scroll"><table class="comparison-table"><thead><tr><th>Испытание</th><th>Устная или письменная работа</th></tr></thead><tbody>
+    return '''<div class="wrap"><header class="page-title"><p class="eyebrow">9 и 11 классы · Устная речь и письменная работа</p><h1>К экзаменам —<br>через понимание текста</h1><p class="lead">Научиться отвечать по существу, находить доказательства, говорить понятно и редактировать написанное. Выберите свой экзамен: у каждого свой порядок подготовки.</p></header><div class="catalogue-intro"><p>Не нужно начинать с большого сочинения. Сначала попробуем ответить на один вопрос, потом объясним один эпизод и свяжем два наблюдения. Так постепенно появится целая работа, которую вы умеете написать самостоятельно.</p><div class="context-note"><strong>Требования проверены 9 октября 2026 года.</strong> ОГЭ, ЕГЭ и собеседование — по опубликованным ФИПИ проектам 2027 года. Итоговое сочинение — по материалам 2026/27 учебного года. Статус проекта сохранён; после утверждения инструкции могут уточняться.</div></div>''' + f'<p><a class="button" href="{ESSAY_WORKSHOP}">Начать тренировку итогового сочинения</a></p>' + hub_callout() + cards() + '''<article class="prose"><section><h2>Где нужно писать сочинение?</h2><div class="table-scroll"><table class="comparison-table"><thead><tr><th>Испытание</th><th>Устная или письменная работа</th></tr></thead><tbody>
 <tr><th>Собеседование</th><td>Устно: чтение, беседа по тексту и самостоятельный монолог.</td></tr><tr><th>ОГЭ по русскому</th><td>Сжатое изложение и одно сочинение из трёх предложенных вариантов. Здесь готовимся к этим двум частям.</td></tr><tr><th>ОГЭ по литературе</th><td>Развёрнутые ответы, сопоставление и сочинение на выбранную литературную тему.</td></tr><tr><th>Итоговое сочинение</th><td>Самостоятельное рассуждение с литературной аргументацией. Это отдельная работа, не задание ЕГЭ.</td></tr><tr><th>ЕГЭ по русскому</th><td>Сочинение по исходному тексту: позиция автора, комментарий, своё обоснованное отношение.</td></tr><tr><th>ЕГЭ по литературе</th><td>Анализ, сопоставительные ответы и большое сочинение на литературную тему.</td></tr></tbody></table></div></section>
 <section><h2>Как мы помогаем пройти этот путь</h2><ol><li><strong>Короткая первая попытка.</strong> Она покажет конкретную трудность: найти мысль, выбрать пример, объяснить связь или связно произнести ответ.</li><li><strong>Шесть занятий.</strong> У каждого — задача, материал, подсказка и понятный признак готовности. Можно остановиться на трудном шаге.</li><li><strong>Разбор и редактура.</strong> Сравниваем слабый и улучшенный ответ, затем проверяем развёрнутый пример. Переписываем собственный неудачный фрагмент.</li><li><strong>Целая работа.</strong> Выполняем итоговую тренировку и проверяем её вместе с учителем. Сохраняем черновик, чтобы видеть своё продвижение.</li></ol><p>За один подход достаточно одного занятия. Когда основные действия станут понятны, переходите к полной официальной демоверсии своей дисциплины. Эта мастерская не обещает автоматического балла и не заменяет тестовую подготовку по русскому языку.</p></section>
 <section id="tradition"><h2>Где здесь православная мысль?</h2><p>Она помогает задавать вопросы о совести, свободе, милосердии и ответственности. Экзаменационное доказательство строится на тексте: что человек сделал, как это показано, почему эпизод подтверждает наш вывод. В изложение нельзя добавлять собственное толкование; в сочинении важно понимать, где говорит автор, а где вы.</p><p><a class="button secondary" href="''' + GUIDE + '''">Как обосновать вывод через православное прочтение</a></p><p>Духовную цитату не требуется вставлять в каждый ответ. Религиозное согласие не является критерием оценки. Уместная, точная и объяснённая мысль ценнее формулы, которой пытаются закрыть любой вопрос.</p></section>

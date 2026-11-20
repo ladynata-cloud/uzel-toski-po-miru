@@ -60,6 +60,7 @@ jobs:
         env:
           SITE_URL: http://127.0.0.1:8074
           SITE_ASSISTANT_ORIGIN: https://assistant.invalid
+          ESSAY_ASSISTANT_ORIGIN: https://essay-assistant.invalid
         run: |
           python3 build.py
           python3 verify_site.py
@@ -87,6 +88,8 @@ jobs:
                   time.sleep(0.2)
           PY
           NODE_PATH="$RUNNER_TEMP/reader-browser-deps/node_modules" READER_ARTIFACT_DIR="$RUNNER_TEMP/reader-browser" node tests/reader-browser-smoke.cjs
+          NODE_PATH="$RUNNER_TEMP/reader-browser-deps/node_modules" node tests/essay-workshop-browser.cjs
+          NODE_PATH="$RUNNER_TEMP/reader-browser-deps/node_modules" node tests/essay-workshop-integration.cjs
       - name: Save browser evidence
         if: always()
         uses: actions/upload-artifact@v4
