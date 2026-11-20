@@ -145,11 +145,22 @@
       button('route-quick','Подобрать аргумент к теме')+button('route-thesisLab','Уточнить свой тезис')+
       button('route-drills','Потренировать отдельную правку')+button('route-edit','Открыть редактор моей работы')+
       button('route-full','Написать целое сочинение')+button('route-rehearsal','Репетиция без подсказок')+'</div></div>'+
+      fullReviewControls(false)+
       '<p class="ew-small"><a href="https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/trenazher-gigachat.zip">Для родителей · скачать тренажёр с подключением своего GigaChat API (ZIP)</a></p>';
   }
   function pageAfterTopic() {
     if (state.route==='draftReader') return 'draftReader';
     return state.route==='edit'?'draft':'thesis';
+  }
+  function fullReviewControls(withDraft) {
+    const published='https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/proverka-sochineniya.html';
+    const hosted=/^https?:$/.test(location.protocol) && /\/pomoshchnik\/(?:index\.html)?$/.test(location.pathname);
+    const href=hosted?'proverka-sochineniya.html':published;
+    if (!withDraft || !hosted) {
+      return '<p><a href="'+h(href)+'">Проверить сочинение целиком</a></p>';
+    }
+    return actions(button('open-full-review','Проверить это сочинение целиком'))+
+      '<p id="ew-review-transfer" class="ew-small" role="status"></p>';
   }
   function topicScreen() {
     const groups = [...new Set(catalog.topics.map(t=>t.section))];
@@ -495,7 +506,7 @@
       answerControls(stage,copy[3])+(stage==='episode'?shelfControls():stage==='link'?shelfCurrent():'')+
       (stage==='thesis'?actions(button('page-thesisLab','Уточнить свой тезис на примере')):'')+
       (stage==='draft'?'<p class="ew-counter" id="ew-count"></p>'+countOptions()+actions(button('snapshot','Сохранить версию перед правкой'))+'<p id="ew-snapshot-status" class="ew-small" role="status">'+(n.before!==null?'Первая версия сохранена. Сравнение доступно в самопроверке.':'')+'</p>':'')+
-      '<div id="ew-revision"></div>'+actions(nav)+coach(stage);
+      '<div id="ew-revision"></div>'+actions(nav)+(stage==='draft'?fullReviewControls(true):'')+coach(stage);
   }
   const evidenceTasks = {
     position:{title:'Мой ответ на вопрос темы',criterion:'К1',hint:'Что ты сам отвечаешь на вопрос темы? Сформулируй ответ в одном предложении.'},
@@ -588,7 +599,7 @@
       (n.before!==null?'<details><summary>Сравнить версии</summary><div><p><strong>До правки</strong></p><p class="ew-note">'+h(n.before)+'</p><p><strong>После правки</strong></p><p class="ew-note">'+h(n.draft)+'</p></div></details>':'');
     return heading(quick?'Мой литературный аргумент':'Самопроверка',text)+body+
       actions(button('page-draft',quick?'Перейти к полному сочинению':'Вернуться к правке',true),button(quick?'page-paragraphTrial':'page-draftReader',quick?'Попробовать абзац на новую тему':'Разметить мой черновик'),button('download','Скачать мою работу (.txt)'))+
-      externalPacket();
+      (quick?'':fullReviewControls(true))+externalPacket();
   }
   function counter(value) {
     const total=EssayCoach.countWords(value,note().draftHeading);
@@ -785,6 +796,20 @@
   root.addEventListener('click',event=>{
     const b=event.target.closest('button[data-act]');if(!b)return;
     const action=b.dataset.act;
+    if(action==='open-full-review'){
+      const n=note(), target='proverka-sochineniya.html';
+      const data={topic:topic().title,essay:n.draft};
+      try {
+        sessionStorage.setItem('uzel.essay-review.handoff.v1',JSON.stringify(data));
+        location.assign(target+'#iz-masterskoy');
+      } catch {
+        const help=panel.querySelector('#ew-review-transfer');
+        help.textContent='Браузер не разрешил перенести работу. Скопируй черновик и ';
+        const link=document.createElement('a');
+        link.href=target;link.textContent='открой страницу проверки';help.append(link);
+      }
+      return;
+    }
     if(action==='shelf-capture'){captureShelf();return;}
     if(action==='shelf-return'){leaveShelf(note());go('episode');return;}
     if(action==='answer-check' || action==='drill-check'){checkAnswer();return;}
