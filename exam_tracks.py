@@ -35,13 +35,14 @@ def essay_workshop_body(personal=False):
     catalog = json.loads(read('catalog.json'))
     catalog['drills'] = json.loads(read('drills.json'))
     assets = {
-        'CSS': read('workshop.css'),
+        'CSS': read('workshop.css') + '\n' + read('rehearsal.css'),
         'CATALOG': script_json(catalog),
         'SYSTEM': script_json(read('assistant/system.ru.md')),
         'COACH': read('coach.js'),
         'ORIGIN': 'personal' if personal else e(assistant_origin(os.environ.get('ESSAY_ASSISTANT_ORIGIN', '')), quote=True),
         'REVISION': read('revision.js'),
         'MODELC': read('model-client.js'),
+        'REHEARSAL': read('rehearsal.js'),
         'INTENTS': read('intent-model.js'),
         'APP': read('workshop.js'),
     }
