@@ -4,7 +4,7 @@ const EssayAnswerFeedback = (() => {
   'use strict';
 
   const nextStep = {
-    reading:'Выпиши один предмет, жест или звук из отрывка, который привлёк твоё внимание.',
+    reading:'Назови один предмет, жест или звук в этой сцене, который привлёк твоё внимание.',
     thesis:'Ответь на вопрос темы так, как ответил бы собеседнику одним предложением.',
     episode:'Назови героя и одно его действие, которое читатель может найти в книге.',
     link:'Возьми одну деталь своего эпизода и объясни, что по ней можно понять о твоей мысли.',
@@ -62,13 +62,14 @@ const EssayAnswerFeedback = (() => {
   function inspect(context={}) {
     const {work,reading,drill}=context;
     const stage=({read:'reading',drill:'exercise',review:'draft'})[context.stage] || context.stage || 'draft';
+    const paraphrase=stage==='reading' && reading && (reading.kind==='scene'||!reading.quote?.trim());
     const topic=typeof context.topic==='string'?context.topic:context.topic?.title;
     const text=String(context.text ?? '').trim();
     const words=norm(text);
     const next=stage==='thesis'?topicQuestion(topic):nextStep[stage] || nextStep.draft;
     if (!words || !/\p{L}/u.test(text)) return finding('empty',text?'В поле пока только числа или знаки.':'В этом поле пока пусто.',next,text);
     if (/^(?:(?:я|пока|я пока) )?(?:не знаю|не помню|не понимаю|не могу придумать|не знаю что (?:написать|сказать))$/u.test(words)) {
-      return finding('stuck','Ты указал, где работа остановилась.',stage==='reading' || stage==='episode'?'Посмотри в отрывке, что герой держит, слышит или делает, и запиши одну подробность.':next,text);
+      return finding('stuck','Ты указал, где работа остановилась.',stage==='reading' || stage==='episode'?'Вспомни, что происходит в этой сцене. Какую подробность ты мог бы описать своими словами?':next,text);
     }
     if (/^(?:я (?:считаю|думаю|полагаю)(?: что)?|мне кажется(?: что)?|на мой взгляд|по моему мнению|потому что|так как|этот пример (?:показывает|доказывает)(?: что)?|таким образом)$/u.test(words)) {
       return finding('unfinished','Вся запись занимает только вводные слова. Мысль после них ещё можно дописать.',next,text);
@@ -83,7 +84,10 @@ const EssayAnswerFeedback = (() => {
     }
     const parts=text.match(/[^.!?…\n]+[.!?…]*/gu)?.map(s=>s.trim()).filter(Boolean) || [text];
     const last=parts[parts.length-1];
-    if (stage==='reading' && reading && sourceContains(reading.quote,words,2)) {
+    if (paraphrase && words===norm(reading.context)) {
+      return finding('summary-echo','В записи повторён пересказ мастерской.','Какую деталь ты выбрал бы сам? Запиши своими словами, почему она оказалась важной.',text);
+    }
+    if (stage==='reading' && !paraphrase && reading && sourceContains(reading.quote,words,2)) {
       if (words===norm(reading.quote)) return finding('source-echo','Ты перенёс весь показанный отрывок.','Выбери один предмет, жест или два-три слова и напиши, почему ты их заметил.',text);
       return finding('source-detail','Эти слова есть в показанном отрывке. Ты выбрал деталь для наблюдения.','Допиши своими словами, почему ты выделил именно эту деталь.',text);
     }
@@ -119,6 +123,7 @@ const EssayAnswerFeedback = (() => {
         /(?:^| )сначала /u.test(words) && / (?:потом|затем|после этого) /u.test(words)) {
       return finding('sequence','В записи отмечен порядок событий, от первого действия к следующему.','Выбери одно действие из этой последовательности. Что изменится в твоём рассуждении, если его убрать?',parts.find(s=>/(?:^| )(?:потом|затем|после этого) /u.test(norm(s))) || last);
     }
+    if (paraphrase) return finding('reader-check','Сравни своё наблюдение с эпизодом на карточке.','Как выбранная деталь помогает тебе ответить на вопрос к этой сцене? Слова автора при необходимости можно сверить по ссылке на источник.',last);
     if (stage==='reading') return finding('reader-check','Сопоставь свою запись со строками над ней.','Какое слово из отрывка поможет другому читателю увидеть то, что заметил ты?',last);
     if (stage==='episode') return finding('reader-check','Эту часть твоей записи читатель может попробовать найти в книге.','Какую подробность из этой фразы можно сверить с текстом произведения?',last);
     if (stage==='link') {

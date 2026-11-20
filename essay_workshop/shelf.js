@@ -45,7 +45,7 @@ const EssayShelf = (() => {
   function add(value) {
     const title=clean(value.title),source=clean(value.source),observation=clean(value.observation);
     if(!title) return {message:'Укажи название произведения.'};
-    if(!observation) return {message:'Запиши, что именно ты заметил в тексте.'};
+    if(!observation) return {message:'Запиши, что именно ты заметил в сцене.'};
     if(!source) return {message:'Укажи, где найти это место: главу, страницу, издание или ссылку.'};
     const bookId=value.bookId||'own', quote=clean(value.quote);
     const previous=list().find(c=>c.bookId===bookId && c.title===title && c.source===source &&
@@ -95,14 +95,14 @@ const EssayShelf = (() => {
     return '<section id="ew-shelf"><h2 id="ew-title" tabindex="-1">Моя полка</h2>'+
       '<p class="ew-sub">Сохрани поступок, реплику или деталь из книги. Позже можно взять ту же сцену для другой темы и объяснить её по-новому.</p>'+
       '<p data-shelf-status role="status" class="ew-small"></p>'+
-      (!cards.length?'<p>Пока здесь пусто. Можно добавить сцену из своей книги или начать с короткого отрывка.</p>':'')+
+      (!cards.length?'<p>Пока здесь пусто. Можно добавить сцену из своей книги или выбрать занятие на книжной полке.</p>':'')+
       '<details data-shelf-add><summary>Добавить сцену из своей книги</summary><div><form data-new-scene>'+
       '<label for="ew-shelf-book">Книга и автор</label><input name="book" id="ew-shelf-book" required>'+
       '<label for="ew-shelf-observation">Какую сцену я хочу запомнить?</label><textarea name="observation" id="ew-shelf-observation" required rows="3"></textarea>'+
       '<label for="ew-shelf-quote">Короткая цитата из книги (по желанию)</label><textarea name="quote" id="ew-shelf-quote" rows="2"></textarea>'+
       '<label for="ew-shelf-source">Где найти эту сцену?</label><input name="source" id="ew-shelf-source" placeholder="Глава, страница, издание или ссылка" required>'+
       '<div class="ew-actions"><button class="ew-primary" type="submit">Сохранить сцену</button></div></form></div></details>'+
-      (cards.length?'<div class="ew-actions">'+btn('export','Скачать карточки (.txt)')+'</div>':'<div class="ew-actions"><button type="button" data-act="page-read">Открыть первое чтение</button></div>')+
+      (cards.length?'<div class="ew-actions">'+btn('export','Скачать карточки (.txt)')+'</div>':'<div class="ew-actions"><button type="button" data-act="page-library">Открыть книжную полку</button></div>')+
       '<div data-shelf-list>'+cards.map(c=>cardMarkup(c,topics,active)).join('')+'</div>'+
       '<div class="ew-actions"><button type="button" data-act="page-paragraphTrial">Абзац на новую тему</button></div></section>';
   }

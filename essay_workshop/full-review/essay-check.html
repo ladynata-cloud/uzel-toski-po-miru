@@ -13,6 +13,9 @@
 pre{max-height:24rem;overflow-y:auto}
 .share-preview{margin:.4rem 0;padding:.7rem .85rem;border-left:3px solid #9db7a6;background:#f2f5ee}.share-preview p{white-space:pre-wrap;overflow-wrap:anywhere}.share-preview p+p{margin-top:.5rem}.share-body{max-height:20rem;overflow:auto}
 .guide-image{display:block;width:min(100%,768px);height:auto;margin:.6rem 0;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.shelf-result{border-top:1px solid var(--line);padding:.4rem 0}.shelf-result .check{margin:.32rem 0}.shelf-result details{margin:0 0 .35rem 1.75rem}.shelf-result summary{font-size:.9rem}.shelf-result p{margin:.25rem 0}.shelf-results{margin-top:.6rem;max-height:27rem;overflow-y:auto}.shelf-picked{margin:.3rem 0;color:var(--muted);font-size:.93rem}.preview-card{margin:.6rem 0;padding:.55rem .75rem;border-left:3px solid var(--line)}.preview-card p{margin:.25rem 0}
+#topic-picker select{max-width:100%;font:inherit;color:var(--ink);background:white;border:1px solid #91a298;border-radius:6px;padding:.4rem .6rem;margin-bottom:.6rem}
+.topic-match{border-top:1px solid var(--line);padding:.55rem 0}.topic-match button{display:block;width:100%;text-align:left}.topic-match .small{display:block;margin-top:.25rem}
 </style>
 </head>
 <body>
@@ -22,15 +25,36 @@ pre{max-height:24rem;overflow-y:auto}
 <section class="panel" aria-labelledby="writing-title">
 <h2 id="writing-title">Моя работа</h2>
 <div class="field"><label for="topic">Тема сочинения</label><input id="topic" maxlength="500" placeholder="Перенеси сюда точную формулировку темы"></div>
+<details id="topic-picker"><summary>Выбрать тему из каталога</summary>
+<label for="topic-kind">Какие темы показать?</label>
+<select id="topic-kind"><option value="all">Все темы</option><option value="public">Опубликованные темы</option><option value="author">Авторские темы «Узла»</option></select>
+<label for="topic-search">Поиск по словам темы или названию источника</label>
+<input id="topic-search" type="search" placeholder="Например, дружба или память" autocomplete="off">
+<p class="small" id="topic-count" role="status"></p>
+<div id="topic-results" class="shelf-results" aria-label="Найденные темы"></div>
+<button id="topic-more" type="button" hidden>Показать ещё темы</button>
+<div id="topic-confirm" class="insight" hidden><h3>Заменить тему в редакторе?</h3>
+<p>Сейчас в работе</p><p id="topic-old"></p><p>Выбранная тема</p><p id="topic-new"></p>
+<div class="buttons"><button id="topic-replace" type="button">Заменить тему</button><button id="topic-keep" type="button">Оставить мою тему</button></div></div>
+</details>
+<p class="status" id="topic-picked" role="status"></p>
 <div class="field"><label for="essay">Мой черновик</label><textarea class="write" id="essay" rows="10" placeholder="Напиши или вставь сюда свой текст"></textarea></div>
 <div class="meta"><span id="count">Слов в тексте, примерно: 0</span><span id="saved" role="status"></span></div>
+<details id="book-shelf"><summary>Полка произведений</summary>
+<p>Здесь можно вспомнить эпизод и выбрать до двух карточек для разбора. Если пишешь о своей книге, назови её в черновике и оставь выбор пустым.</p>
+<label for="book-search">Найти автора, название или деталь эпизода</label>
+<input id="book-search" type="search" placeholder="Например, Куприн или блюдце">
+<p id="shelf-picked" class="shelf-picked" role="status"></p>
+<button type="button" id="shelf-clear" hidden>Продолжить без карточек</button>
+<div class="shelf-results" id="book-list" aria-label="Произведения"></div>
+</details>
 <div class="buttons"><button id="local-check" type="button" class="primary">Проверить самостоятельно</button><button id="download" type="button">Скачать работу в TXT</button></div>
 <p class="small">Эти действия доступны без интернета.</p>
 <div id="import-conflict" class="insight" hidden>
 <h3>Открыть другую работу?</h3><p id="import-info"></p><p>В редакторе уже есть твой текст. При замене программа предложит скачать его отдельным файлом.</p>
 <div class="buttons"><button id="import-apply" type="button">Скачать прежнюю и открыть другую</button><button id="import-keep" type="button">Оставить текущую работу</button></div></div>
-<details><summary>Перенести работу в домашнюю копию</summary>
-<p>Скачай файл с темой и черновиком. Открой эту страницу в домашней программе и выбери в ней сохранённый файл.</p>
+<details id="draft-transfer"><summary>Перенести работу в домашнюю копию</summary>
+<p>Скачай файл с темой, черновиком и выбором книг. Открой его в новой копии страницы через поле ниже.</p>
 <div class="buttons"><button id="transfer-save" type="button">Скачать для переноса (.json)</button></div>
 <label for="transfer-file">Открыть сохранённую работу (.json)</label><input type="file" id="transfer-file" accept=".json,application/json">
 <p id="transfer-status" class="status" role="status"></p></details>
@@ -41,7 +65,8 @@ pre{max-height:24rem;overflow-y:auto}
 <p>GigaChat увидит тему и весь черновик. Убери фамилию, школу и другие личные сведения, если они попали в текст. Можно отправить и один абзац.</p>
 <h3>Текст для передачи</h3>
 <div class="share-preview"><p id="preview-topic" aria-label="Тема для передачи"></p><p id="preview-essay" class="share-body" tabindex="0" aria-label="Черновик для передачи"></p></div>
-<details><summary>Точный формат запроса</summary><p class="small">Тема и черновик передаются в двух отдельных полях.</p><pre id="preview" tabindex="0" aria-label="Тема и черновик для передачи"></pre></details>
+<div id="preview-cards" aria-label="Карточки для передачи"></div>
+<details><summary>Точный формат запроса</summary><p class="small">Помощник получит эту запись вместе со встроенной инструкцией о проверке.</p><pre id="preview" tabindex="0" aria-label="Точные данные для передачи"></pre></details>
 <p id="size-warning" class="status warn" role="status"></p>
 <details id="kak-poluchit-klyuch" class="segment"><summary>Как получить ключ GigaChat</summary>
 <p>Ключ для домашнего подключения получает взрослый владелец или администратор проекта в GigaChat API.</p>
@@ -59,11 +84,12 @@ pre{max-height:24rem;overflow-y:auto}
 <p class="small">Если тебе ещё нет 18 лет, взрослый владелец проекта сам просматривает и отправляет работу. Для личного API владельцем может быть полностью дееспособный резидент РФ от 18 лет. Запрос учитывается по условиям проекта.</p>
 <form id="review-form" autocomplete="off">
 <label for="gigakey">Ключ авторизации GigaChat</label><input id="gigakey" type="password" maxlength="4096" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Ключ авторизации проекта">
-<label class="check"><input id="consent" type="checkbox"><span>Я просмотрел тему и черновик выше и хочу отправить эту версию в GigaChat.</span></label>
+<label class="check"><input id="consent" type="checkbox"><span>Я просмотрел тему, черновик и выбор карточек и хочу отправить эту версию в GigaChat.</span></label>
 <button id="send" type="submit" class="primary" disabled>Отправить на разбор</button>
 </form></div>
 <div id="setup" class="segment">
 <h3>Подключить API на домашнем компьютере</h3>
+<p class="warn" id="version-warning" role="status" hidden></p>
 <p>Распакуй <a href="https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/proverka-gigachat.zip">семейный комплект с программой подключения</a> и выполни инструкцию в архиве. Запущенная программа покажет адрес страницы для ввода ключа.</p>
 <details><summary>У меня уже есть этот HTML-файл</summary>
 <p>Для местного подключения нужен Python 3. Сохрани программу рядом с HTML. Открой терминал в этой папке, набери команду ниже и добавь после пробела фактическое имя скачанного HTML в кавычках. В файл с ключом ничего записывать не нужно.</p>
@@ -82,8 +108,12 @@ pre{max-height:24rem;overflow-y:auto}
 <p class="status" id="online-status" role="status" aria-live="polite"></p>
 <section class="panel" id="review-panel" aria-labelledby="review-title" hidden>
 <h2 id="review-title">Замечания GigaChat</h2>
-<p id="stale" class="warn" hidden>После отправки текст изменился. Это замечания к прежней версии.</p>
+<p id="stale" class="warn" hidden>После отправки изменились текст, тема или выбор карточек. Это замечания к прежней версии.</p>
 <div id="result"></div><div class="buttons"><button id="review-download" type="button">Скачать разбор и проверенный текст (.txt)</button></div></section>
+<section class="panel" aria-labelledby="method-heading"><h2 id="method-heading">Методика разбора</h2>
+<p>В эту копию встроена версия <strong id="method-version"></strong>. Для обновления скачай <a href="https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/proverka-gigachat.zip">актуальный семейный комплект</a>. Перед заменой сохрани работу для переноса, затем открой её из файла в новой версии.</p>
+<div class="buttons"><button id="method-transfer" type="button">Перейти к переносу работы</button></div>
+<details><summary>Прочитать инструкцию помощника</summary><pre id="method-text" tabindex="0"></pre></details></section>
 </main>
 <footer><a id="standalone-download" download="essay-check.html">Скачать эту страницу для работы без интернета (HTML)</a> · <a href="https://fipi.ru/itogovoe-sochinenie" target="_blank" rel="noopener noreferrer">Материалы и критерии ФИПИ</a> · <a href="https://developers.sber.ru/docs/ru/policies/gigachat-agreement/individuals" target="_blank" rel="noopener noreferrer">Условия GigaChat API</a></footer>
 <script>
@@ -96,12 +126,32 @@ const byId = id => document.getElementById(id);
 const topic = byId('topic'), essay = byId('essay'), keyField = byId('gigakey'), consent = byId('consent');
 const storageKey = 'uzel.essay-review.draft.v1';
 const titles = {K1:'Соответствие теме',K2:'Аргументация и литературный материал',K3:'Композиция и логика',K4:'Качество письменной речи',K5:'Грамотность'};
-const manualInstruction = 'Прочитай мою работу к итоговому сочинению. В следующих полях приводятся тема и мой текст. Дай по каждому из пяти критериев короткое наблюдение, точную цитату из моей работы (если она есть) и одно действие для правки. Критерии: соответствие теме, аргументация с опорой на литературу, композиция и логика, качество письменной речи, грамотность. Если данных для вывода мало, укажи это. Отделяй то, что видно в тексте, от догадки. Я могу выбрать собственное прочтение произведения. В конце предложи одну первоочередную правку. Не пиши сочинение за меня, не выдумывай цитат и не предсказывай зачёт.';
+const reviewBundle=/*__REVIEW_BUNDLE__*/;
+const topicMenu=/*__TOPIC_MENU__*/;
+const bookById=new Map(reviewBundle.cards.map(card=>[card.id,card]));
+const methodVersion=reviewBundle.method.version;
+let chosen=[];
 let available = false, pending = false, reviewed = null, localSnapshot = null, savedReview = null;
 let awaitingImport = null;
-function data() { return {topic:topic.value,essay:essay.value}; }
-function exact(a,b) { return Boolean(a && b && a.topic===b.topic && a.essay===b.essay); }
-function manualPrompt() { return manualInstruction+'\n\n'+JSON.stringify(data(),null,2); }
+function normalChoice(value){
+  return Array.isArray(value)?[...new Set(value.filter(id=>bookById.has(id)))].slice(0,2):[];
+}
+function selectionNotice(item){
+  return Array.isArray(item.cardIds)&&item.cardIds.some(id=>!bookById.has(id))?' Часть выбранных ранее карточек отсутствует в этой версии полки.':'';
+}
+function data() {return {topic:topic.value,essay:essay.value,...(chosen.length?{cardIds:[...chosen]}:{})};}
+function exact(a,b) {
+  return Boolean(a&&b&&a.topic===b.topic&&a.essay===b.essay&&
+    JSON.stringify(a.cardIds||[])===JSON.stringify(b.cardIds||[]));
+}
+function chosenCards(value){
+  return (value.cardIds||[]).map(id=>bookById.get(id)).filter(Boolean).map(({id,title,fact,url})=>({id,title,fact,url}));
+}
+function userMaterial(snap) {
+  const cards=chosenCards(snap);
+  return {topic:snap.topic,essay:snap.essay,...(cards.length?{cards}:{})};
+}
+function manualPrompt() {return reviewBundle.manualPrompt+'\n\n'+JSON.stringify(userMaterial(data()),null,2);}
 function words(value) {
   if (typeof EssayCoach !== 'undefined' && typeof EssayCoach.countWords === 'function') return EssayCoach.countWords(value);
   return (value.match(/[\p{L}][\p{L}\p{M}]*(?:[-‐‑’'][\p{L}\p{M}]+)*/gu)||[]).length;
@@ -112,18 +162,151 @@ function el(kind, content, css) {
   if(css) item.className=css;
   return item;
 }
+function sourceLink(url){
+  try{
+    const target=new URL(url);
+    if(target.protocol==='https:'||target.protocol==='http:'){
+      const link=el('a','Сверить с текстом произведения ↗');
+      link.href=target.href;link.target='_blank';link.rel='noopener noreferrer';return link;
+    }
+  }catch{}
+  return el('span',url);
+}
+function cardNotes(box,card){
+  box.append(el('p','Редакторский пересказ'),el('p',card.fact),sourceLink(card.url));
+}
+function matchText(value){return value.toLocaleLowerCase('ru').replace(/ё/gu,'е');}
+const topicBatchSize=12;
+let topicMatches=[], topicShown=0, pendingTopic=null;
+function closeTopicPrompt(){
+  pendingTopic=null;
+  byId('topic-confirm').hidden=true;
+}
+function renderTopicBatch(focusFirst=false){
+  const list=byId('topic-results'), start=topicShown;
+  const limit=Math.min(start+topicBatchSize,topicMatches.length);
+  for(;topicShown<limit;topicShown++){
+    const index=topicMatches[topicShown];
+    const [title,sourceIndex]=topicMenu.topics[index];
+    const source=topicMenu.sources[sourceIndex];
+    const row=el('div',undefined,'topic-match'), pick=el('button',title);
+    pick.type='button';pick.dataset.topicIndex=String(index);
+    row.append(pick);
+    if(source.url){
+      const link=el('a',source.title+' ↗','small');
+      link.href=source.url;link.target='_blank';link.rel='noopener noreferrer';row.append(link);
+    }else row.append(el('span',source.title,'small'));
+    list.append(row);
+  }
+  byId('topic-count').textContent=topicMatches.length?'Показано '+topicShown+' из '+topicMatches.length+'.':'Совпадений нет. Попробуй другое слово или впиши собственную тему.';
+  byId('topic-more').hidden=topicShown>=topicMatches.length;
+  if(focusFirst)list.querySelector('[data-topic-index="'+topicMatches[start]+'"]')?.focus();
+}
+function searchTopics(){
+  closeTopicPrompt();
+  const kind=byId('topic-kind').value;
+  const terms=matchText(byId('topic-search').value).match(/[\p{L}\p{N}]+/gu)||[];
+  topicMatches=[];
+  topicMenu.topics.forEach(([title,src],index)=>{
+    if(kind==='author'&&src!==topicMenu.authorSource || kind==='public'&&src===topicMenu.authorSource)return;
+    const text=matchText(title+' '+topicMenu.sources[src].title);
+    if(terms.every(word=>text.includes(word)))topicMatches.push(index);
+  });
+  topicShown=0;byId('topic-results').replaceChildren();renderTopicBatch();
+}
+function applyTopic(title){
+  const changed=topic.value!==title;
+  closeTopicPrompt();
+  if(changed){topic.value=title;onWriting();}
+  byId('topic-picker').open=false;topic.focus();
+  byId('topic-picked').textContent=changed?'Тема перенесена в поле выше.':'Эта тема уже стоит в редакторе.';
+}
+byId('topic-picker').addEventListener('toggle',()=>{
+  if(byId('topic-picker').open)searchTopics();
+  else closeTopicPrompt();
+});
+byId('topic-search').addEventListener('input',searchTopics);
+byId('topic-kind').addEventListener('change',searchTopics);
+byId('topic-more').addEventListener('click',()=>renderTopicBatch(true));
+byId('topic-results').addEventListener('click',event=>{
+  const target=event.target.closest('button[data-topic-index]');
+  if(!target)return;
+  const [title]=topicMenu.topics[Number(target.dataset.topicIndex)];
+  if(!topic.value.trim()||topic.value===title){applyTopic(title);return;}
+  pendingTopic={title,previous:topic.value};
+  byId('topic-old').textContent=topic.value;byId('topic-new').textContent=title;
+  byId('topic-confirm').hidden=false;byId('topic-keep').focus();
+});
+byId('topic-replace').addEventListener('click',()=>{
+  if(pendingTopic&&topic.value===pendingTopic.previous)applyTopic(pendingTopic.title);
+  else closeTopicPrompt();
+});
+byId('topic-keep').addEventListener('click',()=>{
+  closeTopicPrompt();byId('topic-picker').open=false;topic.focus();
+  byId('topic-picked').textContent='Твоя тема сохранена.';
+});
+function renderShelf(){
+  const words=matchText(byId('book-search').value).trim().split(/\s+/u).filter(Boolean);
+  const list=byId('book-list');list.replaceChildren();
+  for(const card of reviewBundle.cards){
+    const labelText=matchText(card.title+' '+card.fact);
+    if(!words.every(word=>labelText.includes(word)))continue;
+    const article=el('article',undefined,'shelf-result');
+    const label=el('label',undefined,'check'), check=el('input');check.type='checkbox';check.dataset.cardId=card.id;
+    label.append(check,el('span',card.title));
+    const details=el('details');details.append(el('summary','Эпизод и источник'));
+    cardNotes(details,card);article.append(label,details);list.append(article);
+  }
+  if(!list.childElementCount)list.append(el('p','По этому запросу ничего не найдено. Сократи запрос или укажи свою книгу в черновике.','small'));
+  updateSelection();
+}
+function updateSelection(){
+  byId('shelf-picked').textContent=chosen.length?'Для разбора выбрано '+chosen.length+' из 2: '+chosen.map(id=>bookById.get(id).title).join(' · ')+'.':'Пока без карточек. Можно работать с любым своим произведением.';
+  byId('shelf-clear').hidden=!chosen.length;
+  for(const input of byId('book-list').querySelectorAll('[data-card-id]')){
+    input.checked=chosen.includes(input.dataset.cardId);
+    input.disabled=!input.checked&&chosen.length>=2;
+  }
+}
+function syncCardPreview(cards){
+  const box=byId('preview-cards');box.replaceChildren();
+  if(!cards.length){box.append(el('p','Карточки полки передаваться не будут.','small'));return;}
+  box.append(el('h3','Выбранные карточки'));
+  cards.forEach(card=>{
+    const item=el('div',undefined,'preview-card');
+    item.append(el('strong',card.title));cardNotes(item,card);box.append(item);
+  });
+}
+byId('book-search').addEventListener('input',renderShelf);
+byId('book-list').addEventListener('change',event=>{
+  const input=event.target,id=input.dataset.cardId;
+  if(!bookById.has(id))return;
+  chosen=input.checked?normalChoice([...chosen,id]):chosen.filter(x=>x!==id);
+  updateSelection();onWriting();
+});
+byId('shelf-clear').addEventListener('click',()=>{
+  chosen=[];updateSelection();onWriting();byId('book-search').focus();
+});
+byId('method-version').textContent=methodVersion;
+byId('method-text').textContent=reviewBundle.manualPrompt;
+byId('method-transfer').addEventListener('click',()=>{
+  byId('draft-transfer').open=true;byId('transfer-save').focus();
+});
 function refresh() {
   const snapshot=data();
+  const material=userMaterial(snapshot);
   byId('count').textContent='Слов в тексте, примерно: '+words(snapshot.essay);
   byId('preview-topic').textContent=snapshot.topic||'Добавь тему в поле выше.';
   byId('preview-essay').textContent=snapshot.essay||'Здесь появится твой черновик.';
-  byId('preview').textContent=JSON.stringify(snapshot,null,2);
+  syncCardPreview(material.cards||[]);
+  byId('preview').textContent=JSON.stringify(material,null,2);
   byId('manual-text').textContent=manualPrompt();
   byId('size-warning').textContent=snapshot.essay.length>20000?'В черновике больше 20 000 знаков. Можно сохранить полный текст в TXT и выбрать для API более короткую версию.':'';
   byId('send').disabled=pending||!available||!consent.checked||!keyField.value.trim()||!snapshot.topic.trim()||!snapshot.essay.trim()||snapshot.essay.length>20000;
   byId('stale').hidden=!reviewed||exact(reviewed,snapshot);
 }
 function onWriting() {
+  closeTopicPrompt();byId('topic-picked').textContent='';
   consent.checked=false;
   if(localSnapshot&&!exact(data(),localSnapshot)){
     localSnapshot=null;
@@ -137,10 +320,11 @@ function onWriting() {
 try {
   const saved=JSON.parse(localStorage.getItem(storageKey));
   if(saved && typeof saved.topic==='string' && typeof saved.essay==='string'){
-    topic.value=saved.topic; essay.value=saved.essay;
-    byId('saved').textContent='Восстановлена сохранённая работа.';
+    topic.value=saved.topic; essay.value=saved.essay;chosen=normalChoice(saved.cardIds);
+    byId('saved').textContent='Восстановлена сохранённая работа.'+selectionNotice(saved);
   }
 } catch {byId('saved').textContent='Если браузер не сохранит работу, скачай TXT.';}
+renderShelf();
 topic.addEventListener('input',onWriting);
 essay.addEventListener('input',onWriting);
 keyField.addEventListener('input',refresh);
@@ -205,21 +389,23 @@ function download(name,blob){
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function transferFile(value,name='rabota-dlya-perenosa.json'){
-  download(name,new Blob([JSON.stringify({format:'uzel-essay-review.1',topic:value.topic,essay:value.essay},null,2)],{type:'application/json;charset=UTF-8'}));
+  const ids=normalChoice(value.cardIds);
+  const entry={format:'uzel-essay-review.1',topic:value.topic,essay:value.essay,...(ids.length?{cardIds:ids}:{})};
+  download(name,new Blob([JSON.stringify(entry,null,2)],{type:'application/json;charset=UTF-8'}));
 }
 function validDraft(item){
-  return item && typeof item.topic==='string' && typeof item.essay==='string' && item.topic.length<=500 && (item.topic.trim()||item.essay.trim());
+  return item && typeof item.topic==='string' && typeof item.essay==='string' && item.topic.length<=500 && (item.topic.trim()||item.essay.trim()||normalChoice(item.cardIds).length);
 }
 function acceptImport(item){
-  topic.value=item.topic;essay.value=item.essay;onWriting();
+  topic.value=item.topic;essay.value=item.essay;chosen=normalChoice(item.cardIds);updateSelection();onWriting();
   awaitingImport=null;byId('import-conflict').hidden=true;
-  byId('transfer-status').textContent='Работа открыта в редакторе.';
+  byId('transfer-status').textContent='Работа открыта в редакторе.'+selectionNotice(item);
 }
 function proposeImport(item){
   if(!validDraft(item))return false;
   if(exact(item,data()))return true;
-  if(!topic.value.trim()&&!essay.value.trim()){acceptImport(item);return true;}
-  awaitingImport={topic:item.topic,essay:item.essay};
+  if(!validDraft(data())){acceptImport(item);return true;}
+  awaitingImport={topic:item.topic,essay:item.essay,cardIds:Array.isArray(item.cardIds)?item.cardIds.filter(id=>typeof id==='string').slice(0,2):[]};
   byId('import-info').textContent='Входящая работа: '+(item.topic||'без темы')+' · примерно '+words(item.essay)+' сл.';
   byId('import-conflict').hidden=false;
   return true;
@@ -284,6 +470,8 @@ byId('copy-prompt').addEventListener('click',async()=>{
 });
 function showReview(review,unverified){
   const out=byId('result');out.replaceChildren();
+  out.append(el('p','Версия методики: '+review.methodVersion+'.','small'));
+  if(review.books?.length)out.append(el('p','Карточки при разборе: '+review.books.map(c=>c.title).join(' · ')+'.','small'));
   out.append(el('p','Мнение модели для твоей правки. Факты о книге можно сверить с текстом произведения.','small'));
   if(review.priority) {
     const first=el('p',undefined,'insight priority');first.append(el('strong','С чего начать правку'),el('br'),document.createTextNode(review.priority));out.append(first);
@@ -301,6 +489,7 @@ function showReview(review,unverified){
 }
 const errorText={
   invalid_input:'Проверь, что заполнены тема, черновик и ключ авторизации.',
+  invalid_cards:'Сервер не распознал выбранные карточки. Открой комплект одной версии или выбери «Продолжить без карточек».',
   too_large:'Для отправки доступны 500 знаков темы и 20 000 знаков черновика. Сохрани полную работу в TXT, если собираешься сократить текст.',
   authorization_failed:'Сервис отклонил авторизацию. Проверь ключ своего проекта GigaChat.',
   access_denied:'У проекта нет доступа к этому запросу. Проверь настройки API у владельца подключения.',
@@ -327,6 +516,7 @@ byId('review-form').addEventListener('submit',async event=>{
     if(!res.ok){status.textContent=Object.hasOwn(errorText,json?.error)?errorText[json.error]:'Не удалось получить разбор. Проверь подключение к местной программе.';return;}
     const result=json?.review, rows=result?.criteria;
     if(!Array.isArray(rows)||rows.length!==5||new Set(rows.map(r=>r?.id)).size!==5||!rows.every(r=>Object.hasOwn(titles,r?.id)&&['quote','comment','action'].every(k=>typeof r[k]==='string'))||typeof result.priority!=='string'){status.textContent=errorText.invalid_response;return;}
+    if(json.methodVersion!==methodVersion||json.materialsId!==reviewBundle.materialsId){status.textContent='Методика или полка в полученном ответе отличаются от этой страницы. Сохрани черновик и открой HTML и программу из одного комплекта.';return;}
     reviewed=current;
     const unverified=Array.isArray(json.unverifiedQuotes)?json.unverifiedQuotes.slice():[];
     const checked=rows.map(r=>{
@@ -335,14 +525,21 @@ byId('review-form').addEventListener('submit',async event=>{
       unverified.push(r.id);
       return {id:r.id,quote:'',comment:'',action:''};
     });
-    savedReview={criteria:checked,priority:result.priority,unverified};
+    savedReview={criteria:checked,priority:result.priority,unverified,methodVersion,books:chosenCards(current)};
     showReview(savedReview,unverified);status.textContent='Разбор получен.';
+    try{localStorage.setItem('uzel.essay-review.report.v1',JSON.stringify({draft:reviewed,review:savedReview}));}
+    catch{status.textContent='Разбор получен. Чтобы сохранить его до закрытия, скачай TXT.';}
   }catch{status.textContent='Не удалось связаться с местной программой. Убедись, что её окно открыто. Текст остался в редакторе.';}
   finally{pending=false;refresh();}
 });
 byId('review-download').addEventListener('click',()=>{
   if(!reviewed||!savedReview)return;
-  const lines=['Разбор черновика · Узел тоски по миру','Тема:',reviewed.topic,'','Текст, отправленный на разбор:',reviewed.essay,'','Замечания GigaChat','С чего начать правку:',savedReview.priority];
+  const lines=['Разбор черновика · Узел тоски по миру','Версия методики: '+savedReview.methodVersion,'Тема:',reviewed.topic,'','Текст, отправленный на разбор:',reviewed.essay];
+  if(savedReview.books?.length){
+    lines.push('','Карточки, переданные для разбора');
+    for(const card of savedReview.books)lines.push(card.title,'Редакторский пересказ: '+card.fact,'Источник: '+card.url);
+  }
+  lines.push('','Замечания GigaChat','С чего начать правку:',savedReview.priority);
   for(const row of savedReview.criteria){
     lines.push('',row.id+' · '+titles[row.id]);
     if(row.quote)lines.push('Цитата: '+row.quote);
@@ -353,6 +550,16 @@ byId('review-download').addEventListener('click',()=>{
   download('razbor-i-proverennyy-tekst.txt',new Blob(['\uFEFF',lines.join('\n')],{type:'text/plain;charset=UTF-8'}));
 });
 const isLocal=['http:','https:'].includes(location.protocol)&&['127.0.0.1','localhost','[::1]'].includes(location.hostname);
+function restoreReview(){
+  try{
+    const entry=JSON.parse(localStorage.getItem('uzel.essay-review.report.v1'));
+    const review=entry?.review, rows=review?.criteria;
+    if(!validDraft(entry?.draft)||typeof review?.methodVersion!=='string'||typeof review.priority!=='string'||!Array.isArray(rows)||rows.length!==5||
+      !rows.every(r=>Object.hasOwn(titles,r?.id)&&['quote','comment','action'].every(k=>typeof r[k]==='string'))||
+      !Array.isArray(review.unverified)||!Array.isArray(review.books)||!review.books.every(c=>c&&['id','title','fact','url'].every(k=>typeof c[k]==='string')))return;
+    reviewed=entry.draft;savedReview=review;showReview(review,review.unverified);
+  }catch{/* The writing area remains usable when a stored report is unreadable. */}
+}
 async function detect(){
   if(!isLocal)return;
   try{
@@ -360,11 +567,16 @@ async function detect(){
     if(!res.ok)return;
     const info=await res.json();
     if(info?.service!=='uzel-essay-full-review'||info.version!==1)return;
+    if(info.methodVersion!==methodVersion||info.maxCards!==2||info.materialsId!==reviewBundle.materialsId){
+      const warning=byId('version-warning');
+      warning.hidden=false;warning.textContent='Локальная программа и страница используют разные версии. Скачай один актуальный комплект, распакуй его в отдельную папку и перенеси черновик через JSON.';
+      return;
+    }
     available=true;byId('api-controls').hidden=false;byId('setup').hidden=true;
     refresh();
   }catch{/* Self-review and manual transfer work without the local service. */}
 }
-refresh();detect();
+restoreReview();refresh();detect();
 })();
 </script>
 </body>

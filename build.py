@@ -18,7 +18,7 @@ from art_library import ART_LIBRARY, publish_art
 from textbooks import publish_textbooks
 from exams import publish_exams
 from exam_tracks import ESSAY_WORKSHOP, essay_workshop_body, home_section as exam_home
-from essay_workshop.personal_package import build_personal_package
+from essay_workshop.personal_package import build_personal_package, standalone_workshop
 from essay_workshop.review_package import build_review_package
 from philosophy import publish_philosophy
 from reading_pages import publish_reading_pages, reading_path
@@ -357,7 +357,10 @@ exam_paths = publish_exams(page)
 essay_output = OUT / ESSAY_WORKSHOP.strip('/')
 (essay_output / 'pamyatka-2026-27.pdf').write_bytes((ROOT / 'essay_workshop/pamyatka-2026-27.pdf').read_bytes())
 build_personal_package(essay_output / 'trenazher-gigachat.zip', essay_workshop_body(personal=True))
-build_review_package(essay_output)
+family_workshop = standalone_workshop(essay_workshop_body(personal=True).replace(
+    'id="essay-workshop"', 'id="essay-workshop" data-bundled-review="essay-check.html"', 1))
+(essay_output / 'masterskaya.html').write_bytes(family_workshop)
+build_review_package(essay_output, practice_page=family_workshop)
 philosophy_paths = publish_philosophy(page)
 reading_paths = publish_reading_pages(page, LESSONS, ART_LIBRARY)
 reading_list_paths = publish_reading_lists(page)

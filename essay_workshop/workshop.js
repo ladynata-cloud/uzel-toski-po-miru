@@ -11,7 +11,7 @@
   const reasons = {stuck:'Не знаю, с чего начать',clarify:'Уточнить мысль',retell:'Получился пересказ',check:'На что посмотреть?'};
   const intentChoices = {thesis:'Сформулировать свою мысль',scene:'Вспомнить сцену',explain:'Объяснить, что доказывает сцена',wording:'Исправить фразу',counter:'Рассмотреть возражение'};
   steps.push(['read','Первое чтение']);
-  steps.push(['shelf','Моя полка']);
+  steps.push(['library','Книжная полка'],['shelf','Моя полка'],['themeAtlas','Библиотека тем']);
   steps.push(['rehearsal','Репетиция']);
   steps.push(['thesisLab','Уточнить тезис']);
   steps.push(['draftReader','Разметить черновик'],['paragraphTrial','Абзац на новую тему']);
@@ -75,7 +75,7 @@
     const first=state.page==='read';
     const info=first?catalog.works.find(w=>w.id===state.reading):work();
     const source=first?info?.url:(panel.querySelector('#ew-scene-source')?.value.trim()||info?.url);
-    const quote=first?catalog.readings.find(r=>r.id===state.reading)?.quote:
+    const quote=first?readingQuote(readingsById.get(state.reading)):
       (source===argument().quoteSource?argument().quote:'');
     const result=EssayShelf.add({bookId:info?.id||'own',title:info?.title||note().own,
       observation:first?state.readingNotes[state.reading]:argument().episode,quote,source});
@@ -125,7 +125,8 @@
   function options(items,active) {
     return items.map(x=>'<option value="'+h(x.id)+'"'+(x.id===active?' selected':'')+'>'+h(x.title)+'</option>').join('');
   }
-  function go(page) {
+  function go(page,fromLibrary=false) {
+    if(page==='read')state.readingFromLibrary=fromLibrary;
     if (!steps.some(([id])=>id===page)) page = 'start';
     if (page==='draftReader') state.route='draftReader';
     state.page = page;
@@ -138,15 +139,16 @@
   }
   function start() {
     return '<div data-ew-entry>'+heading('С чего начнём?')+'<div class="ew-entry-choices">'+
-      routeButton('read','Смутно помню книгу','Прочитай несколько строк у Куприна или Чехова и сохрани сцену, о которой можешь написать.')+
+      routeButton('read','Смутно помню книгу','Прочитай отрывок или вспомни сцену по короткому пересказу. Запиши, что тебе запомнилось.')+
       routeButton('draftReader','У меня есть черновик','Принеси хотя бы один свой абзац. Отметь событие и свою мысль, затем попробуй одну правку.')+'</div>'+
-      '<div class="ew-entry-return">'+button('page-shelf','Открыть мою полку сцен')+'</div>'+
+      '<div class="ew-entry-return ew-actions">'+'<a class="ew-library-entry" href="#knizhnaya-polka" data-act="page-library">Найти книгу на книжной полке</a>'+button('route-themeAtlas','Выбрать тему сочинения')+button('page-shelf','Открыть мою полку сцен')+'</div>'+
       '<h3 class="ew-entry-heading">Другие занятия</h3><div class="ew-entry-tools">'+
       button('route-quick','Подобрать аргумент к теме')+button('route-thesisLab','Уточнить свой тезис')+
       button('route-drills','Потренировать отдельную правку')+button('route-edit','Открыть редактор моей работы')+
       button('route-full','Написать целое сочинение')+button('route-rehearsal','Репетиция без подсказок')+'</div></div>'+
       fullReviewControls(false)+
-      '<p class="ew-small"><a href="https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/trenazher-gigachat.zip">Для родителей · скачать тренажёр с подключением своего GigaChat API (ZIP)</a></p>';
+      '<p class="ew-small"><a href="https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/proverka-gigachat.zip">Скачать мастерскую, темы и проверку сочинения для дома (ZIP)</a></p>'+
+      '<details><summary>Мне нужна подсказка к одной фразе</summary><p><a href="https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/trenazher-gigachat.zip">Скачать домашнюю версию с диалогом по выделенному фрагменту</a></p></details>';
   }
   function pageAfterTopic() {
     if (state.route==='draftReader') return 'draftReader';
@@ -155,9 +157,11 @@
   function fullReviewControls(withDraft) {
     const published='https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/proverka-sochineniya.html';
     const hosted=/^https?:$/.test(location.protocol) && /\/pomoshchnik\/(?:index\.html)?$/.test(location.pathname);
-    const href=hosted?'proverka-sochineniya.html':published;
+    const bundled=root.dataset.bundledReview && location.protocol==='file:' && /\/practice\.html$/i.test(location.pathname);
+    const href=hosted?'proverka-sochineniya.html':bundled?'essay-check.html':published;
     if (!withDraft || !hosted) {
-      return '<p><a href="'+h(href)+'">Проверить сочинение целиком</a></p>';
+      return '<p><a href="'+h(href)+'">Проверить сочинение целиком</a></p>'+
+        (withDraft && !hosted?'<p class="ew-small">Скопируй сюда тему и черновик либо выгрузи их из мастерской кнопкой ниже.</p>'+actions(button('export-review-draft','Скачать для переноса в проверку')):'');
     }
     return actions(button('open-full-review','Проверить это сочинение целиком'))+
       '<p id="ew-review-transfer" class="ew-small" role="status"></p>';
@@ -179,7 +183,7 @@
         '<form id="ew-exam-form"><label for="ew-exam-set">Тренировочный комплект</label><select id="ew-exam-set">'+options([{id:'0',title:'Комплект 1'},{id:'1',title:'Комплект 2'}],String(activeSet))+'</select>'+
         sets+actions('<button class="ew-primary">Выбрать тему и перейти к тезису</button>')+'</form></div></details>';
     }
-    return heading('О чём будешь писать?','Можно взять тему учителя или выбрать авторскую тренировочную тему. Формулировки на предстоящем экзамене заранее неизвестны.',routes[state.route])+
+    return heading('О чём будешь писать?','Можно взять вопрос учителя, тему из опубликованной подборки или учебную тему мастерской. Формулировки на предстоящем экзамене заранее неизвестны.',routes[state.route])+
       examChoice+
       '<label for="ew-topic">Тема сочинения</label><select id="ew-topic">'+opts+'</select><p class="ew-topic">'+h(topic().title)+'</p>'+
       (topic().focus && note().work===topic().work?'<p>'+h(topic().focus)+'</p>':'')+
@@ -189,14 +193,100 @@
       '<details><summary>Ввести свою тему</summary><div><form id="ew-custom-form"><label for="ew-custom">Формулировка темы</label><input id="ew-custom" required maxlength="500">'+actions('<button class="ew-primary">Работать с этой темой</button>')+'</form></div></details>'+
       actions(button('forward-topic',pageAfterTopic()==='thesis'?'Перейти к тезису':'Перейти к моему черновику',true));
   }
+  const sectionNames = [
+    'Духовно-нравственные ориентиры в жизни человека',
+    'Семья, общество, Отечество в жизни человека',
+    'Природа и культура в жизни человека'
+  ];
+  const libraryView = {query:'',section:'',limit:12,atlas:null};
+  function selectAtlasTopic(row,mode,books){
+    let id=row.id;
+    if(row.own){
+      id=allTopics().find(t=>t.title===row.title)?.id||'custom-'+(globalThis.crypto?.randomUUID?.()||Date.now().toString(36));
+    }else if(row.official)id='public-topic-'+row.id;
+    if(!allTopics().some(t=>t.id===id))state.custom.push({id,title:row.title,work:'own'});
+    state.active=id;state.route='full';
+    if(mode==='books'){
+      const section=/^[1-3](?:\.|$)/u.test(row.section||'')?row.section[0]:'';
+      Object.assign(libraryView,{query:'',section:books.length?'':section,limit:12,atlas:{topic:id,ids:books}});
+      go('library');
+    }else if(mode==='ownBook'){
+      takeLibraryWork('own');go('episode');
+    }else go('thesis');
+  }
+  const readingsById = new Map(catalog.readings.map(r=>[r.id,r]));
+  function readingQuote(reading) {
+    return reading?.kind==='scene'?'':String(reading?.quote||'').trim();
+  }
+  function searchWords(text) {
+    return String(text).toLocaleLowerCase('ru').replaceAll('ё','е').match(/[а-яa-z0-9]+/gu)||[];
+  }
+  function libraryScreen() {
+    const choices=sectionNames.map((name,i)=>({id:String(i+1),title:name}));
+    const fromAtlas=libraryView.atlas?.topic===state.active;
+    return '<section data-library>'+heading('Книжная полка','Найди знакомую книгу или выбери сцену, с которой начнёшь работу.')+
+      '<p class="ew-library-current"><strong>Моя тема</strong> · '+h(topic().title)+' '+button('page-topic','Сменить тему')+'</p>'+
+      (fromAtlas?'<p class="ew-small">'+(libraryView.atlas.ids.length?'Подборка мастерской для этой темы. Можно предложить другое произведение.':libraryView.section?'Показаны книги этого раздела. Найди эпизод, который помогает обосновать твою мысль.':'Раздел этой темы не указан. Найди знакомую книгу по автору или названию.')+'</p>'+actions(button('library-all','Все книги'),button('page-themeAtlas','Вернуться к подборке тем')):'')+
+      '<div class="ew-library-filters"><div><label for="ew-library-search">Автор или название</label>'+
+      '<input id="ew-library-search" type="search" value="'+h(libraryView.query)+'" placeholder="Например, Чехов" autocomplete="off"></div>'+
+      '<div><label for="ew-library-section">Раздел банка тем</label><select id="ew-library-section">'+
+      options([{id:'',title:'Все разделы'},...choices],libraryView.section)+'</select></div>'+
+      '<div class="ew-library-mode"><label for="ew-library-mode">Ракурс вопросов</label><select id="ew-library-mode">'+
+      options([{id:'secular',title:'Литературный разбор'},{id:'orthodox',title:'Православный ракурс'}],state.mode)+'</select></div></div>'+
+      '<p class="ew-small ew-library-status" id="ew-library-count" role="status"></p><div id="ew-library-list"></div>'+
+      button('library-more','Показать ещё')+actions(button('library-own','Взять свою книгу'),button('page-shelf','Мои сохранённые сцены'))+'</section>';
+  }
+  function libraryCard(w) {
+    const reading=readingsById.get(w.id);
+    const read=reading?button('library-read-'+w.id,readingQuote(reading)?'Прочитать отрывок':'Разобрать эпизод'):'';
+    return '<article class="ew-library-book" data-library-work="'+h(w.id)+'"><h3 tabindex="-1">'+h(w.title)+'</h3>'+
+      '<p class="ew-small">Эпизод · пересказ мастерской</p><p>'+h(w.fact)+'</p>'+
+      '<p class="ew-tip">'+h(w[state.mode])+'</p>'+
+      '<a target="_blank" rel="noopener noreferrer" href="'+h(w.url)+'">К источнику</a>'+
+      actions(button('library-use-'+w.id,'Взять для моей темы'),read)+'</article>';
+  }
+  function updateLibrary() {
+    const words=searchWords(libraryView.query);
+    const section=Number(libraryView.section);
+    const matches=catalog.works.filter(w=>{
+      if(libraryView.atlas?.topic===state.active && libraryView.atlas.ids.length && !libraryView.atlas.ids.includes(w.id))return false;
+      if(section && !w.sections?.includes(section))return false;
+      const name=searchWords(w.title).join(' ');
+      return words.every(word=>name.includes(word));
+    });
+    const list=panel.querySelector('#ew-library-list');
+    const count=panel.querySelector('#ew-library-count');
+    list.innerHTML=matches.slice(0,libraryView.limit).map(libraryCard).join('');
+    count.textContent=matches.length?'Найдено книг: '+matches.length+'. Показано: '+Math.min(libraryView.limit,matches.length)+'.':'Книг с таким запросом нет. Измени запрос или раздел.';
+    panel.querySelector('[data-act="library-more"]').hidden=matches.length<=libraryView.limit;
+  }
+  function takeLibraryWork(id) {
+    const n=note();
+    if(n.work!==id || n.shelfChoice) {
+      n.libraryPrevious={forWork:id,work:n.work,own:n.own,shelfChoice:n.shelfChoice||null};
+      leaveShelf(n);n.work=id;
+    }
+  }
+  function libraryReturn() {
+    const n=note();
+    return n.libraryPrevious?.forWork===n.work && !n.shelfChoice?
+      actions(button('library-restore','Вернуться к прежнему выбору книги')):'';
+  }
   function readingScreen() {
-    const r=catalog.readings.find(x=>x.id===state.reading)||catalog.readings[0], w=catalog.works.find(x=>x.id===r.id);
-    return heading('Начни с нескольких строк','Прочитай, что происходит в сцене. Запиши деталь, за которую зацепился взгляд. Это заготовка для первого аргумента.')+
-      '<label for="ew-reading">Что прочитать?</label><select id="ew-reading">'+options(catalog.readings.map(x=>catalog.works.find(w=>w.id===x.id)),r.id)+'</select>'+
-      '<div class="ew-text-card"><p>'+h(r.context)+'</p><p class="ew-topic">«'+h(r.quote)+'»</p><p><a target="_blank" rel="noopener noreferrer" href="'+h(w.url)+'">Прочитать '+h(w.title)+' ↗</a></p></div>'+
-      '<p>'+h(r[state.mode])+'</p>'+field('reading','Что я заметил в тексте?',state.readingNotes[r.id]||'')+
+    const r=readingsById.get(state.reading)||catalog.readings[0];
+    const w=catalog.works.find(x=>x.id===r.id), quote=readingQuote(r);
+    const intro=quote
+      ? heading('Начни с нескольких строк','Прочитай отрывок и запиши, какая деталь привлекла твоё внимание.')
+      : heading('Разбери эпизод','Прочитай пересказ мастерской. Какой поступок, слово или предмет поможет тебе ответить на вопрос под карточкой?');
+    const currentTheme=state.readingFromLibrary?topic():catalog.topics.find(t=>t.id===r.topic);
+    return intro+'<label for="ew-reading">Выбрать произведение</label><select id="ew-reading">'+options(catalog.works.filter(w=>readingsById.has(w.id)),r.id)+'</select>'+
+      '<div class="ew-text-card" data-reading-kind="'+(quote?'excerpt':'scene')+'"><p class="ew-small">'+(quote?'Контекст сцены':'Эпизод · пересказ мастерской')+'</p><p>'+h(r.context)+'</p>'+
+      (quote?'<p class="ew-small">Цитата из произведения</p><p class="ew-topic" data-reading-quote>«'+h(quote)+'»</p>':'')+
+      '<p><a target="_blank" rel="noopener noreferrer" href="'+h(w.url)+'">К источнику</a></p></div>'+
+      '<p class="ew-small">Тема для этой записи · '+h(currentTheme.title)+'</p><p>'+h(r[state.mode])+'</p>'+
+      field('reading',quote?'Что я заметил в тексте?':'Что я заметил в этой сцене?',state.readingNotes[r.id]||'')+
       answerControls('reading',state.readingNotes[r.id]||'')+shelfControls(true)+
-      actions(button('reading-apply','Взять сцену для аргумента',true))+'<p class="ew-small" id="ew-reading-status" role="status"></p>';
+      actions(button('reading-apply',state.readingFromLibrary?'Взять запись для моей темы':'Взять сцену для аргумента',true),button('page-library','Книжная полка'))+'<p class="ew-small" id="ew-reading-status" role="status"></p>';
   }
   function bookTopics() {
     const sel=panel.querySelector('#ew-from-book'),list=panel.querySelector('#ew-book-topics');
@@ -242,9 +332,9 @@
       return EssayAnswerFeedback.inspect({stage,text,drill});
     }
     if(stage==='reading') {
-      const reading=catalog.readings.find(item=>item.id===state.reading);
+      const reading=readingsById.get(state.reading);
       const work=catalog.works.find(item=>item.id===reading.id);
-      const title=catalog.topics.find(item=>item.id===reading.topic)?.title||'';
+      const title=state.readingFromLibrary?topic().title:catalog.topics.find(item=>item.id===reading.topic)?.title||'';
       return EssayAnswerFeedback.inspect({stage,text,reading,work,topic:title,mode:state.mode});
     }
     return EssayAnswerFeedback.inspect({...context(stage),text});
@@ -480,8 +570,8 @@
     const w=work();
     if(note().shelfChoice)return '<p class="ew-small">Книга для аргумента · '+h(selectedTitle())+'</p>'+shelfCurrent();
     return '<div class="ew-field"><label for="ew-work">Книга для аргумента</label><select id="ew-work">'+options([...catalog.works,{id:'own',title:'Моё произведение'}],note().work)+'</select></div>'+
-      (w?'<div class="ew-text-card"><p><strong>'+h(w.title)+'</strong></p><p><a target="_blank" rel="noopener noreferrer" href="'+h(w.url)+'">Прочитать произведение или главу ↗</a></p><details><summary>Вспомнить сцену и получить вопрос</summary><div><p>'+h(w.fact)+'</p><p>'+h(w[state.mode])+'</p></div></details></div>':
-      ownBookField());
+      (w?'<div class="ew-text-card"><p><strong>'+h(w.title)+'</strong></p><p><a target="_blank" rel="noopener noreferrer" href="'+h(w.url)+'">К источнику</a></p><details><summary>Вспомнить сцену и получить вопрос</summary><div><p class="ew-small">Пересказ мастерской</p><p>'+h(w.fact)+'</p><p>'+h(w[state.mode])+'</p></div></details></div>':
+      ownBookField())+libraryReturn();
   }
   function outline() {
     const parts = [['Тезис',note().thesis],['Эпизод · '+selectedTitle(),argument().episode],['Что доказывает эпизод',argument().link]];
@@ -661,12 +751,15 @@
     menu.innerHTML=steps.map(([id,title],i)=>'<button type="button" data-act="page-'+id+'"'+(state.page===id?' aria-current="step"':'')+'><span aria-hidden="true">'+(i>0&&i<7?i+' ·':'')+'</span>'+title+'</button>').join('');
     mode.value=state.mode==='orthodox'?'orthodox':'secular';
     root.classList.toggle('ew-in-rehearsal',state.page==='rehearsal');
-    const pages={start,topic:topicScreen,review,drills,read:readingScreen,shelf:()=>EssayShelf.render(shelfContext()),rehearsal:EssayRehearsal.render,thesisLab};
+    const pages={start,topic:topicScreen,review,drills,read:readingScreen,library:libraryScreen,shelf:()=>EssayShelf.render(shelfContext()),rehearsal:EssayRehearsal.render,thesisLab};
+    pages.themeAtlas=()=>EssayThemeAtlas.render(catalog,sectionNames);
     pages.draftReader=()=>EssayDraftReader.render(draftReaderContext());
     pages.paragraphTrial=()=>EssayParagraphTrial.render({record:state.paragraphTrial ||= {}});
     panel.innerHTML=pages[state.page]?pages[state.page]():writing(state.page);
     if (state.page==='draftReader') EssayDraftReader.mount(panel,draftReaderContext());
     if (state.page==='paragraphTrial') EssayParagraphTrial.mount(panel,{record:state.paragraphTrial,save,go});
+    if (state.page==='library') updateLibrary();
+    if (state.page==='themeAtlas') EssayThemeAtlas.mount(panel,catalog,sectionNames,selectAtlasTopic);
     if (state.page==='shelf') EssayShelf.mount(panel,shelfContext());
     if (state.page==='thesisLab') EssayThesisLab.mount(panel,{record:note().thesisLab,save});
     if (state.page==='rehearsal') EssayRehearsal.mount(panel,catalog,reviewRehearsal);
@@ -710,6 +803,7 @@
   }
   root.addEventListener('input',event=>{
     const el=event.target,key=el.dataset.field;
+    if(el.id==='ew-library-search'){libraryView.query=el.value;libraryView.limit=12;updateLibrary();return;}
     if(el.hasAttribute('data-shelf-source')){argument().source=el.value;save();return;}
     if (el.id==='ew-revision-text') {
       const s=revisionRecord(state.page).session;
@@ -746,6 +840,8 @@
   });
   root.addEventListener('change',event=>{
     const el=event.target;
+    if(el.id==='ew-library-mode'){mode.value=state.mode=el.value;updateLibrary();save();return;}
+    if(el.id==='ew-library-section'){libraryView.section=el.value;libraryView.limit=12;updateLibrary();return;}
     if(el.id==='ew-share-before'){
       panel.querySelector('#ew-packet-preview').value=composeExport(true,el.checked);
       panel.querySelector('#ew-packet-status').textContent='';
@@ -796,9 +892,18 @@
   root.addEventListener('click',event=>{
     const b=event.target.closest('button[data-act]');if(!b)return;
     const action=b.dataset.act;
-    if(action==='open-full-review'){
+    if(action==='open-full-review'||action==='export-review-draft'){
       const n=note(), target='proverka-sochineniya.html';
+      const selected=n.shelfChoice?.bookId || n.work;
       const data={topic:topic().title,essay:n.draft};
+      if(catalog.works.some(w=>w.id===selected)) data.cardIds=[selected];
+      if(action==='export-review-draft'){
+        const url=URL.createObjectURL(new Blob([JSON.stringify({format:'uzel-essay-review.1',...data})],{type:'application/json'}));
+        const link=document.createElement('a');
+        link.href=url;link.download='chernovik-dlya-proverki.json';link.click();
+        setTimeout(()=>URL.revokeObjectURL(url),1500);
+        return;
+      }
       try {
         sessionStorage.setItem('uzel.essay-review.handoff.v1',JSON.stringify(data));
         location.assign(target+'#iz-masterskoy');
@@ -807,6 +912,35 @@
         help.textContent='Браузер не разрешил перенести работу. Скопируй черновик и ';
         const link=document.createElement('a');
         link.href=target;link.textContent='открой страницу проверки';help.append(link);
+      }
+      return;
+    }
+    if(action==='library-all'){
+      Object.assign(libraryView,{atlas:null,section:'',query:'',limit:12});go('library');return;
+    }
+    if(action==='library-more'){
+      const previous=panel.querySelectorAll('[data-library-work]').length;
+      libraryView.limit+=12;updateLibrary();
+      panel.querySelectorAll('[data-library-work]')[previous]?.querySelector('h3')?.focus();
+      return;
+    }
+    if(action.startsWith('library-read-')){
+      const id=action.slice('library-read-'.length);
+      if(readingsById.has(id)){state.reading=id;go('read',true);}
+      return;
+    }
+    if(action==='library-own'||action.startsWith('library-use-')){
+      const id=action==='library-own'?'own':action.slice('library-use-'.length);
+      if(id==='own'||catalog.works.some(w=>w.id===id)){takeLibraryWork(id);go('episode');}
+      return;
+    }
+    if(action==='library-restore'){
+      const n=note(),before=n.libraryPrevious;
+      if(before?.forWork===n.work){
+        n.work=before.work;n.own=before.own;
+        if(before.shelfChoice)n.shelfChoice=before.shelfChoice;
+        delete n.libraryPrevious;
+        go('episode');
       }
       return;
     }
@@ -842,18 +976,22 @@
     if(action==='copy-giga-prompt') {void copyGigaPrompt();return;}
     if(action.startsWith('rev-')) {handleRevision(action);return;}
     if(action==='reading-apply'){
-      const r=catalog.readings.find(x=>x.id===state.reading),detail=(state.readingNotes[r.id]||'').trim();
+      const r=readingsById.get(state.reading),detail=(state.readingNotes[r.id]||'').trim();
       if(!detail){panel.querySelector('#ew-reading-status').textContent='Запиши хотя бы одну деталь в поле выше.';return;}
-      state.active=r.topic;state.route='quick';leaveShelf(note());note().work=r.id;
-      const a=argument();
+      if(state.readingFromLibrary)takeLibraryWork(r.id);
+      else {state.active=r.topic;state.route='quick';leaveShelf(note());note().work=r.id;}
+      const a=argument(),quote=readingQuote(r),source=work()?.url;
+      if(quote && source && !a.quote && (!a.source || a.source===source)){
+        a.quote=quote;a.quoteSource=source;
+      }
       if(!a.episode.includes(detail)) updateEditor('episode',[a.episode,detail].filter(Boolean).join('\n'));
-      go('thesis');return;
+      go(state.readingFromLibrary?'episode':'thesis');return;
     }
     if(action.startsWith('pick-')){state.active=action.slice(5);go(pageAfterTopic());return;}
     if(action.startsWith('page-')){if(action==='page-review')state.reviewKind='draft';go(action.slice(5));return;}
     if(action.startsWith('route-')){
       const route=action.slice(6);
-      if(route==='drills'||route==='read'||route==='rehearsal'||route==='thesisLab'||route==='draftReader'){go(route);return;}
+      if(route==='drills'||route==='read'||route==='rehearsal'||route==='thesisLab'||route==='draftReader'||route==='themeAtlas'){go(route);return;}
       state.route=route;go('topic');return;
     }
     if(action.startsWith('hint-')){
@@ -873,7 +1011,11 @@
   // A shared exercise opens with the learner's own saved answer for that card.
   function openLinkedExercise() {
     const drill=catalog.drills.find(d=>location.hash==='#uprazhnenie-'+d.id);
-    if (location.hash==='#polka') {
+    if (location.hash==='#temy-sochineniya') {
+      go('themeAtlas');
+    } else if (location.hash==='#knizhnaya-polka') {
+      go('library');
+    } else if (location.hash==='#polka') {
       go('shelf');
     } else if (drill) {
       state.exercise=drill.id;
