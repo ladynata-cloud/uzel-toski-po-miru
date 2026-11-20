@@ -35,6 +35,7 @@ jobs:
         run: |
           python3 build.py
           python3 verify_site.py
+          python3 -m unittest discover -s essay_workshop/personal-gigachat
           node --check dist/assets/app.js
           node --check dist/assets/exam-practice.js
           node --check dist/assets/reader-search.js

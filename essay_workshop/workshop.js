@@ -77,7 +77,8 @@
       routeButton('quick','Помню книгу. Как сделать из неё аргумент?','За один короткий подход — от сцены до её объяснения.')+
       routeButton('full','Хочу написать целое сочинение','Выбери тему, наметь ход мысли и перейди к свободному письму.')+
       routeButton('edit','У меня уже есть черновик','Вставь свой текст, выбери место для правки и сравни две версии.')+
-      routeButton('drills','Хочу потренировать одно трудное место','Шесть коротких упражнений на чужих черновиках.')+'</div>';
+      routeButton('drills','Хочу потренировать одно трудное место','Шесть коротких упражнений на чужих черновиках.')+'</div>'+
+      '<p class="ew-small"><a href="https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/trenazher-gigachat.zip">Для родителей · скачать тренажёр с подключением своего GigaChat API (ZIP)</a></p>';
   }
   function topicScreen() {
     const groups = [...new Set(catalog.topics.map(t=>t.section))];
@@ -124,6 +125,38 @@
   function closeOnlineReview() {
     root.dispatchEvent(new CustomEvent('ew-revision-close'));
   }
+  function gigaChatHandOff(passage) {
+    const prompt=[
+      'Помоги мне подготовиться к итоговому сочинению.',
+      'Тема: '+topic().title,
+      'Книга: '+selectedTitle(),
+      'Ракурс: '+(state.mode==='orthodox'?'православный':'светский'),
+      'Моя фраза: «'+passage+'»',
+      'Задай один короткий вопрос, который поможет мне уточнить эту фразу с опорой на книгу. Свой вариант я напишу самостоятельно.'
+    ].join('\n');
+    return '<details id="ew-giga-handoff"><summary>Спросить в своём ГигаЧате</summary><div>'+
+      '<label for="ew-giga-prompt">Задание для чата · можно изменить перед копированием</label>'+
+      '<textarea id="ew-giga-prompt" rows="4">'+h(prompt)+'</textarea>'+
+      actions(button('copy-giga-prompt','Скопировать задание'),'<a href="https://giga.chat/" target="_blank" rel="noopener noreferrer">Открыть ГигаЧат ↗</a>')+
+      '<p id="ew-giga-copy-status" class="ew-small" role="status"></p>'+
+      '<p>Вставь задание в чат. Прочитай вопрос помощника и вернись сюда, чтобы вписать свою правку.</p>'+
+      '<p class="ew-small">Если тебе ещё нет 18 лет, пользуйся ГигаЧатом с согласия и под контролем родителя или другого законного представителя, который принял условия сервиса. <a href="https://developers.sber.ru/docs/ru/policies/gigachat/agreement" target="_blank" rel="noopener noreferrer">Условия ГигаЧата, пункт 3.1</a></p>'+
+      '</div></details>';
+  }
+  async function copyGigaPrompt() {
+    const input=panel.querySelector('#ew-giga-prompt');
+    const status=panel.querySelector('#ew-giga-copy-status');
+    if (!input || !status) return;
+    if (!input.value.trim()) {status.textContent='Впиши задание, которое хочешь скопировать.';input.focus();return;}
+    try {
+      await navigator.clipboard.writeText(input.value);
+      status.textContent='Задание скопировано. Его можно вставить в ГигаЧат.';
+    } catch {
+      if (!input.isConnected) return;
+      input.focus();input.select();
+      status.textContent='Текст выделен. Нажми Ctrl+C, ⌘C или выбери «Копировать» в меню телефона.';
+    }
+  }
   function showRevision(stage, message='') {
     const slot=panel.querySelector('#ew-revision');
     if (!slot) return;
@@ -140,7 +173,7 @@
       form='<div class="ew-coach"><h3>Разбор фразы</h3>'+
         '<p class="ew-topic" id="ew-revision-original">'+h(session.passage)+'</p>'+
         '<p id="ew-revision-question">'+h(question)+'</p>'+sourceLink+
-        '<div id="ew-model-help"></div><div class="ew-field"><label for="ew-revision-text">Мой вариант после подсказки</label>'+
+        '<div id="ew-model-help"></div>'+(current?gigaChatHandOff(session.passage):'')+'<div class="ew-field"><label for="ew-revision-text">Мой вариант после подсказки</label>'+
         '<textarea id="ew-revision-text" rows="3">'+h(session.proposal)+'</textarea></div>'+
         actions('<button type="button" class="ew-primary" data-act="rev-apply"'+(current?'':' disabled')+'>Внести мою правку</button>',button('rev-close','Закрыть разбор'))+'</div>';
       if (!current) message='Исходный текст изменился. Выдели фразу ещё раз, чтобы внести правку в новое место.';
@@ -350,6 +383,7 @@
   root.addEventListener('click',event=>{
     const b=event.target.closest('button[data-act]');if(!b)return;
     const action=b.dataset.act;
+    if(action==='copy-giga-prompt') {void copyGigaPrompt();return;}
     if(action.startsWith('rev-')) {handleRevision(action);return;}
     if(action==='reading-apply'){
       const r=catalog.readings.find(x=>x.id===state.reading),detail=(state.readingNotes[r.id]||'').trim();

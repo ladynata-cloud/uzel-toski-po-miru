@@ -17,7 +17,8 @@ from school_data import load_grades
 from art_library import ART_LIBRARY, publish_art
 from textbooks import publish_textbooks
 from exams import publish_exams
-from exam_tracks import home_section as exam_home
+from exam_tracks import ESSAY_WORKSHOP, essay_workshop_body, home_section as exam_home
+from essay_workshop.personal_package import build_personal_package
 from philosophy import publish_philosophy
 from reading_pages import publish_reading_pages, reading_path
 from reading_lists import publish_reading_lists
@@ -352,6 +353,7 @@ publish_art(page)
 publish_textbooks(page)
 school_paths = publish_school(page, LESSONS, ART_LIBRARY)
 exam_paths = publish_exams(page)
+build_personal_package(OUT / ESSAY_WORKSHOP.strip('/') / 'trenazher-gigachat.zip', essay_workshop_body(personal=True))
 philosophy_paths = publish_philosophy(page)
 reading_paths = publish_reading_pages(page, LESSONS, ART_LIBRARY)
 reading_list_paths = publish_reading_lists(page)
