@@ -227,7 +227,7 @@ home = f'''<div class="wrap home-wrap">
 <section class="home-section" aria-labelledby="home-start-title">
   <h2 id="home-start-title">С чего начать</h2>
   <p>Для первого знакомства можно прочитать несколько строк Чехова с подсказками, найти книгу по запомнившейся детали или выбрать философскую статью.</p>
-  <ul class="home-index-links">
+  <ul>
     <li><a href="/poisk-po-pamyati/#work-student">Начать с «Студента» Чехова</a> — на карточке выберите «Читать начало вместе, шаг за шагом».</li>
     <li><a href="/poisk-po-pamyati/">Вспомнить название книги</a> — по герою, месту или поступку.</li>
     <li><a href="/filosofiya/">Почитать о добре, свободе и надежде</a> — без учебного задания.</li>
