@@ -18,3 +18,8 @@
 @media(max-width:760px){.ew-head{display:block}.ew-date{margin:14px 0 0}.ew-layout{display:flex;flex-direction:column;gap:12px}.ew-sidenav{position:static;width:100%}.ew-sidenav h2{display:none}.ew nav{display:flex;flex-wrap:wrap;gap:3px}.ew nav button{font-size:14px;padding:5px 8px;min-height:38px}.ew nav button span{min-width:16px}.ew-mode{display:flex;align-items:center;gap:10px;margin:8px 0 0;padding:4px 0;border:0}.ew-mode label{margin:0}.ew-mode select{width:auto;min-height:37px;padding:5px}.ew .ew-save{margin:1px 0 2px}.ew-sheet{width:100%}}
 @media(max-width:420px){.ew{padding:16px 10px 30px}.ew-head{margin-bottom:14px}.ew-sheet{padding:14px 11px}.ew .ew-text-card,.ew .ew-coach{padding:11px 10px}.ew-head h1{font-size:36px}}
 @media print{.ew-sidenav,.ew-coach,.ew-actions,.ew-rules{display:none}.ew-layout{display:block}.ew-sheet{border:0}}
+.ew #ew-exam-form{margin-top:12px}
+.ew #ew-exam-form fieldset{min-width:0;border:0;padding:0;margin-top:14px}
+.ew #ew-exam-form legend{padding:0;font-weight:650}
+
+.ew .ew-exam-guide{margin-top:2rem;scroll-margin-top:1.5rem}.ew .ew-exam-guide h2{font:500 clamp(23px,3vw,30px)/1.2 Georgia,serif}.ew .ew-exam-guide details{margin-top:.5rem}.ew .ew-exam-guide details>div{max-width:80ch}.ew .ew-date a{font-size:14px}

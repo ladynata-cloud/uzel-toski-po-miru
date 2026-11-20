@@ -9,6 +9,7 @@
   const storageKey = 'uzel.essay-workshop.v1';
   const steps = [['start','Старт'],['topic','Тема'],['thesis','Тезис'],['episode','Эпизод'],['link','Аргумент'],['draft','Черновик'],['review','Самопроверка'],['drills','Упражнения']];
   const reasons = {stuck:'Не знаю, с чего начать',clarify:'Уточнить мысль',retell:'Получился пересказ',check:'На что посмотреть?'};
+  const intentChoices = {thesis:'Сформулировать свою мысль',scene:'Вспомнить сцену',explain:'Объяснить, что доказывает сцена',wording:'Исправить фразу',counter:'Рассмотреть возражение'};
   steps.push(['read','Первое чтение']);
   const routes = {quick:'Собрать аргумент',full:'Написать сочинение',edit:'Разобрать мой черновик'};
   const checklist = [
@@ -85,7 +86,20 @@
     const opts = groups.map(g=>'<optgroup label="'+h(g)+'">'+options(catalog.topics.filter(t=>t.section===g),state.active)+'</optgroup>').join('')+
       (state.custom.length?'<optgroup label="Мои темы">'+options(state.custom,state.active)+'</optgroup>':'');
     const bookChoices=catalog.works.map(w=>({id:w.id,title:w.title}));
+    let examChoice='';
+    if (state.route==='full') {
+      const activeSet=state.practiceSet===1?1:0;
+      const sets=[0,1].map(set=>{
+        const topics=groups.flatMap(group=>catalog.topics.filter(t=>t.section===group).slice(2*set,2*set+2));
+        const choices=topics.map((t,index)=>'<label class="ew-check"><input type="radio" required name="practice-'+set+'" value="'+h(t.id)+'"><span>'+String(index+1)+'. '+h(t.title)+'</span></label>').join('');
+        return '<fieldset data-exam-set="'+set+'"'+(set===activeSet?'':' hidden disabled')+'><legend>Какую тему возьмёшь?</legend>'+choices+'</fieldset>';
+      }).join('');
+      examChoice='<details id="ew-exam-choice"><summary>Попробовать экзаменационный выбор</summary><div><p>В каждом комплекте шесть авторских тем «Узла», по две из каждого раздела ФИПИ. Выбери одну тему, для которой ты помнишь конкретный поступок, разговор или деталь из книги.</p>'+
+        '<form id="ew-exam-form"><label for="ew-exam-set">Тренировочный комплект</label><select id="ew-exam-set">'+options([{id:'0',title:'Комплект 1'},{id:'1',title:'Комплект 2'}],String(activeSet))+'</select>'+
+        sets+actions('<button class="ew-primary">Выбрать тему и перейти к тезису</button>')+'</form></div></details>';
+    }
     return heading('О чём будешь писать?','Можно взять тему учителя или выбрать авторскую тренировочную тему. Формулировки на предстоящем экзамене заранее неизвестны.',routes[state.route])+
+      examChoice+
       '<label for="ew-topic">Тема сочинения</label><select id="ew-topic">'+opts+'</select><p class="ew-topic">'+h(topic().title)+'</p>'+
       (topic().focus?'<p>'+h(topic().focus)+'</p>':'')+
       '<details><summary>Начать со знакомой книги</summary><div><label for="ew-from-book">Какую книгу ты помнишь?</label><select id="ew-from-book">'+options(bookChoices,topic().work)+'</select><div id="ew-book-topics"></div></div></details>'+
@@ -106,12 +120,18 @@
     list.innerHTML=actions(...catalog.topics.filter(t=>t.work===sel.value).map(t=>button('pick-'+t.id,t.title)));
   }
   function context(stage) {
-    return {stage,mode:state.mode,topic:topic().title,work:work() || (note().own?{title:note().own}:null),thesis:note().thesis,episode:argument().episode,link:argument().link,draft:note().draft};
+    return {stage,mode:state.mode,topic:topic().title,work:work() || (note().own?{title:note().own}:null),thesis:note().thesis,episode:argument().episode,link:argument().link,draft:note().draft,draftHeading:note().draftHeading};
   }
   function conversationKey(stage) { return stage+'|'+((stage==='episode'||stage==='link')?note().work:'')+'|'+state.mode; }
   function turns(stage) { return note().turns[conversationKey(stage)] || []; }
   function history(stage) {
-    return turns(stage).map(t=>'<div class="ew-turn"><strong>Ты</strong><p>'+h(t.user)+'</p><strong>Помощник</strong><p>'+h(t.assistant)+'</p></div>').join('');
+    return turns(stage).map((t,i,list)=>{
+      const controls=t.exam===true?'<p class="ew-small"><a target="_blank" rel="noopener noreferrer" href="https://doc.fipi.ru/itogovoe-sochinenie/2026/04_Kriterii_it_soch.pdf">Проверить по критериям ФИПИ, с. 1–2 (PDF)</a></p>'+button('focus-writing','Вернуться к своей записи'):'';
+      let next='';
+      if(i===list.length-1 && t.chooseIntent===true) next=actions(...Object.entries(intentChoices).map(([id,title])=>button('intent-'+id,title)));
+      if(i===list.length-1 && t.selectedIntent===true) next=button('focus-writing','Вернуться к своей записи');
+      return '<div class="ew-turn"><strong>Ты</strong><p>'+h(t.user)+'</p><strong>Помощник</strong><p>'+h(t.assistant)+'</p>'+controls+next+'</div>';
+    }).join('');
   }
   function revisionRecord(stage) {
     const n = note();
@@ -193,7 +213,7 @@
     else note()[stage]=value;
     if (stage==='draft') {
       note().checks={};
-      panel.querySelector('#ew-count').textContent=counter(value);
+      updateCounter();
     }
   }
   function handleRevision(action) {
@@ -251,9 +271,9 @@
       '<div id="ew-log" aria-live="polite">'+history(stage)+'</div>'+
       '<form id="ew-chat"><div class="ew-field"><label for="ew-message">Твоя реплика помощнику</label><textarea id="ew-message" required maxlength="2000" rows="2"></textarea></div><button>Ответить помощнику</button></form></div>';
   }
-  function addTurn(stage,user,assistant) {
+  function addTurn(stage,user,answer) {
     const key=conversationKey(stage);
-    (note().turns[key] ||= []).push({user,assistant});
+    (note().turns[key] ||= []).push({user,...answer});
     if (note().turns[key].length>24) note().turns[key].shift();
     save(); const log=panel.querySelector('#ew-log');
     log.innerHTML=history(stage); log.lastElementChild?.scrollIntoView({block:'nearest'});
@@ -282,7 +302,7 @@
       (stage==='episode'?workPicker():'')+previous+
       (stage==='draft'?'<details><summary>Книга для подсказок · '+h(selectedTitle())+'</summary><div>'+workPicker()+'</div></details>'+outline():'')+
       field(stage,copy[2],copy[3],stage==='draft'?12:4)+
-      (stage==='draft'?'<p class="ew-counter" id="ew-count"></p>'+actions(button('snapshot','Сохранить версию перед правкой'))+'<p id="ew-snapshot-status" class="ew-small" role="status">'+(n.before!==null?'Первая версия сохранена. Сравнение доступно в самопроверке.':'')+'</p>':'')+
+      (stage==='draft'?'<p class="ew-counter" id="ew-count"></p>'+countOptions()+actions(button('snapshot','Сохранить версию перед правкой'))+'<p id="ew-snapshot-status" class="ew-small" role="status">'+(n.before!==null?'Первая версия сохранена. Сравнение доступно в самопроверке.':'')+'</p>':'')+
       '<div id="ew-revision"></div>'+actions(nav)+coach(stage);
   }
   function review() {
@@ -297,9 +317,24 @@
       '<details><summary>Продолжить с диалоговым ИИ-помощником</summary><div><p>Скачай инструкцию с выбранной темой, ракурсом и своими записями. Её можно передать выбранному тобой чат-помощнику. Страница сама ничего не отправляет.</p>'+actions(button('download-prompt','Скачать задание для чата'))+'</div></details>';
   }
   function counter(value) {
-    const total=EssayCoach.countWords(value);
+    const total=EssayCoach.countWords(value,note().draftHeading);
     const hint=!total?'':total<250?'До минимального объёма полной работы ещё около '+(250-total)+' сл.':total<350?'Минимальный объём набран. Рекомендуемый ориентир — от 350 слов.':'Рекомендуемый объём набран. Проверь доказательство и переходы.';
-    return 'Примерный подсчёт: '+total+' сл. '+hint;
+    return 'Примерный подсчёт: '+total+' сл. '+(note().draftHeading?'Заголовок исключён. ':'')+hint;
+  }
+  function countOptions() {
+    return '<details><summary>Как считать слова и убрать заголовок из подсчёта</summary><div>'+
+      '<label class="ew-check"><input type="checkbox" id="ew-draft-heading"><span>Первая непустая строка моего черновика — отдельный заголовок с темой.</span></label>'+
+      '<p>Если вопрос темы входит во вступление, оставь отметку пустой. Слова цитаты и служебные слова входят в объём. «Всё-таки» — одно слово, «всё же» — два. «5 лет» — одно слово. Инициалы и фамилия считаются одним словом.</p>'+
+      '<p><a href="https://doc.fipi.ru/itogovoe-sochinenie/mr_organizacia_it_sochineniya_2026-27.pdf#page=29" target="_blank" rel="noopener noreferrer">Правила подсчёта · пункт 5.2.3, с. 29–30</a></p></div></details>';
+  }
+  function updateCounter() {
+    const n=note();
+    const firstLine=EssayCoach.firstDraftLine(n.draft);
+    if (n.draftHeading && firstLine!==n.draftHeading) n.draftHeading='';
+    const checkbox=panel.querySelector('#ew-draft-heading');
+    checkbox.disabled=!firstLine;
+    checkbox.checked=Boolean(n.draftHeading);
+    panel.querySelector('#ew-count').textContent=counter(n.draft);
   }
   function drills() {
     const d=catalog.drills.find(x=>x.id===state.exercise)||catalog.drills[0];
@@ -318,7 +353,7 @@
     panel.innerHTML=pages[state.page]?pages[state.page]():writing(state.page);
     if (panel.querySelector('#ew-revision')) showRevision(state.page);
     if(state.page==='topic') bookTopics();
-    if(state.page==='draft') panel.querySelector('#ew-count').textContent=counter(note().draft);
+    if(state.page==='draft') updateCounter();
   }
   function exportText(withPrompt) {
     const n=note();
@@ -354,6 +389,17 @@
   });
   root.addEventListener('change',event=>{
     const el=event.target;
+    if(el.id==='ew-exam-set'){
+      state.practiceSet=Number(el.value);
+      for(const choices of el.form.querySelectorAll('[data-exam-set]')){
+        choices.hidden=choices.disabled=choices.dataset.examSet!==el.value;
+      }
+      save();return;
+    }
+    if(el.id==='ew-draft-heading'){
+      note().draftHeading=el.checked?EssayCoach.firstDraftLine(note().draft):'';
+      updateCounter();save();return;
+    }
     if(el.id==='ew-from-book'){bookTopics();return;}
     if(el.id==='ew-reading') state.reading=el.value;
     else if(el.id==='ew-mode') state.mode=el.value;
@@ -367,6 +413,11 @@
   });
   root.addEventListener('submit',event=>{
     event.preventDefault();
+    if(event.target.id==='ew-exam-form'){
+      const choice=event.target.querySelector('fieldset:enabled input:checked');
+      if(choice){state.active=choice.value;go('thesis');}
+      return;
+    }
     if(event.target.id==='ew-custom-form'){
       const title=panel.querySelector('#ew-custom').value.trim(); if(!title)return;
       let t=allTopics().find(x=>x.title===title);
@@ -376,13 +427,21 @@
     if(event.target.id==='ew-chat'){
       const input=panel.querySelector('#ew-message'), message=input.value.trim(); if(!message)return;
       const stage=panel.querySelector('[data-stage]').dataset.stage;
-      const answer=EssayCoach.reply(context(stage),message,turns(stage).at(-1));
+      const answer=EssayCoach.respond(context(stage),message,turns(stage).at(-1));
       input.value='';addTurn(stage,message,answer);input.focus({preventScroll:true});
     }
   });
   root.addEventListener('click',event=>{
     const b=event.target.closest('button[data-act]');if(!b)return;
     const action=b.dataset.act;
+    if(action==='focus-writing'){sourceField(state.page)?.focus();return;}
+    if(action.startsWith('intent-')){
+      const choice=action.slice(7);
+      if(!Object.hasOwn(intentChoices,choice) || turns(state.page).at(-1)?.chooseIntent!==true) return;
+      addTurn(state.page,intentChoices[choice],{assistant:EssayCoach.intentFeedback(choice,context(state.page)),selectedIntent:true});
+      panel.querySelector('#ew-log .ew-turn:last-child button')?.focus({preventScroll:true});
+      return;
+    }
     if(action==='copy-giga-prompt') {void copyGigaPrompt();return;}
     if(action.startsWith('rev-')) {handleRevision(action);return;}
     if(action==='reading-apply'){
@@ -402,7 +461,7 @@
     }
     if(action.startsWith('hint-')){
       const stage=panel.querySelector('[data-stage]').dataset.stage, reason=action.slice(5);
-      addTurn(stage,reasons[reason],EssayCoach.advise({...context(stage),reason}));return;
+      addTurn(stage,reasons[reason],{assistant:EssayCoach.advise({...context(stage),reason})});return;
     }
     if(action==='forward-topic'){go(state.route==='edit'?'draft':'thesis');return;}
     if(action==='finish-argument'){state.reviewKind='argument';go('review');return;}
