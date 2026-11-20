@@ -14,6 +14,39 @@ const context = {
 };
 const reply = message => coach.reply(context, message);
 
+test('checks the length of the full essay and guides a paragraph by its argument', () => {
+  for (const message of [
+    'Этот абзац пока 86 слов. Раз абзац короче 250, мой аргумент уже провалил проверку?',
+    'В одном фрагменте 110 слов. Этого хватит?',
+  ]) {
+    const answer=reply(message);
+    assert.match(answer,/250 слов относится ко всему сочинению/u);
+    assert.match(answer,/деталь.*ответить на вопрос темы/u);
+    assert.doesNotMatch(answer,/незачёт/u);
+  }
+  for (const message of [
+    'Я пересчитал: в готовой работе ровно 249 слов без заголовка. Что это значит по правилам?',
+    'В абзаце 86 слов, а во всей работе ровно 249 слов. Это мало?',
+  ]) assert.match(reply(message),/«незачёт» за всё сочинение/u);
+  assert.match(reply('Это всё сочинение, я насчитал ровно 250 слов. Если 350 только рекомендуют, что мне осталось проверить?'),/требование к объёму выполнено.*самостоятельность/u);
+  assert.doesNotMatch(reply('К полному объёму осталось написать 15 слов.'),/«незачёт» за всё сочинение/u);
+});
+
+test('asks for the source of exact words from an unverified work', () => {
+  const work={title:'«Сырая тропа»'};
+  for (const question of [
+    'Мне запомнился рассказ «Сырая тропа». Там, кажется, сторож вернул письмо. Дай точную цитату именно из этой сцены.',
+    'Процитируй эту сцену дословно.',
+    'Можешь привести короткую цитату из повести?',
+  ]) {
+    const answer=coach.respond({...context,work},question);
+    assert.match(answer.assistant,/сверь слова.*короткий отрывок.*автора, название и главу или страницу/u);
+    assert.doesNotMatch(answer.assistant,/сторож|письмо|https?:|«/u);
+    assert.equal(answer.exam,undefined);
+  }
+  assert.match(reply('Можно ли привести цитату в сочинении?'),/Укажи источник в свободной форме/u);
+});
+
 test('answers the source question before the pupil’s affiliation or choice of lens', () => {
   for (const message of ['А Библия подойдёт как источник?', 'Можно ли взять Коран как литературный аргумент?',
     'Я не православная. Можно ли сослаться на Тору?', 'Можно ли использовать пример из другой священной книги?',

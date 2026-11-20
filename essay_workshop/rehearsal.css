@@ -1,0 +1,10 @@
+.ew .ew-rehearsal form>label:not(:first-child){margin-top:.9rem}
+.ew .ew-rehearsal .ew-small{margin-top:.7rem}
+.ew .ew-r-topics{border:0;padding:0;min-width:0;margin:.8rem 0}
+.ew .ew-r-topics legend,.ew .ew-r-clock{font-weight:700}
+.ew .ew-r-clock{font-variant-numeric:tabular-nums}
+.ew .ew-r-history{display:grid;gap:.45rem}
+.ew .ew-rehearsal [data-r-confirm]:not(:empty){margin-top:1rem;border-left:3px solid var(--deep);padding:.7rem 1rem}
+.ew-r-printout{display:none}
+@media print{body:has(>.ew-r-printout)>:not(.ew-r-printout){display:none!important}.ew-r-printout{display:block!important;color:#000;font:13pt/1.55 Georgia,serif}.ew-r-printout h1{font-size:21pt}.ew-r-printout li{margin:.65em 0;break-inside:avoid}}
+.ew-in-rehearsal .ew-mode,.ew-in-rehearsal #ew-mode-help,.ew-in-rehearsal #ew-save{display:none}

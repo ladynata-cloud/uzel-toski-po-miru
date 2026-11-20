@@ -14,7 +14,11 @@ async function exercise(page) {
   const start = () => page.locator('#ew-steps [data-act="page-start"]').click();
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  const response = await page.goto(url);
+  await page.goto(base);
+  const [response] = await Promise.all([
+    page.waitForResponse(result => result.url() === url && result.request().isNavigationRequest()),
+    page.locator('a[href$="/k-sochineniyu/itogovoe/pomoshchnik/"]').first().click(),
+  ]);
   assert.ok(response?.ok(), 'The generated workshop must return HTTP 200');
   async function fits() {
     const overflow = await page.locator('#essay-workshop').evaluate(root =>
@@ -112,6 +116,7 @@ async function exercise(page) {
   assert.match(await count.textContent(), /249 сл\./u);
   const original = 'Доктор помог семье.';
   const revised = original + ' Он сделал это деликатно.';
+  const privateQuestion = 'Мой личный вопрос: почему этот момент важен для меня?';
   await field('draft').fill(original);
   await fits();
   assert.match(await panel.locator('#ew-count').textContent(), /\b3 сл\./u, 'Draft word count follows live input');
@@ -122,6 +127,8 @@ async function exercise(page) {
   await action('route-edit');
   await action('forward-topic');
   assert.equal(await field('draft').inputValue(), original, 'Edit route must reopen the same draft');
+  await panel.getByText('Мой вопрос к эпизоду',{exact:true}).click();
+  await field('readerQuestion').fill(privateQuestion);
   await action('snapshot');
   await field('draft').fill(revised);
   await action('page-review');
@@ -133,12 +140,24 @@ async function exercise(page) {
   assert.ok(await panel.locator('[data-check="logic"]').isChecked(), 'Review checklist survives reload');
   await fits();
   const saved = await download('download', 'moe-sochinenie.txt');
-  for (const value of [topic, book, thesis, episode, link, revised, original, 'православный']) {
+  for (const value of [topic, book, thesis, episode, link, revised, 'До правки\n'+original, privateQuestion, 'православный']) {
     assert.ok(saved.includes(value), 'Export is missing ' + value);
   }
   await panel.getByText('Продолжить с диалоговым ИИ-помощником', {exact:true}).click();
+  const preview = panel.locator('#ew-packet-preview');
+  const includeBefore = panel.locator('#ew-share-before');
+  assert.equal(await includeBefore.isChecked(), false, 'First version is opt-in');
+  const currentOnly = await preview.inputValue();
   const packet = await download('download-prompt', 'zadanie-pomoshchniku.txt');
-  assert.ok(packet.includes(saved.trim()) && packet.length > saved.length, 'Chat handoff must include the instructions and the student’s work');
+  assert.equal(packet, currentOnly, 'The exported UTF-8 text matches the complete preview');
+  for (const value of [topic, book, thesis, episode, link, revised]) assert.ok(packet.includes(value));
+  assert.ok(!packet.includes('До правки\n'+original) && !packet.includes(privateQuestion));
+  await includeBefore.check();
+  const bothVersions = await preview.inputValue();
+  assert.ok(bothVersions.includes('До правки\n'+original) && !bothVersions.includes(privateQuestion));
+  assert.equal(await download('download-prompt','zadanie-pomoshchniku.txt'), bothVersions);
+  assert.equal(await includeBefore.isChecked(), false, 'Opting into a previous version applies to one download');
+  assert.equal(await preview.inputValue(), currentOnly);
 
   await start();
   await action('route-quick');
@@ -156,6 +175,89 @@ async function exercise(page) {
   await field('exercise').fill('Моя редакция учебного фрагмента.');
   await action('drill-check');
   assert.ok((await panel.locator('#ew-drill-feedback').textContent()).trim(), 'A submitted revision receives a self-check');
+
+  await page.locator('#ew-steps [data-act="page-draft"]').click();
+  await field('draft').fill('  ');
+  await action('page-review');
+  assert.equal(await panel.locator('[data-check], #ew-evidence-draft').count(), 0, 'An empty draft has no review controls');
+  await panel.getByRole('button',{name:'Открыть мой черновик'}).click();
+  assert.ok(await field('draft').evaluate(el=>el===document.activeElement));
+
+  const position = 'Помощь требует времени.';
+  const detail = 'Он вернулся.';
+  const draft = '\n'+position+'\n'+detail+' '+detail+' Его поступок говорит о заботе.';
+  const second = draft.lastIndexOf(detail);
+  await field('draft').fill(draft);
+  await action('page-review');
+  const source = panel.locator('#ew-evidence-draft');
+  const role = panel.locator('#ew-evidence-kind');
+  const finding = key => panel.locator('[data-evidence-result="'+key+'"]');
+  const select = (from,to) => source.evaluate((el,[a,b])=>{el.focus();el.setSelectionRange(a,b);},[from,to]);
+  assert.equal(await source.inputValue(), draft, 'Review preserves leading newlines and selections');
+  await action('evidence-mark');
+  assert.equal(await panel.locator('[data-evidence-result]').count(), 0);
+  assert.match(await panel.locator('#ew-evidence-status').textContent(), /выдели фразу/u);
+  await select(0,position.length+2);
+  await action('evidence-mark');
+  assert.equal(await finding('position').locator('.ew-note').textContent(),'«'+position+'»');
+  assert.equal(await role.inputValue(),'detail');
+  await select(second,second+detail.length);
+  await action('evidence-mark');
+  assert.equal(await role.inputValue(),'reasoning');
+  await action('evidence-missing');
+  await page.reload();
+  assert.equal(await finding('detail').locator('.ew-note').textContent(),'«'+detail+'»');
+  assert.match(await finding('reasoning').textContent(),/Пока не нашёл/u);
+  await fits();
+  await action('evidence-edit-reasoning');
+  const caret = () => field('draft').evaluate(el=>[el===document.activeElement,el.selectionStart,el.selectionEnd]);
+  assert.deepEqual(await caret(),[true,second+detail.length,second+detail.length]);
+  assert.match(await panel.locator('#ew-evidence-edit-hint').textContent(),/Свяжи/u);
+  await action('page-review');
+  await action('evidence-edit-detail');
+  assert.deepEqual(await caret(),[true,second,second+detail.length], 'Edit the selected occurrence, even if the phrase is repeated');
+  await field('draft').fill(draft+' Ещё одна мысль.');
+  await action('page-review');
+  assert.match(await finding('detail').textContent(),/Отметь фразу заново/u);
+  assert.equal(await finding('detail').locator('.ew-note').count(),0, 'Previous selections need review after an edit');
+  await role.selectOption('detail');
+  await select(draft.indexOf(detail),draft.indexOf(detail)+detail.length);
+  await action('evidence-mark');
+  assert.equal(await finding('detail').locator('.ew-note').textContent(),'«'+detail+'»');
+
+  const previousDraft = await source.inputValue();
+  const step = name => page.locator('#ew-steps [data-act="page-'+name+'"]').click();
+  const rehearsal = name => panel.locator('[data-rehearsal="'+name+'"]').click();
+  await start();
+  await action('route-rehearsal');
+  await panel.locator('#ew-r-time').selectOption('none');
+  await panel.locator('[data-r-form="start"] button').click();
+  const choices = panel.getByRole('radio');
+  assert.equal(await choices.count(), 6);
+  await choices.nth(1).click();
+  const examTopic = await panel.locator('[data-r-title]').textContent();
+  const examDraft = '\nГерой мог пройти мимо, но остановился и выслушал незнакомого человека.';
+  await panel.locator('#ew-r-draft').fill(examDraft);
+  await fits();
+  await page.reload();
+  assert.equal(await panel.locator('#ew-r-draft').inputValue(), examDraft, 'Reload restores the exact independent draft');
+  await rehearsal('finish');
+  await rehearsal('confirm');
+  await rehearsal('review');
+  assert.equal(await panel.locator('#ew-title').textContent(), 'Самопроверка');
+  assert.equal(await panel.locator('.ew-topic').textContent(), examTopic, 'Review shows the selected topic');
+  assert.equal(await source.inputValue(), examDraft, 'First review opens a working copy of the submission');
+  await action('page-draft');
+  const editedCopy = examDraft+' Именно этот выбор я считаю проявлением заботы.';
+  await field('draft').fill(editedCopy);
+  await step('rehearsal');
+  assert.equal(await panel.locator('.ew-note').textContent(), examDraft, 'The submitted version is still available');
+  await rehearsal('review');
+  assert.equal(await source.inputValue(), editedCopy, 'Returning to review retains edits to the copy');
+  await step('topic');
+  await panel.locator('#ew-topic').selectOption({label:topic});
+  await step('draft');
+  assert.equal(await field('draft').inputValue(), previousDraft, 'The earlier training draft is independent of the rehearsal');
   assert.deepEqual(errors, [], 'The workshop raised an uncaught browser error');
 }
 

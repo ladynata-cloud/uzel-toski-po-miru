@@ -11,6 +11,7 @@
   const reasons = {stuck:'Не знаю, с чего начать',clarify:'Уточнить мысль',retell:'Получился пересказ',check:'На что посмотреть?'};
   const intentChoices = {thesis:'Сформулировать свою мысль',scene:'Вспомнить сцену',explain:'Объяснить, что доказывает сцена',wording:'Исправить фразу',counter:'Рассмотреть возражение'};
   steps.push(['read','Первое чтение']);
+  steps.push(['rehearsal','Репетиция']);
   const routes = {quick:'Собрать аргумент',full:'Написать сочинение',edit:'Разобрать мой черновик'};
   const checklist = [
     ['topic','Тема','Я могу показать фразу, в которой отвечаю на вопрос темы.'],
@@ -61,7 +62,7 @@
     return (kicker?'<p class="ew-overline">'+h(kicker)+'</p>':'')+'<h2 id="ew-title" tabindex="-1">'+h(title)+'</h2>'+(desc?'<p class="ew-sub">'+h(desc)+'</p>':'');
   }
   function field(key,label,value,rows=4) {
-    return '<div class="ew-field"><label for="ew-write-'+key+'">'+h(label)+'</label><textarea id="ew-write-'+key+'" data-field="'+key+'" rows="'+rows+'">'+h(value)+'</textarea></div>';
+    return '<div class="ew-field"><label for="ew-write-'+key+'">'+h(label)+'</label><textarea id="ew-write-'+key+'" data-field="'+key+'" rows="'+rows+'">\n'+h(value)+'</textarea></div>';
   }
   function options(items,active) {
     return items.map(x=>'<option value="'+h(x.id)+'"'+(x.id===active?' selected':'')+'>'+h(x.title)+'</option>').join('');
@@ -81,6 +82,7 @@
       routeButton('read','Пока не знаю, о чём писать','Прочитай короткую сцену и запиши одно наблюдение.')+
       routeButton('quick','Помню книгу. Как сделать из неё аргумент?','За один короткий подход — от сцены до её объяснения.')+
       routeButton('full','Хочу написать целое сочинение','Выбери тему, наметь ход мысли и перейди к свободному письму.')+
+      routeButton('rehearsal','Репетиция без подсказок','Открой шесть тем и напиши работу самостоятельно. Таймер включается по желанию.')+
       routeButton('edit','У меня уже есть черновик','Вставь свой текст, выбери место для правки и сравни две версии.')+
       routeButton('drills','Хочу потренировать одно трудное место','Шесть коротких упражнений на чужих черновиках.')+'</div>'+
       '<p class="ew-small"><a href="https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/trenazher-gigachat.zip">Для родителей · скачать тренажёр с подключением своего GigaChat API (ZIP)</a></p>';
@@ -216,6 +218,10 @@
     }
   }
   function updateEditor(stage, value) {
+    const current=note();
+    if (stage==='draft' && value!==current.draft && current.evidence) {
+      for (const mark of Object.values(current.evidence)) mark.stale=true;
+    }
     if (stage==='episode' || stage==='link') argument()[stage]=value;
     else note()[stage]=value;
     if (stage==='draft') {
@@ -317,16 +323,98 @@
       (stage==='draft'?'<p class="ew-counter" id="ew-count"></p>'+countOptions()+actions(button('snapshot','Сохранить версию перед правкой'))+'<p id="ew-snapshot-status" class="ew-small" role="status">'+(n.before!==null?'Первая версия сохранена. Сравнение доступно в самопроверке.':'')+'</p>':'')+
       '<div id="ew-revision"></div>'+actions(nav)+coach(stage);
   }
+  const evidenceTasks = {
+    position:{title:'Мой ответ на вопрос темы',criterion:'К1',hint:'Что ты сам отвечаешь на вопрос темы? Сформулируй ответ в одном предложении.'},
+    detail:{title:'Деталь из произведения',criterion:'К2',hint:'Вернись к книге. Какой поступок, реплика или деталь служит примером для твоей мысли?'},
+    reasoning:{title:'Почему деталь доказывает мысль',criterion:'К2',hint:'Что становится понятно из выбранной детали? Свяжи её с собственным ответом на тему.'}
+  };
+  function evidenceIsCurrent(mark,draft) {
+    return mark && !mark.stale && !mark.missing && draft.replace(/\r\n?/g,'\n').slice(mark.start,mark.end)===mark.quote;
+  }
+  function evidenceFindings(n) {
+    return Object.entries(evidenceTasks).map(([key,task])=>{
+      const mark=n.evidence?.[key];
+      if(!mark)return '';
+      const current=evidenceIsCurrent(mark,n.draft);
+      const feedback=current?'<p class="ew-note">«'+h(mark.quote)+'»</p>':
+        '<p>'+(mark.stale?'Текст изменился. Отметь фразу заново.':'Пока не нашёл. '+h(task.hint))+'</p>';
+      return '<div class="ew-text-card" data-evidence-result="'+key+'"><strong>'+task.title+'</strong>'+feedback+
+        actions(button('evidence-edit-'+key,current?'Править эту фразу':'Перейти к правке'))+'</div>';
+    }).join('');
+  }
+  function evidenceScreen(n) {
+    const tasks=Object.entries(evidenceTasks).map(([id,t])=>({id,title:t.criterion+' · '+t.title}));
+    const pending=tasks.find(t=>!n.evidence?.[t.id] || n.evidence[t.id].stale)?.id;
+    return '<section aria-labelledby="ew-evidence-title"><h3 id="ew-evidence-title">Проверь, чем ты доказал свою мысль</h3>'+
+      '<label for="ew-evidence-kind">Что ищешь в своей работе?</label><select id="ew-evidence-kind">'+options(tasks,pending)+'</select>'+
+      '<div class="ew-field"><label for="ew-evidence-draft">Выдели нужные слова в черновике</label>'+
+      '<textarea id="ew-evidence-draft" readonly rows="7">\n'+h(n.draft)+'</textarea></div>'+
+      actions(button('evidence-mark','Отметить выделенную фразу',true),button('evidence-missing','Пока не нашёл'))+
+      '<p role="status" id="ew-evidence-status"></p><div id="ew-evidence-results">'+evidenceFindings(n)+'</div></section>';
+  }
+  function handleEvidence(action) {
+    if(action==='evidence-start'){
+      go('draft');
+      sourceField('draft').focus();
+      return;
+    }
+    const n=note(), select=panel.querySelector('#ew-evidence-kind');
+    if(!select)return;
+    if(action.startsWith('evidence-edit-')){
+      const key=action.slice('evidence-edit-'.length);
+      if(!Object.hasOwn(evidenceTasks,key))return;
+      const mark=n.evidence?.[key];
+      go('draft');
+      const editor=sourceField('draft');
+      const current=evidenceIsCurrent(mark,editor.value);
+      const previous=n.evidence?.[key==='reasoning'?'detail':'position'];
+      let caret=editor.value.length;
+      if(key==='position')caret=0;
+      else if(evidenceIsCurrent(previous,editor.value))caret=previous.end;
+      editor.focus();
+      editor.setSelectionRange(current?mark.start:caret,current?mark.end:caret);
+      const help=document.createElement('p');
+      help.className='ew-tip'; help.id='ew-evidence-edit-hint';
+      help.textContent=evidenceTasks[key].hint;
+      editor.setAttribute('aria-describedby',help.id);
+      editor.before(help);
+      return;
+    }
+    const key=select.value, task=evidenceTasks[key];
+    const source=panel.querySelector('#ew-evidence-draft'), status=panel.querySelector('#ew-evidence-status');
+    const missing=action==='evidence-missing';
+    let start=source.selectionStart, end=source.selectionEnd;
+    const selected=source.value.slice(start,end);
+    if(!missing && !selected.trim()){
+      status.textContent='Сначала выдели фразу в тексте. На телефоне нажми на слово и растяни границы выделения.';
+      source.focus();return;
+    }
+    start+=selected.length-selected.trimStart().length;
+    end=start+selected.trim().length;
+    n.evidence ||= {};
+    n.evidence[key]=missing?{missing:true}:{start,end,quote:source.value.slice(start,end)};
+    save();
+    panel.querySelector('#ew-evidence-results').innerHTML=evidenceFindings(n);
+    const next=Object.keys(evidenceTasks).find(id=>!n.evidence[id] || n.evidence[id].stale);
+    if(next)select.value=next;
+    source.setSelectionRange(end,end);
+    const message=missing?'Отмечено «Пока не нашёл».':'Отметка «'+task.title+'» добавлена.';
+    status.textContent=message+(next?' Следующий шаг — «'+evidenceTasks[next].title+'».':' Перечитай свои отметки и выбери место для правки.');
+  }
   function review() {
     const n=note(), quick=state.reviewKind==='argument';
-    const text=quick?'Перечитай три записи вместе. Сможет ли читатель по выбранной детали понять, почему ты так ответил на вопрос темы?':'Отметь, что проверил самостоятельно. Помощник может задать вопрос по твоей правке, а окончательную оценку выставляет эксперт.';
+    if(!quick && !n.draft.trim()){
+      return heading('Самопроверка','Напиши или вставь хотя бы один свой абзац. Тогда сможешь найти в нём ответ на тему и литературное доказательство.')+
+        '<p class="ew-topic">'+h(topic().title)+'</p>'+actions(button('evidence-start','Открыть мой черновик',true));
+    }
+    const text=quick?'Перечитай три записи вместе. Сможет ли читатель по выбранной детали понять, почему ты так ответил на вопрос темы?':'Найди в своём тексте ответ на вопрос темы, пример из книги и объяснение. Если чего-то пока нет, вернись к этому месту и допиши.';
     const body=quick?'<div class="ew-text-card"><p><strong>Тезис</strong></p><p class="ew-note">'+h(n.thesis||'Тезис пока пуст.')+'</p><p><strong>'+h(selectedTitle())+'</strong></p><p class="ew-note">'+h(argument().episode||'Эпизод пока пуст.')+'</p><p class="ew-note">'+h(argument().link||'Объяснение пока пусто.')+'</p></div>':
-      '<p class="ew-topic">'+h(topic().title)+'</p><p class="ew-small">'+h(counter(n.draft))+'</p><details><summary>Перечитать мой черновик</summary><div class="ew-note">'+h(n.draft||'Можно вставить текст на шаге «Черновик».')+'</div></details>'+
+      '<p class="ew-topic">'+h(topic().title)+'</p><p class="ew-small">'+h(counter(n.draft))+'</p>'+evidenceScreen(n)+
       checklist.map(([key,title,detail])=>'<label class="ew-check"><input type="checkbox" data-check="'+key+'"'+(n.checks[key]?' checked':'')+'><span><strong>'+h(title)+'</strong> · '+h(detail)+'</span></label>').join('')+
       (n.before!==null?'<details><summary>Сравнить версии</summary><div><p><strong>До правки</strong></p><p class="ew-note">'+h(n.before)+'</p><p><strong>После правки</strong></p><p class="ew-note">'+h(n.draft)+'</p></div></details>':'');
     return heading(quick?'Мой литературный аргумент':'Самопроверка',text)+body+
       actions(button('page-draft',quick?'Перейти к полному сочинению':'Вернуться к правке',true),button('download','Скачать мою работу (.txt)'))+
-      '<details><summary>Продолжить с диалоговым ИИ-помощником</summary><div><p>Скачай инструкцию с выбранной темой, ракурсом и своими записями. Её можно передать выбранному тобой чат-помощнику. Страница сама ничего не отправляет.</p>'+actions(button('download-prompt','Скачать задание для чата'))+'</div></details>';
+      externalPacket();
   }
   function counter(value) {
     const total=EssayCoach.countWords(value,note().draftHeading);
@@ -356,26 +444,66 @@
       '<details><summary>Нужна подсказка</summary><div>'+h(d.hint)+'</div></details>'+
       field('exercise','Моя редакция',v)+actions(button('drill-check','Проверить мою правку',true))+'<p id="ew-drill-feedback" class="ew-tip" role="status"></p>'+actions(button('page-start','К выбору маршрута'));
   }
+  function reviewRehearsal({title,draft,attemptId}) {
+    const id='rehearsal-'+attemptId;
+    const firstVisit=!state.custom.some(t=>t.id===id);
+    if (firstVisit) state.custom.push({id,title,work:'own'});
+    state.active=id;
+    state.route='edit';
+    state.reviewKind='draft';
+    if (firstVisit) {
+      note().draft=draft;
+      note().before=draft;
+    }
+    go('review');
+  }
   function render() {
+    EssayRehearsal.unmount();
     closeOnlineReview();
     if (!steps.some(([id])=>id===state.page)) state.page='start';
     menu.innerHTML=steps.map(([id,title],i)=>'<button type="button" data-act="page-'+id+'"'+(state.page===id?' aria-current="step"':'')+'><span aria-hidden="true">'+(i>0&&i<7?i+' ·':'')+'</span>'+title+'</button>').join('');
     mode.value=state.mode==='orthodox'?'orthodox':'secular';
-    const pages={start,topic:topicScreen,review,drills,read:readingScreen};
+    root.classList.toggle('ew-in-rehearsal',state.page==='rehearsal');
+    const pages={start,topic:topicScreen,review,drills,read:readingScreen,rehearsal:EssayRehearsal.render};
     panel.innerHTML=pages[state.page]?pages[state.page]():writing(state.page);
+    if (state.page==='rehearsal') EssayRehearsal.mount(panel,catalog,reviewRehearsal);
     if (panel.querySelector('#ew-revision')) showRevision(state.page);
     if(state.page==='topic') bookTopics();
     if(state.page==='draft') updateCounter();
   }
-  function exportText(withPrompt) {
+  function externalPacket() {
+    const previous = note().before
+      ? '<label class="ew-check"><input type="checkbox" id="ew-share-before" autocomplete="off"><span>Добавить первую версию для сравнения в этот файл</span></label>'
+      : '';
+    return '<details><summary>Продолжить с диалоговым ИИ-помощником</summary><div>'+
+      '<p>В файл войдут инструкция помощнику, тема, тип подсказки, книга, тезис, эпизод, объяснение и весь текущий черновик. Просмотри текст, затем скачай его и сам передай в выбранный чат. Для обсуждения одной фразы выдели её в черновике и нажми «Разобрать фразу».</p>'+
+      previous+'<label for="ew-packet-preview">Точный текст файла для чата</label>'+
+      '<textarea id="ew-packet-preview" rows="8" readonly>'+h(composeExport(true, false))+'</textarea>'+
+      actions(button('download-prompt','Скачать задание для чата'))+'<p id="ew-packet-status" class="ew-small" role="status"></p></div></details>';
+  }
+  function composeExport(withPrompt, includeBefore) {
     const n=note();
     const text=[topic().title,'Тип подсказки к тексту: '+lensLabel(),'Произведение: '+selectedTitle(),'Тезис\n'+n.thesis,'Эпизод\n'+argument().episode,'Объяснение\n'+argument().link,'Сочинение\n'+n.draft];
     const question=argument()[readerQuestionKey()];
     if (!withPrompt && question) text.push('Мой вопрос к эпизоду\n'+question);
-    if(n.before!==null) text.push('До правки\n'+n.before);
+    if(includeBefore && n.before) text.push('До правки\n'+n.before);
     if(withPrompt) text.unshift(instruction,'Далее — сам черновик ученика. Начни с одного полезного вопроса к этой работе.');
-    const url=URL.createObjectURL(new Blob(['\uFEFF'+text.join('\n\n')],{type:'text/plain;charset=utf-8'}));
+    return text.join('\n\n');
+  }
+  function exportText(withPrompt) {
+    const preview=panel.querySelector('#ew-packet-preview');
+    const text=withPrompt?preview.value:'\uFEFF'+composeExport(false,true);
+    const url=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));
     const a=document.createElement('a'); a.href=url; a.download=withPrompt?'zadanie-pomoshchniku.txt':'moe-sochinenie.txt'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+    if(!withPrompt) return;
+    const previous=panel.querySelector('#ew-share-before');
+    const status=panel.querySelector('#ew-packet-status');
+    status.textContent='Файл для чата подготовлен.';
+    if(previous?.checked){
+      previous.checked=false;
+      preview.value=composeExport(true,false);
+      status.textContent='Первая версия включена в этот файл. Для следующего скачивания её можно выбрать снова.';
+    }
   }
   root.addEventListener('input',event=>{
     const el=event.target,key=el.dataset.field;
@@ -408,6 +536,11 @@
   });
   root.addEventListener('change',event=>{
     const el=event.target;
+    if(el.id==='ew-share-before'){
+      panel.querySelector('#ew-packet-preview').value=composeExport(true,el.checked);
+      panel.querySelector('#ew-packet-status').textContent='';
+      return;
+    }
     if(el.id==='ew-exam-set'){
       state.practiceSet=Number(el.value);
       for(const choices of el.form.querySelectorAll('[data-exam-set]')){
@@ -453,6 +586,7 @@
   root.addEventListener('click',event=>{
     const b=event.target.closest('button[data-act]');if(!b)return;
     const action=b.dataset.act;
+    if(action.startsWith('evidence-')){handleEvidence(action);return;}
     if(action==='use-from-book'){
       note().work=panel.querySelector('#ew-from-book').value;
       render();save();panel.querySelector('#ew-topic').focus({preventScroll:true});return;
@@ -484,7 +618,7 @@
     if(action.startsWith('page-')){if(action==='page-review')state.reviewKind='draft';go(action.slice(5));return;}
     if(action.startsWith('route-')){
       const route=action.slice(6);
-      if(route==='drills'||route==='read'){go(route);return;}
+      if(route==='drills'||route==='read'||route==='rehearsal'){go(route);return;}
       state.route=route;go('topic');return;
     }
     if(action.startsWith('hint-')){
