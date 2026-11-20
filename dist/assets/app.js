@@ -10,17 +10,21 @@
   const download = practice.querySelector('[data-download]');
   const email = practice.querySelector('[data-email-draft]');
   const save = practice.querySelector('[data-save-draft]');
+  const forget = practice.querySelector('[data-delete-draft]');
   const taskSource = practice.querySelector('[data-draft-source]');
   const sourceText = () => taskSource?.value.trim() || '';
   const sourceLine = () => sourceText() ? 'Источник задания: ' + sourceText() + '\n' : '';
   const storageKey = 'uzel-workshop-draft-v1:' + practice.dataset.lesson;
   let changed = false;
+  // null means storage could not be inspected; keep deletion available to retry.
+  let hasSavedCopy = null;
   const refresh = () => {
     const count = countWords(area.value);
     practice.querySelector('.word-count').textContent = 'Слов в черновике: ' + count;
     practice.querySelector('.print-draft').textContent = sourceLine() + (sourceText() ? '\n' : '') + area.value;
     download.disabled = !area.value.trim();
     if (save) save.disabled = !area.value.trim();
+    if (forget) forget.disabled = hasSavedCopy === false;
     if (email) {
       const title = document.querySelector('h1').textContent.trim();
       const intro = title + '\n' + select.selectedOptions[0].textContent + '\n' + window.location.href + '\n\n';
@@ -32,17 +36,31 @@
     }
   };
   const updatePrompt = () => { prompt.textContent = select.selectedOptions[0].dataset.prompt; refresh(); };
-  select.addEventListener('change', updatePrompt);
+  select.addEventListener('change', () => { changed = true; status.textContent = ''; updatePrompt(); });
   area.addEventListener('input', () => { changed = true; status.textContent = ''; refresh(); });
   taskSource?.addEventListener('input', () => { changed = true; status.textContent = ''; refresh(); });
   save?.addEventListener('click', () => {
     try {
       localStorage.setItem(storageKey, JSON.stringify({text: area.value, mode: select.selectedIndex, source: sourceText()}));
       changed = false;
+      hasSavedCopy = true;
       status.textContent = 'Ответ сохранён в этом браузере. Срок хранения не гарантируется: данные могут исчезнуть. Для надёжной копии скачайте файл.';
     } catch (_) {
       status.textContent = 'Браузер не разрешил сохранение. Скачайте ответ файлом, чтобы не потерять его.';
     }
+    refresh();
+  });
+  forget?.addEventListener('click', () => {
+    try {
+      localStorage.removeItem(storageKey);
+      hasSavedCopy = false;
+      changed = true;
+      status.textContent = 'Сохранённая копия этого черновика удалена из браузера. Текст на странице не изменён.' +
+        (area.value.trim() ? ' Перед уходом скачайте его или сохраните снова, если хотите оставить копию.' : '');
+    } catch (_) {
+      status.textContent = 'Браузер не разрешил удалить сохранённую копию. Текст на странице не изменён; сохранённая копия могла остаться.';
+    }
+    refresh();
   });
   download.addEventListener('click', () => {
     if (!area.value.trim()) return;
@@ -73,14 +91,18 @@
     if (changed && area.value.trim()) { event.preventDefault(); event.returnValue = ''; }
   });
   try {
-    const saved = JSON.parse(localStorage.getItem(storageKey));
+    const raw = localStorage.getItem(storageKey);
+    hasSavedCopy = raw !== null;
+    const saved = JSON.parse(raw);
     if (saved && typeof saved.text === 'string' && saved.text.length <= 50000) {
       area.value = saved.text;
       if (taskSource && typeof saved.source === 'string' && saved.source.length <= 1000) taskSource.value = saved.source;
       if (Number.isInteger(saved.mode) && saved.mode >= 0 && saved.mode < select.options.length) select.selectedIndex = saved.mode;
       status.textContent = 'Восстановлен ответ, сохранённый в этом браузере. После правок сохраните его снова или скачайте файл.';
     }
-  } catch (_) { /* Storage may be unavailable or contain an outdated draft. */ }
+  } catch (_) {
+    status.textContent = 'Не удалось прочитать сохранённый черновик. Можно продолжать работу; для надёжной копии скачайте файл.';
+  }
   refresh(); updatePrompt();
   const context = document.modelContext;
   if (!context?.registerTool) return;

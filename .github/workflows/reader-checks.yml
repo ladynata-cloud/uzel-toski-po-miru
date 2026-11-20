@@ -39,7 +39,7 @@ jobs:
           node --check dist/assets/exam-practice.js
           node --check dist/assets/reader-search.js
           node --check dist/assets/reader-workshop.js
-          node --test tests/reader-search.test.cjs tests/reader-workshop.test.cjs
+          node --test tests/reader-search.test.cjs tests/reader-workshop.test.cjs tests/workshop-draft.test.cjs
 
   reader-browser:
     name: Reader browser smoke (Chromium)
