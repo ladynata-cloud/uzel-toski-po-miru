@@ -39,7 +39,7 @@ test('points to the exact sentence within a draft, including text preceding a ne
   const draft='Врач помог семье\n'+sentence+' Мне важно, как он попрощался.';
   const res=review('draft',draft);
   assert.equal(res.kind,'general-claim');assert.equal(res.excerpt,sentence);
-  assert.match(res.next,/поступку врача/u);
+  assert.match(res.next,/уже назвал поступок/u);
   const repeated='Поэт придаёт этому жесту особое значение.';
   assert.equal(review('draft',repeated+'\n'+repeated).kind,'repeated-sentence');
   assert.equal(review('link','Человек не всегда может сразу попросить помощи.').kind,'reader-check');
@@ -108,4 +108,33 @@ test('multiple readings have the same criteria and do not receive a simulated gr
     assert.equal(a.kind,'reader-check');assert.deepEqual(a,b);
     assert.doesNotMatch(a.observation+' '+a.next,/зач[её]т|балл|верно|неверно/iu);
   }
+});
+
+test('specific feedback quotes the handover sentence in the episode and in the draft',()=>{
+  for (const stage of ['episode','draft']) {
+    for (const mistake of ['Пирогов лично вручил Мерцалову деньги.', 'Пирогов дал Мерцалову деньги в руки.']) {
+      const sample=mistake+' Семья не ожидала помощи.';
+      const result=review(stage,sample);
+      assert.equal(result.kind,'check-source');
+      assert.equal(result.excerpt,mistake);
+      assert.match(result.next,/когда он увидел деньги/u);
+      assert.notEqual(review(stage,sample,{work:{id:'student'}}).kind,'check-source');
+    }
+    for (const sample of [
+      'Пирогов не дал Мерцалову деньги в руки.',
+      'Если бы Пирогов лично вручил деньги, это смутило бы Мерцалова.',
+      'После ухода Пирогова Мерцалов нашёл деньги под блюдцем.',
+      'Разве Пирогов лично вручил деньги?',
+      'Пирогов дал совет. Позже Мерцалов взял найденные деньги в руки.',
+      'Пирогов дал совет, а деньги в руки Мерцалов взял позже.'
+    ]) assert.notEqual(review(stage,sample).kind,'check-source',sample);
+  }
+});
+
+test('a general claim can be revised using an action the learner has already described',()=>{
+  const opening='Нужно помогать людям.';
+  assert.match(review('thesis',opening).next,/По какому поступку/u);
+  const result=review('thesis',opening+' Врач оставляет деньги под блюдцем, чтобы Мерцалову не пришлось их просить.');
+  assert.equal(result.excerpt,opening);
+  assert.match(result.next,/уже назвал поступок/u);
 });

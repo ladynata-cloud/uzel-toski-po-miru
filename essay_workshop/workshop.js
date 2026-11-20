@@ -276,6 +276,7 @@
   function answerControls(stage,text) {
     const {label,result}=answerContent(stage,text);
     return '<div id="ew-answer-tools" data-answer-stage="'+stage+'">'+
+      '<p class="ew-small" data-answer-guidance>Тренажёр подсказывает, что можно уточнить. Смысл ответа и факты сверяй с произведением.</p>'+
       actions(button(stage==='drill'?'drill-check':'answer-check',label,stage==='drill'))+
       '<div data-answer-result id="'+(stage==='drill'?'ew-drill-feedback':'ew-answer-feedback')+'" role="status">'+result+'</div></div>';
   }
