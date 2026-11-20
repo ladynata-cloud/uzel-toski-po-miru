@@ -12,6 +12,7 @@
   const intentChoices = {thesis:'Сформулировать свою мысль',scene:'Вспомнить сцену',explain:'Объяснить, что доказывает сцена',wording:'Исправить фразу',counter:'Рассмотреть возражение'};
   steps.push(['read','Первое чтение']);
   steps.push(['rehearsal','Репетиция']);
+  steps.push(['thesisLab','Уточнить тезис']);
   const routes = {quick:'Собрать аргумент',full:'Написать сочинение',edit:'Разобрать мой черновик'};
   const checklist = [
     ['topic','Тема','Я могу показать фразу, в которой отвечаю на вопрос темы.'],
@@ -81,6 +82,7 @@
     return heading('С чем нужна помощь?','Выбери задание по тому, что у тебя уже есть.')+'<div class="ew-routes">'+
       routeButton('read','Пока не знаю, о чём писать','Прочитай короткую сцену и запиши одно наблюдение.')+
       routeButton('quick','Помню книгу. Как сделать из неё аргумент?','За один короткий подход — от сцены до её объяснения.')+
+      routeButton('thesisLab','Уточнить свой тезис','Начни со своей фразы, подкрепи её деталью и попробуй тот же приём на новой сцене.')+
       routeButton('full','Хочу написать целое сочинение','Выбери тему, наметь ход мысли и перейди к свободному письму.')+
       routeButton('rehearsal','Репетиция без подсказок','Открой шесть тем и напиши работу самостоятельно. Таймер включается по желанию.')+
       routeButton('edit','У меня уже есть черновик','Вставь свой текст, выбери место для правки и сравни две версии.')+
@@ -423,6 +425,7 @@
       (stage==='draft'?'<details><summary>Книга для подсказок · '+h(selectedTitle())+'</summary><div>'+workPicker()+'</div></details>'+outline()+readerQuestion:'')+
       field(stage,copy[2],copy[3],stage==='draft'?12:4)+
       answerControls(stage,copy[3])+
+      (stage==='thesis'?actions(button('page-thesisLab','Уточнить свой тезис на примере')):'')+
       (stage==='draft'?'<p class="ew-counter" id="ew-count"></p>'+countOptions()+actions(button('snapshot','Сохранить версию перед правкой'))+'<p id="ew-snapshot-status" class="ew-small" role="status">'+(n.before!==null?'Первая версия сохранена. Сравнение доступно в самопроверке.':'')+'</p>':'')+
       '<div id="ew-revision"></div>'+actions(nav)+coach(stage);
   }
@@ -561,6 +564,11 @@
     }
     go('review');
   }
+  function thesisLab() {
+    const n=note();
+    n.thesisLab ||= {};
+    return EssayThesisLab.render({record:n.thesisLab,initial:n.thesis,work:work(),ownTitle:n.own});
+  }
   function render() {
     EssayRehearsal.unmount();
     closeOnlineReview();
@@ -568,8 +576,9 @@
     menu.innerHTML=steps.map(([id,title],i)=>'<button type="button" data-act="page-'+id+'"'+(state.page===id?' aria-current="step"':'')+'><span aria-hidden="true">'+(i>0&&i<7?i+' ·':'')+'</span>'+title+'</button>').join('');
     mode.value=state.mode==='orthodox'?'orthodox':'secular';
     root.classList.toggle('ew-in-rehearsal',state.page==='rehearsal');
-    const pages={start,topic:topicScreen,review,drills,read:readingScreen,rehearsal:EssayRehearsal.render};
+    const pages={start,topic:topicScreen,review,drills,read:readingScreen,rehearsal:EssayRehearsal.render,thesisLab};
     panel.innerHTML=pages[state.page]?pages[state.page]():writing(state.page);
+    if (state.page==='thesisLab') EssayThesisLab.mount(panel,{record:note().thesisLab,save});
     if (state.page==='rehearsal') EssayRehearsal.mount(panel,catalog,reviewRehearsal);
     if (panel.querySelector('#ew-revision')) showRevision(state.page);
     if(state.page==='topic') bookTopics();
@@ -737,7 +746,7 @@
     if(action.startsWith('page-')){if(action==='page-review')state.reviewKind='draft';go(action.slice(5));return;}
     if(action.startsWith('route-')){
       const route=action.slice(6);
-      if(route==='drills'||route==='read'||route==='rehearsal'){go(route);return;}
+      if(route==='drills'||route==='read'||route==='rehearsal'||route==='thesisLab'){go(route);return;}
       state.route=route;go('topic');return;
     }
     if(action.startsWith('hint-')){
@@ -757,9 +766,12 @@
   // A shared exercise opens with the learner's own saved answer for that card.
   function openLinkedExercise() {
     const drill=catalog.drills.find(d=>location.hash==='#uprazhnenie-'+d.id);
-    if (!drill) return false;
-    state.exercise=drill.id;
-    go('drills');
+    if (drill) {
+      state.exercise=drill.id;
+      go('drills');
+    } else if (location.hash==='#utochnit-tezis') {
+      go('thesisLab');
+    } else return false;
     try { window.history.replaceState(window.history.state,'',location.href.split('#')[0]); } catch {}
     return true;
   }

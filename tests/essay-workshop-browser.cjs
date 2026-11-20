@@ -329,6 +329,64 @@ async function exercise(page) {
   assert.equal(await drill.inputValue(),'observation', 'The link shared with a pupil must open the named exercise');
   assert.ok(await panel.locator('[data-drill-contrast]').isVisible());
   await fits();
+
+  const labField = key => panel.locator('[data-tl="'+key+'"]');
+  const labButton = key => panel.locator('[data-tl-action="'+key+'"]');
+  await step('topic');
+  await topics.selectOption({index:0});
+  await start();
+  await action('route-thesisLab');
+  await labButton('sample').click();
+  assert.match(await labField('phrase').inputValue(),/добрым/u);
+  outgoing.length = 0;
+  page.on('request', recordRequest);
+  await labField('word').fill('добрым');
+  await labButton('next').click();
+  const deed = 'Мерцалов находит деньги под блюдцем уже после ухода врача.';
+  await labField('deed').fill(deed);
+  await labButton('next').click();
+  const meaning = 'Деньги остались под блюдцем.';
+  await labField('meaning').fill(meaning);
+  await labButton('compare').click();
+  assert.equal(await labField('revision').inputValue(), meaning, 'Revision starts with the learner’s own explanation');
+  const improved = 'Герои смогут принять помощь, сохранив достоинство. Благодарить при постороннем им не приходится.';
+  await labField('revision').fill(improved);
+  await labButton('next').click();
+  assert.equal(await labField('transfer').inputValue(), '');
+  assert.equal(await panel.locator('[data-tl-step="transfer"] details, [data-tl-step="transfer"] ol').count(), 0,
+    'Model interpretations and the post-attempt rubric must not reveal answers in advance');
+  assert.equal(await panel.locator('[data-tl-original-transfer], [data-tl-action="revise"], [data-answer-result], [data-act="answer-check"]').count(), 0,
+    'The first independent response must precede revision and coaching');
+  await fits();
+  const independent = 'Лена села ближе. Сначала новичок молчал, а потом заговорил.';
+  await labField('transfer').fill(independent);
+  page.off('request', recordRequest);
+  assert.deepEqual(outgoing, [], 'The lesson and first transfer writing work on the device');
+  await page.reload();
+  assert.equal(await labField('transfer').inputValue(), independent, 'An unfinished independent attempt can be resumed');
+  await labButton('submit').click();
+  assert.equal(await panel.locator('[data-tl-step="review"] ol li').count(), 3, 'The review distinguishes detail, meaning and their connection');
+  const firstTransfer = panel.locator('[data-tl-original-transfer] .ew-note');
+  assert.equal(await firstTransfer.textContent(), independent);
+  await labButton('revise').click();
+  assert.equal(await labField('after').inputValue(), independent);
+  const alternativeReading = 'Лена могла хотеть лишь сесть поближе. То, что мальчик потом заговорил, ещё не раскрывает её намерения.';
+  await labField('after').fill(alternativeReading);
+  await fits();
+  await step('topic');
+  await topics.selectOption({label:topic});
+  await page.goto(base);
+  await page.goto(url+'#utochnit-tezis');
+  assert.equal(await labField('phrase').inputValue(), thesis, 'A different topic starts from its own thesis');
+  assert.equal(await firstTransfer.count(), 0, 'Earlier independent work stays with the original topic');
+  await step('draft');
+  assert.equal(await field('draft').inputValue(), previousDraft, 'The exercise must not change the pupil’s essay');
+  await step('topic');
+  await topics.selectOption({index:0});
+  await start();
+  await action('route-thesisLab');
+  assert.equal(await firstTransfer.textContent(), independent, 'Revising an interpretation preserves the unaided first attempt');
+  assert.equal(await labField('after').inputValue(), alternativeReading);
   assert.deepEqual(errors, [], 'The workshop raised an uncaught browser error');
 }
 

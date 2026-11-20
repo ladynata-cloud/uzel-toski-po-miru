@@ -45,6 +45,7 @@ def essay_workshop_body(personal=False):
         'REHEARSAL': read('rehearsal.js'),
         'ANSWER_FEEDBACK': read('answer-feedback.js'),
         'DRILL_CONTRAST': read('drill-contrast.js'),
+        'THESIS_LAB': read('thesis-lab.js'),
         'INTENTS': read('intent-model.js'),
         'APP': read('workshop.js'),
     }

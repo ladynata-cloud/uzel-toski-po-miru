@@ -45,6 +45,27 @@ test('points to the exact sentence within a draft, including text preceding a ne
   assert.equal(review('link','Человек не всегда может сразу попросить помощи.').kind,'reader-check');
 });
 
+test('a causal connector and a proposed motive cannot establish that an argument is sound',()=>{
+  const thesis='Помощь может сохранить достоинство человека.';
+  const episode='После ухода врача Мерцалов нашёл деньги под блюдцем.';
+  const samples=[
+    'Мерцалов заметил деньги, потому что поднял блюдце.',
+    'Оставляя деньги под блюдцем, врач избавил семью от необходимости благодарить его при встрече.',
+    'Доктор боялся славы.',
+    'Мы не знаем, боялся ли доктор славы.',
+    'Если бы доктор ждал благодарности, он мог бы задержаться.'
+  ];
+  for (const text of samples) {
+    const reply=review('link',text,{thesis,episode});
+    assert.equal(reply.kind,'reader-check');
+    assert.equal(reply.excerpt,text);
+    assert.match(reply.next,/деталь/u);
+    assert.ok(reply.next.includes(thesis));
+    assert.doesNotMatch(reply.observation,/тво[её] объяснение|доказан|верно|ошибка/iu);
+  }
+  assert.equal(review('link','Потому что.',{thesis,episode}).kind,'unfinished');
+});
+
 test('a book-specific factual comparison stays with the selected book',()=>{
   const passage='Пирогов лично вручает Мерцалову деньги и заставляет его расписаться в получении.';
   const res=review('episode',passage);
