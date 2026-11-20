@@ -87,6 +87,7 @@ jobs:
                   time.sleep(0.2)
           PY
           NODE_PATH="$RUNNER_TEMP/reader-browser-deps/node_modules" READER_ARTIFACT_DIR="$RUNNER_TEMP/reader-browser" node tests/reader-browser-smoke.cjs
+          NODE_PATH="$RUNNER_TEMP/reader-browser-deps/node_modules" node tests/essay-workshop-browser.cjs
       - name: Save browser evidence
         if: always()
         uses: actions/upload-artifact@v4
