@@ -104,6 +104,128 @@ async function topicAtlas(page) {
   }
 }
 
+async function topicToArgument(page) {
+  await page.goto(workshop.href + '#temy-sochineniya');
+  const catalog = JSON.parse(await page.locator('#ew-catalog').textContent());
+  const panel = page.locator('#ew-current');
+  const action = id => panel.locator('[data-act="' + id + '"]');
+  const step = id => page.locator('#ew-steps [data-act="page-' + id + '"]');
+  const publicRecords = catalog.publicTopics.topics;
+  const books = new Map(catalog.works.map(w => [w.id, w]));
+  const primary = publicRecords.find(t => t.id === 'pub-fipi-sample-2026-2');
+  const historical = publicRecords.find(t => t.id === 'pub-fipi-sample-2026-4');
+  async function checkSelection(record) {
+    const suggestions = record.bookRoutes.map(k => catalog.bookRoutes[k]);
+    assert.ok(suggestions.length >= 1 && suggestions.length <= 3);
+    const cards = panel.locator('[data-topic-work]');
+    assert.deepEqual(await cards.evaluateAll(nodes => nodes.map(n => n.dataset.topicWork)),
+      suggestions.map(r => r.work));
+    for (const {work, why, scene, url} of suggestions) {
+      const card = panel.locator('[data-topic-work="' + work + '"]');
+      const book = books.get(work);
+      assert.ok((await card.innerText()).includes(why), 'Shows the reason this scene fits this topic');
+      assert.ok((await card.innerText()).includes(scene || book.fact), 'Shows an identifiable scene');
+      assert.equal(await card.locator('a').getAttribute('href'), url || book.url);
+    }
+    assert.equal(await panel.locator('[data-library-work]').count(), 0);
+    return suggestions.map(r => r.work);
+  }
+  const link = panel.locator('[data-ta-card="p:' + primary.id + '"] a[data-ta-act="books"]').first();
+  assert.equal(await link.getAttribute('href'), '#tema-' + primary.id);
+  await link.click();
+  const candidates = await checkSelection(primary);
+  const chosen = candidates[0];
+  const storedWork = () => page.evaluate(() => {
+    const notebook = JSON.parse(localStorage.getItem('uzel.essay-workshop.v1'));
+    return notebook.notes[notebook.active].work;
+  });
+  assert.equal(await storedWork(), '', 'Viewing a theme does not select a book');
+  await action('library-use-' + chosen).click();
+  assert.equal(await panel.locator('#ew-work').inputValue(), chosen);
+  assert.equal(await panel.locator('#ew-work option').count(), candidates.length + 2);
+  const observation = 'Эту деталь я отметил самостоятельно.';
+  await panel.locator('[data-field="episode"]').fill(observation);
+  await step('draft').click();
+  await panel.locator('[data-field="draft"]').fill(essay);
+
+  await page.goto(workshop.href + '#tema-' + historical.id);
+  const historyBooks = await checkSelection(historical);
+  assert.notDeepEqual(historyBooks, candidates, 'History and doing good have different selections');
+  assert.equal(await storedWork(), '', 'A new topic starts without the previous choice');
+  await page.reload();
+  await checkSelection(historical);
+  await action('library-all').click();
+  await panel.locator('#ew-library-search').fill(books.get(chosen).title);
+  assert.ok(await panel.locator('[data-library-work="' + chosen + '"]').isVisible());
+  await action('topic-books').click();
+  await checkSelection(historical);
+
+  await page.goto(workshop.href + '#tema-' + primary.id);
+  assert.equal(await storedWork(), chosen);
+  await action('library-use-' + chosen).click();
+  assert.equal(await panel.locator('[data-field="episode"]').inputValue(), observation);
+  await step('draft').click();
+  assert.equal(await panel.locator('[data-field="draft"]').inputValue(), essay);
+
+  await step('topic').click();
+  const authored = catalog.topics[1];
+  await panel.locator('#ew-topic').selectOption(authored.id);
+  await checkSelection(authored);
+  assert.equal(await panel.locator('#ew-from-book option').count(), 0,
+    'The reverse lookup loads the whole catalogue only when requested');
+  await panel.locator('#ew-browse-by-book summary').click();
+  await panel.locator('#ew-from-book option').nth(1).waitFor({state:'attached'});
+  assert.equal(await panel.locator('#ew-from-book option').count(), catalog.works.length + 1);
+
+  await page.goto(workshop.href + '#temy-sochineniya');
+  await panel.locator('#ta-own summary').click();
+  await panel.locator('#ta-own-title').fill('Мой новый вопрос о герое книги');
+  await panel.locator('[data-ta-own-form] button').click();
+  assert.equal(await panel.locator('[data-topic-work]').count(), 0);
+  assert.match(await panel.locator('[data-topic-picks]').innerText(), /нет готовой подборки/u);
+  await action('choose-own-book').click();
+  assert.equal(await panel.locator('#ew-work').inputValue(), 'own');
+  await panel.locator('#ew-own').fill('Моё произведение');
+  const alternateTopic = publicRecords.find(t => t.bookRoutes.some(k => catalog.bookRoutes[k].card));
+  assert.ok(alternateTopic, 'A question has a specific fragment beyond the standard shelf card');
+  const alternate = alternateTopic.bookRoutes.map(k => catalog.bookRoutes[k]).find(r => r.card);
+  await page.goto(workshop.href + '#tema-' + alternateTopic.id);
+  await checkSelection(alternateTopic);
+  await action('library-use-' + alternate.work).click();
+  const scene = panel.locator('.ew-text-card').first();
+  assert.ok((await scene.textContent()).includes(alternate.scene));
+  assert.equal(await scene.locator('a').getAttribute('href'), alternate.url);
+  await panel.locator('[data-field="episode"]').fill(observation);
+  await step('draft').click();
+  await panel.locator('[data-field="draft"]').fill(essay);
+  await action('open-full-review').click();
+  const review = JSON.parse(await page.locator('#preview').textContent());
+  assert.equal(review.topic, alternateTopic.title);
+  assert.equal(review.essay, essay);
+  assert.equal(review.cards[0].fact, alternate.scene);
+  assert.equal(review.cards[0].url, alternate.url);
+
+  await page.goto(workshop.href + '#tema-' + alternateTopic.id);
+  await action('library-use-' + alternate.work).click();
+  await action('shelf-capture').click();
+  await action('page-shelf').click();
+  const saved = panel.locator('[data-shelf-card]').first();
+  await saved.locator('[data-shelf-action="choose"]').click();
+  await saved.locator('select[name="topic"]').selectOption('!new');
+  const secondTopic = 'Что я замечаю в этом разговоре при повторном чтении?';
+  await saved.locator('input[name="newTopic"]').fill(secondTopic);
+  await saved.locator('[data-shelf-action="apply"]').click();
+  await step('draft').click();
+  await panel.locator('[data-field="draft"]').fill(essay);
+  await action('open-full-review').click();
+  await page.locator('#import-apply').click();
+  const reused = JSON.parse(await page.locator('#preview').textContent());
+  assert.equal(reused.topic, secondTopic);
+  assert.deepEqual(reused.cards, review.cards, 'The personal shelf preserves the particular scene on a new topic');
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+  assert.ok(overflow <= 1, 'Book selection fits the viewport');
+}
+
 async function topicPicker(page) {
   const open = page.locator('#topic-picker > summary');
   const pick = page.locator('#topic-results [data-topic-index]').first();
@@ -212,9 +334,13 @@ async function family(page, browser, release) {
     page.setDefaultTimeout(6000);
     await library(page);
     await topicAtlas(page);
+    for (const width of [1100, 360]) {
+      const scoped = await browser.newPage({viewport:{width, height:800}});
+      try { await topicToArgument(scoped); } finally { await scoped.close(); }
+    }
     const pageHtml = await fs.readFile(path.join(dist, 'proverka-sochineniya.html'), 'utf8');
     const release = JSON.parse(pageHtml.match(/const reviewBundle\s*=\s*(\{[^\n]*\});/)[1]);
     await family(page,browser,release);
-    console.log('Shelf filters, per-book notes, optional cards and family transfer passed.');
+    console.log('Topic selections, mobile navigation, shelf filters, per-book notes and family transfer passed.');
   } finally {await browser.close();}
 })().catch(error => { console.error(error); process.exitCode=1; });

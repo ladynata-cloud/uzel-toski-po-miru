@@ -97,7 +97,7 @@ const EssayRehearsal = (() => {
       '<form data-r-form="start"><label for="ew-r-set">Комплект тем</label><select id="ew-r-set" name="set"><option value="0">Комплект 1</option><option value="1">Комплект 2</option></select>'+
       '<label for="ew-r-time">Время на репетицию</label><select id="ew-r-time" name="duration"><option value="standard">3 часа 55 минут</option><option value="extended">5 часов 25 минут · увеличенное время</option><option value="none">Без таймера</option></select>'+
       '<p class="ew-small">Время на выбор темы входит в репетицию. Учебный черновик хранится отдельно.</p>'+
-      '<div class="ew-actions"><button class="ew-primary" type="submit">Начать и открыть темы</button></div></form>';
+      '<div class="ew-actions"><button class="ew-primary" type="submit">Начать и открыть темы</button></div></form><div class="ew-actions">'+button('prepare','Сначала потренироваться с книгами этого комплекта')+'</div>';
   }
 
   function chooser(record) {
@@ -119,7 +119,7 @@ const EssayRehearsal = (() => {
   function finished(record) {
     return '<p class="ew-sub">Репетиция завершена · '+h(dateText(record.finished))+'</p><p class="ew-topic">'+h(titleOf(record))+'</p>'+
       (record.draft?'<details><summary>Прочитать исходную работу</summary><div class="ew-note">'+h(record.draft)+'</div></details>':'<p>В этой попытке сохранена тема. Текст с бумаги можно внести при разборе.</p>')+
-      '<div class="ew-actions">'+button('review',record.draft?'Разобрать копию работы':'Ввести текст с бумаги для разбора',true)+button('download','Скачать попытку (TXT)')+button('new','Новая репетиция')+'</div>'+
+      '<div class="ew-actions">'+button('review',record.draft?'Разобрать копию работы':'Ввести текст с бумаги для разбора',true)+button('download','Скачать попытку (TXT)')+button('books','Вернуться к этой теме и подобрать книги')+button('new','Новая репетиция')+'</div>'+
       '<p class="ew-small" data-r-status role="status">'+h(storageText(record))+'</p>';
   }
 
@@ -152,7 +152,7 @@ const EssayRehearsal = (() => {
     window.print();
   }
 
-  function mount(panel,catalog,onReview) {
+  function mount(panel,catalog,onReview,prepare) {
     unmount();
     const root=panel.querySelector('.ew-rehearsal');
     if (!root) return;
@@ -229,7 +229,13 @@ const EssayRehearsal = (() => {
         selected=target.dataset.rOpen;notice='';draw();root.querySelector('h2')?.focus();return;
       }
       const record=records.get(selected), action=target.dataset.rehearsal;
+      if (!record && action==='prepare') {
+        prepare(Number(body.querySelector('#ew-r-set').value));return;
+      }
       if (!record||!action) return;
+      if (action==='books' && record.finished) {
+        prepare(record.set,titleOf(record));return;
+      }
       if (action==='download') {download(record);return;}
       if (action==='print') {printTopics(record);return;}
       if (action==='review' && record.finished) {

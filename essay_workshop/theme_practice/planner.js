@@ -6,6 +6,19 @@ const EssayThemePlanner = (() => {
   const esc = value => String(value ?? '').replace(/[&<>"']/gu, ch =>
     ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[ch]));
 
+  // A saved plan can precede the introduction of per-topic book suggestions.
+  const byPlannerKey = new Map();
+  const byTitle = new Map();
+  for (const group of lessons) {
+    group.tasks.forEach((item, index) => {
+      byPlannerKey.set('theme-plan-' + group.id + '-' + index, item.bookSuggestions);
+      byTitle.set(item.title, item.bookSuggestions);
+    });
+  }
+  function suggestionsFor(topic) {
+    return byPlannerKey.get(topic?.plannerKey) || byTitle.get(topic?.title) || [];
+  }
+
   function render() {
     return '<details id="ta-plan"><summary>Сравнить три темы и составить план</summary><div data-tp-content></div></details>';
   }
@@ -27,7 +40,9 @@ const EssayThemePlanner = (() => {
     function task() { return group().tasks[record.levelByGroup[record.group]]; }
     function topicKey() { return group().id + '-' + record.levelByGroup[record.group]; }
     function worksheet() {
-      return record.byTopic[topicKey()] ||= {work:'', thesis:'', notesByWork:{}};
+      const sheet = record.byTopic[topicKey()] ||= {work:'', thesis:''};
+      sheet.notesByWork ||= {};
+      return sheet;
     }
     function notes() {
       const sheet = worksheet();
@@ -48,19 +63,34 @@ const EssayThemePlanner = (() => {
         return '<p><a href="' + esc(url.href) + '" target="_blank" rel="noopener noreferrer">Открыть источник</a></p>';
       } catch { return ''; }
     }
+    function chooseWork(work) {
+      const sheet = worksheet();
+      sheet.work = work;
+      content.querySelectorAll('[data-tp-pick]').forEach(button => {
+        const selected = button.dataset.tpPick === work;
+        button.setAttribute('aria-pressed', String(selected));
+        button.classList.toggle('ew-primary', selected);
+      });
+      const select = content.querySelector('#tp-book');
+      if (select) select.value = work;
+      drawBook();
+      ctx.save();
+      content.querySelector('[data-tp-current-book]')?.focus();
+    }
     function drawBook() {
       const sheet = worksheet(), book = works.get(sheet.work), holder = content.querySelector('[data-tp-book-panel]');
       if (!sheet.work) { holder.innerHTML = ''; return; }
       const n = notes();
+      const match = task().bookSuggestions.find(item => item.work === sheet.work);
       let head;
       if (book) {
         head = '<details data-tp-scene><summary>Вспомнить сцену из книги</summary><p class="ew-small">Пересказ мастерской</p>' +
-          '<p>' + esc(book.fact) + '</p>' + sourceLink(book.url) + '</details>';
+          '<p>' + esc(match?.scene || book.fact) + '</p>' + sourceLink(match?.url || book.url) + '</details>';
       } else {
         head = '<div class="ew-field"><label for="tp-own">Автор и название моей книги</label><input id="tp-own" data-tp-field="own" value="' +
           esc(n.own) + '"></div>';
       }
-      holder.innerHTML = head + field('thesis','Как я отвечу на выбранный вопрос?',sheet.thesis) +
+      holder.innerHTML = '<h4 tabindex="-1" data-tp-current-book>' + (book ? 'Моя книга · ' + esc(match?.title || book.title) : 'Моя книга') + '</h4>' + head + field('thesis','Как я отвечу на выбранный вопрос?',sheet.thesis) +
         field('episode','Какой поступок, жест или деталь я возьму из текста?',n.episode) +
         field('link','Как этот эпизод поможет обосновать мой ответ?',n.link) +
         '<div class="ew-actions"><button type="button" class="ew-primary" data-tp-draft>Открыть черновик с моим планом</button><button type="button" data-tp-download>Скачать мои заметки</button></div>' +
@@ -71,16 +101,31 @@ const EssayThemePlanner = (() => {
       const item = task(), target = content.querySelector('[data-tp-task]');
       if (!item) { target.innerHTML = ''; return; }
       const sheet = worksheet();
-      const suggested = item.books.map(id => works.get(id)).filter(Boolean);
-      const list = arr => arr.map(w => opt(w.id, w.title, sheet.work)).join('');
+      const choices = item.bookSuggestions.map(({work, why, title}, i) => {
+        const book = works.get(work);
+        return '<div class="ew-topic-book"><button type="button" class="' + (work === sheet.work ? 'ew-primary' : '') + '" data-tp-pick="' + esc(work) +
+          '" aria-pressed="' + String(work === sheet.work) + '" aria-describedby="tp-why-' + i + '">' +
+          esc(title || book.title) + '</button><p id="tp-why-' + i + '">' + esc(why) + '</p></div>';
+      }).join('');
       target.innerHTML = '<h3 tabindex="-1" data-tp-title>' + esc(item.title) + '</h3><p>' + esc(item.move) + '</p>' +
         '<details><summary>Как проверить, что я отвечаю именно на эту тему?</summary><p>' + esc(item.check) + '</p></details>' +
-        '<div class="ew-field"><label for="tp-book">Какую книгу я помню?</label><select id="tp-book">' +
-        opt('','Выбрать произведение',sheet.work) + opt('own','Указать свою книгу',sheet.work) +
-        '<optgroup label="Подходящие сцены с полки">' + list(suggested) + '</optgroup>' +
-        '<optgroup label="Другие произведения на полке">' + list(alphabetical.filter(w => !item.books.includes(w.id))) +
-        '</optgroup></select></div><div data-tp-book-panel></div>';
+        '<h4 id="tp-shortlist-label">Книги к этой теме</h4><p class="ew-small">Выбери книгу, эпизод из которой ты помнишь.</p>' +
+        '<div class="tp-shortlist" role="group" aria-labelledby="tp-shortlist-label">' + choices + '</div>' +
+        '<button type="button" data-tp-more aria-expanded="false" aria-controls="tp-more-panel">Выбрать другую книгу</button>' +
+        '<div id="tp-more-panel" class="ew-field" hidden></div><div data-tp-book-panel></div>';
       drawBook();
+    }
+    function toggleOtherBooks(button) {
+      const panel = content.querySelector('#tp-more-panel');
+      const show = panel.hidden;
+      panel.hidden = !show;
+      button.setAttribute('aria-expanded', String(show));
+      if (!show) { panel.replaceChildren(); return; }
+      const sheet = worksheet();
+      panel.innerHTML = '<label for="tp-book">Вся полка и своя книга</label><select id="tp-book">' +
+        opt('', 'Выбрать произведение', sheet.work) + opt('own', 'Ввести свою книгу', sheet.work) +
+        alphabetical.map(book => opt(book.id, book.title, sheet.work)).join('') + '</select>';
+      panel.querySelector('select').focus();
     }
     function drawChoices() {
       const g = group();
@@ -102,7 +147,8 @@ const EssayThemePlanner = (() => {
     }
     function downloadNotes() {
       const sheet = worksheet(), n = notes();
-      const bookTitle = works.get(sheet.work)?.title || n.own;
+      const match = task().bookSuggestions.find(item => item.work === sheet.work);
+      const bookTitle = match?.title || works.get(sheet.work)?.title || n.own;
       const fields = [['Тема',task().title],['Книга',bookTitle],['Мой тезис',sheet.thesis],['Эпизод',n.episode],['Обоснование',n.link]];
       const body = fields.filter(([,v]) => String(v || '').trim()).map(([k,v]) => k + '\n' + v).join('\n\n');
       const url = URL.createObjectURL(new Blob([body], {type:'text/plain;charset=utf-8'}));
@@ -134,7 +180,7 @@ const EssayThemePlanner = (() => {
       if (event.target.id === 'tp-group') {
         record.group = event.target.value; drawChoices(); ctx.save();
       } else if (event.target.id === 'tp-book') {
-        worksheet().work = event.target.value; drawBook(); ctx.save();
+        chooseWork(event.target.value);
       }
     });
     content.addEventListener('input', event => {
@@ -146,6 +192,10 @@ const EssayThemePlanner = (() => {
       ctx.save();
     });
     content.addEventListener('click', event => {
+      const pick = event.target.closest('[data-tp-pick]');
+      if (pick) { chooseWork(pick.dataset.tpPick); return; }
+      const more = event.target.closest('[data-tp-more]');
+      if (more) { toggleOtherBooks(more); return; }
       const level = event.target.closest('[data-tp-level]');
       if (level) {
         record.levelByGroup[record.group] = Number(level.dataset.tpLevel); drawChoices(); ctx.save();
@@ -158,9 +208,12 @@ const EssayThemePlanner = (() => {
 
   function openDraft(state, plan, go) {
     const prefix = 'theme-plan-' + plan.key;
+    const suggestions = suggestionsFor({plannerKey:prefix,title:plan.title});
+    const alternate = suggestions.some(route => route.work === plan.work && route.card);
     const previous = state.custom.filter(t => t.plannerKey === prefix);
+    const argumentKey = n => n.work && n.sceneBook === n.work ? 'topic:' + n.work : n.work;
     const snapshot = n => {
-      const arg = n.args?.[n.work] || {};
+      const arg = n.args?.[argumentKey(n)] || {};
       return [n.work,n.own || '',n.thesis,arg.episode || '',arg.link || ''];
     };
     const fields = [plan.work,plan.own,plan.thesis,plan.episode,plan.link];
@@ -180,12 +233,21 @@ const EssayThemePlanner = (() => {
       }
       const n = state.notes[topic.id] ||= {args:{},draft:'',checks:{},turns:{},before:null};
       n.work = topic.work = plan.work; n.own = plan.own; n.thesis = plan.thesis;
-      const arg = n.args[plan.work] ||= {};
+      n.sceneBook = alternate ? plan.work : '';
+      const arg = n.args[argumentKey(n)] ||= {};
       arg.episode = plan.episode; arg.link = plan.link;
       topic.transferred = fields;
+    } else if (alternate) {
+      const n = state.notes[topic.id];
+      // Earlier plans stored the pupil's notes under the general work.
+      if (n && n.sceneBook === undefined && !n.shelfChoice && n.work === plan.work) {
+        n.sceneBook = plan.work;
+        n.args[argumentKey(n)] ||= {...n.args[plan.work]};
+      }
     }
+    topic.bookSuggestions = suggestions;
     state.active = topic.id; state.route = 'full';
     go('draft');
   }
-  return Object.freeze({render,mount,openDraft});
+  return Object.freeze({render,mount,openDraft,suggestionsFor});
 })();

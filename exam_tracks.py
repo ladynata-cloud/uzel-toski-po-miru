@@ -51,7 +51,7 @@ def essay_workshop_body(personal=False):
         'THESIS_LAB': read('thesis-lab.js'),
         'SHELF': read('shelf.js'),
         'STUDY_URL': ('https://usel-toski-po-miru.art' if personal else '') + ESSAY_WORKSHOP + 'kak-proveryali/',
-        'THEME_ATLAS': planner_script() + '\n' + read('theme-atlas.js'),
+        'THEME_ATLAS': planner_script(catalog) + '\n' + read('theme-atlas.js'),
         'WRITING_PRACTICE': render_writing_practice(),
         'DRAFT_READER': read('draft-reader.js'),
         'PARAGRAPH_TRIAL': read('paragraph-trial.js'),

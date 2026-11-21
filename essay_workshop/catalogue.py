@@ -2,6 +2,8 @@
 import json
 from pathlib import Path
 
+from .topic_books import attach_book_routes
+
 HERE = Path(__file__).parent
 SECTIONS = (
     "Духовно-нравственные ориентиры в жизни человека",
@@ -18,7 +20,8 @@ ORIGINAL_SECTIONS = {
 
 def load_catalog():
     catalog = json.loads((HERE / "catalog.json").read_text(encoding="utf-8"))
-    for name in ("classics_library.json", "shelf_library.json", "named_library.json"):
+    for name in ("classics_library.json", "shelf_library.json", "named_library.json",
+                 "topic_books/lermontov.json", "topic_books/culture_extra.json"):
         extra = json.loads((HERE / name).read_text(encoding="utf-8"))
         for key in ("works", "topics", "readings"):
             catalog[key].extend(extra[key])
@@ -54,4 +57,5 @@ def load_catalog():
     subdivisions = {s["id"] for s in catalog["publicTopics"]["sections"]}
     if {t["subsection"] for t in catalog["topics"]} != subdivisions:
         raise ValueError("Workshop practice must cover every published topic subdivision")
+    attach_book_routes(catalog)
     return catalog

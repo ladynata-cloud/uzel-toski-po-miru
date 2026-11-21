@@ -6,56 +6,10 @@ const EssayThemeAtlas = (() => {
   const view={query:'',section:'',subsection:'',source:publicGroup,limit:pageSize,own:''};
   const kinds={sample:'Официальный образец комплекта',history_examples:'Опубликованный пример исторической темы',
     literature_examples:'Пример литературной темы',past:'Тема прошедшего сочинения',training:'Методический материал',secondary_index:'Архив 4ЕГЭ · вторичный источник'};
-  const readingIdeas=[
-    [/сострадан|милосерд|бескорыст|доброт|чутк|помо[гч]/u,['doctor','yushka','last-leaf','relics']],
-    [/совест|раская|покаян|преступлен|прощен/u,['classic-crime-and-punishment','violin','captain']],
-    [/музык|искусств|худож|творче|талант/u,['singers','mozart-salieri','last-leaf','violin']],
-    [/природ|животн|окружающ.{0,4} мир/u,['meadow','shelf-senior-027','classic-fathers-and-sons']],
-    [/семь|семе[йе]|родител|поколен|матер|отцов|детств/u,['classic-fathers-and-sons','doctor','classic-war-and-peace']],
-    [/воин|войн|военн|фронт|отечеств|родин|патриот/u,['borodino','classic-war-and-peace','shelf-senior-001']],
-    [/честь|честн|верност|предатель|присяг|долг/u,['captain','classic-war-and-peace','ball']],
-    [/одиноч|равнодуш|унижен|достоинств/u,['overcoat','yushka','doctor']]
-  ];
   const clean=value=>String(value??'').toLocaleLowerCase('ru').replace(/ё/gu,'е').trim();
   const escape=value=>String(value??'').replace(/[&<>"']/gu,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function options(items,chosen){return items.map(([id,name])=>'<option value="'+escape(id)+'"'+(id===chosen?' selected':'')+'>'+escape(name)+'</option>').join('');}
   function button(act,label){return '<button type="button" data-ta-act="'+act+'">'+escape(label)+'</button>';}
-  function preciseTitle(question,known){
-    const exact=[];
-    for(const match of question.matchAll(/«([^«»]+)»/gu)){
-      const prefix=question.slice(Math.max(0,match.index-100),match.index).replace(/[А-ЯЁ]\./gu,'');
-      if(!/(?:роман|повест|рассказ|пьес|трагеди|комеди|книг|поэм|басн|произведени|стихотворени)[а-яё]*[^.!?«»]{0,65}$/iu.test(prefix))continue;
-      const name=clean(match[1]);
-      for(const [id,work] of known){
-        const title=work.title.match(/«([^«»]+)»/u)?.[1];
-        if(title&&clean(title)===name)exact.push(id);
-      }
-    }
-    return [...new Set(exact)];
-  }
-  function authorSearch(question,known){
-    const restriction=question.match(/(?:[Пп]о (?:одному или нескольким )?(?:произведениям?|произведению|рассказам?|стихотворениям?)|[Тт]ворчеств[оеау]|[Вв] произведениях)\s+((?:[А-ЯЁ]\.\s*){0,2}[А-ЯЁ][а-яё-]{2,})/u);
-    if(!restriction)return '';
-    const surname=clean(restriction[1].split(/\.\s*/u).at(-1));
-    const stem=surname.replace(/([сц])к(?:ого|ой)$/u,'$1к').replace(/([иео][нв])[ауе]$/u,'$1').replace(/(?:ого|а|у)$/u,'');
-    if(stem.length<4)return '';
-    const authors=[...known.values()].map(w=>w.title.split('«')[0]).flatMap(s=>s.match(/[А-ЯЁ][а-яё-]{2,}/gu)||[]);
-    const match=authors.find(name=>clean(name).startsWith(stem));
-    return match||'';
-  }
-  function related(row,known){
-    const explicit=row.books.filter(id=>known.has(id));
-    if(explicit.length)return {ids:explicit};
-    const exact=preciseTitle(row.title,known);
-    if(exact.length)return {ids:exact};
-    const text=clean(row.title);
-    const historical=['history_examples','past','secondary_index'].includes(row.sourceKind)||
-      /истори|(?:велик|отечественн|гражданск|миров)[а-я]*\s+войн|\b[ivx]+\s*(?:век|столет)|(?:18|19|20)\d{2}|блокад/iu.test(text);
-    const named=/«|[А-ЯЁ]\.\s*[А-ЯЁ]|(?:творчеств|по произведен|в романе|в повести)/u.test(row.title);
-    if(historical||named)return {search:authorSearch(row.title,known)};
-    const ids=readingIdeas.filter(([expression])=>expression.test(text)).flatMap(([,ids])=>ids);
-    return {ids:[...new Set(ids.filter(id=>known.has(id)))].slice(0,6)};
-  }
   function sourceLabel(source){
     const year=source.year?String(source.year):'';
     return source.title+(year&&!source.title.includes(year)?' · '+year:'');
@@ -88,12 +42,14 @@ const EssayThemeAtlas = (() => {
     const rows=pub.topics.map(t=>({...t,key:'p:'+t.id,official:true,sourceKind:sources.get(t.source)?.kind,section:String(t.section||''),books:Array.isArray(t.books)?t.books:[]}));
     for(const t of catalog.topics){
       const top=sectionNames.indexOf(t.section)+1;
-      rows.push({id:t.id,key:'w:'+t.id,title:t.title,source:authorGroup,section:String(t.subsection||(top?top:'')),books:t.work?[t.work]:[],official:false});
+      rows.push({id:t.id,key:'w:'+t.id,title:t.title,source:authorGroup,section:String(t.subsection||(top?top:'')),books:t.work?[t.work]:[],bookRoutes:t.bookRoutes,official:false});
     }
     const byKey=new Map(rows.map(row=>[row.key,row]));
     for(const r of rows){
       const source=sources.get(r.source);
-      r.search=clean([r.title,r.code||'',r.section,r.date||'',r.region||'',r.zone||'',source?.year||'',source?.title||'',...r.books.map(id=>works.get(id)?.title||'')].join(' '));
+      const routes=(r.bookRoutes||[]).map(k=>catalog.bookRoutes[k]).filter(Boolean);
+      const titles=routes.map(route=>works.get(route.work)?.title||'');
+      r.search=clean([r.title,r.code||'',r.section,r.date||'',r.region||'',r.zone||'',source?.year||'',source?.title||'',...titles].join(' '));
     }
     function subsectionOptions(){
       const choices=pub.sections.filter(s=>String(s.id).includes('.')&&(!view.section||String(s.id).startsWith(view.section+'.')));
@@ -117,23 +73,7 @@ const EssayThemeAtlas = (() => {
         '<h3 tabindex="-1">'+escape(row.title)+'</h3>'+src+
         (!row.official&&book?'<p class="ew-small">'+escape(book.title)+'</p>':'')+
         (row.section.includes('.')&&sectionTitles.has(row.section)?'<p class="ew-small">'+(!row.official?'Подбор мастерской по подразделам · ':'')+escape(sectionTitles.get(row.section))+'</p>':'')+
-        '<div class="ew-actions">'+button('write','Писать на эту тему')+button('books','Подобрать книги')+button('ownBook','Взять свою книгу')+'</div><div data-ta-book-box hidden></div></article>';
-    }
-    function fillBookOptions(box){
-      const query=clean(box.querySelector('[data-ta-book-search]').value);
-      const matches=[...works.values()].filter(w=>query.split(/\s+/u).every(word=>clean(w.title).includes(word)));
-      box.querySelector('[data-ta-book-count]').textContent=matches.length?'Найдено книг: '+matches.length+'.':'Книга не найдена. Укажи своё произведение или измени запрос.';
-      const field=box.querySelector('[data-ta-book-choice]'),open=box.querySelector('[data-ta-act="book-choice"]');
-      field.innerHTML=options(matches.map(w=>[w.id,w.title]),'');field.disabled=open.disabled=!matches.length;
-    }
-    function chooseBook(card,query){
-      const box=card.querySelector('[data-ta-book-box]'),key=card.dataset.taCard;
-      box.hidden=false;
-      box.innerHTML='<p>Проверь, ограничивает ли вопрос выбор произведения, автора или исторической эпохи.</p>'+
-        '<label for="'+escape(key+'-find')+'">Найти книгу по автору или названию</label><input type="search" data-ta-book-search id="'+escape(key+'-find')+'" value="'+escape(query)+'">'+
-        '<p data-ta-book-count role="status" class="ew-small"></p><label for="'+escape(key+'-book')+'">Мой выбор</label><select data-ta-book-choice id="'+escape(key+'-book')+'"></select>'+
-        '<div class="ew-actions">'+button('book-choice','Открыть выбранную книгу')+button('ownBook','Указать другое произведение')+'</div>';
-      fillBookOptions(box);box.querySelector('[data-ta-book-search]').focus();
+        '<div class="ew-actions">'+button('write','Писать на эту тему')+'<a data-ta-act="books" href="#tema-'+escape(row.id)+'">Книги и эпизоды к теме</a>'+button('ownBook','Взять свою книгу')+'</div></article>';
     }
     function show(){
       const terms=clean(view.query).split(/\s+/u).filter(Boolean);
@@ -154,7 +94,6 @@ const EssayThemeAtlas = (() => {
     EssayThemePlanner.mount(host,catalog,plannerContext);
     subsectionOptions();show();
     host.addEventListener('input',event=>{
-      if(event.target.hasAttribute('data-ta-book-search')){fillBookOptions(event.target.closest('[data-ta-book-box]'));return;}
       if(event.target.id==='ta-own-title'){view.own=event.target.value;return;}
       if(event.target.id!=='ta-search')return;
       view.query=event.target.value;view.limit=pageSize;show();
@@ -166,7 +105,7 @@ const EssayThemeAtlas = (() => {
       view.limit=pageSize;show();
     });
     host.addEventListener('click',event=>{
-      const b=event.target.closest('[data-ta-act]');if(!b||b.type==='submit')return;
+      const b=event.target.closest('[data-ta-act]');if(!b||b.type==='submit'||b.tagName==='A')return;
       const mode=b.dataset.taAct;
       if(mode==='subsection-workshop'){
         view.source=authorGroup;view.query='';view.limit=pageSize;
@@ -180,21 +119,13 @@ const EssayThemeAtlas = (() => {
       }
       const item=b.closest('[data-ta-card]'),row=byKey.get(item?.dataset.taCard);
       if(!row)return;
-      if(mode==='book-choice'){
-        const id=item.querySelector('[data-ta-book-choice]').value;
-        if(works.has(id))select(row,'books',[id]);return;
-      }
-      if(mode==='books'){
-        const next=related(row,works);
-        if('search' in next)chooseBook(item,next.search);
-        else select(row,mode,next.ids);
-      }else select(row,mode,[]);
+      select(row,mode);
     });
     host.querySelector('[data-ta-own-form]').addEventListener('submit',event=>{
       event.preventDefault();
       const field=host.querySelector('#ta-own-title'),title=field.value.trim();
       if(!title){field.setCustomValidity('Запиши формулировку своей темы.');field.reportValidity();field.setCustomValidity('');return;}
-      view.own='';select({title,own:true},'write',[]);
+      view.own='';select({title,own:true},'write');
     });
   }
   return Object.freeze({render,mount});
