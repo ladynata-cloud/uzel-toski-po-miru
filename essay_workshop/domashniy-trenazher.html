@@ -598,6 +598,11 @@ function mountAiReview(root, getWork, onFeedback) {
     }
     save(); render(); focusHeading();
   };
+  window.addEventListener('hashchange', () => {
+    if (location.hash === '#proverka' && state.mode !== 'paste') {
+      state.mode = 'paste'; save(); render(); focusHeading();
+    }
+  });
   render();
   if (state.paste.essay || state.drafts.some(d => d.thought)) save();
 })();
