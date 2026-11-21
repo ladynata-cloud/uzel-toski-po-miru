@@ -3,6 +3,7 @@ from html import escape
 
 from site_config import SITE_ASSISTANT_ORIGIN, SITE_URL
 from reader_workshop import WORKS, workshop_markup
+from reading_lens import lens_picker, lens_questions
 
 
 def reader_search_body(cards):
@@ -26,6 +27,7 @@ def reader_search_body(cards):
 <div class="breadcrumb"><a href="/">Главная</a><span>/</span><a href="/chtenie/">Что читать</a><span>/</span>Поиск по памяти</div>
 <header class="page-title"><h1>Найти произведение по памяти</h1>
 <p class="lead">Вспомните героя, место или поступок. В карточках можно узнать книгу, сохранив развязку для первого чтения.</p><p>Для «Студента», «Чудесного доктора», «Шинели» и «Вороны и Лисицы» есть короткое чтение с подсказками. Откройте карточку и выберите «Читать начало вместе, шаг за шагом».</p><p><a href="/praktika-chteniya/">Четыре коротких занятия: что попробовать самому или в группе</a></p></header>
+READING_LENS_PICKER
 <section id="memory-dialogue" hidden aria-label="Разговор с читательским помощником">
 <p id="memory-mode">Поиск без спойлеров</p>
 <div id="memory-log" role="log" aria-live="polite" aria-relevant="additions" aria-label="Ваш разговор"></div>
@@ -34,12 +36,14 @@ WORKSHOP_MARKUP
 <form id="memory-form" role="search" data-assistant-origin="ASSISTANT_ORIGIN" hidden>
 <p id="memory-transport" hidden><label><input type="checkbox" id="memory-server-consent">Отправлять мои реплики серверному помощнику</label>
 Без этого выбора поиск и карточки работают в браузере. Режим «Читать начало вместе» всегда работает на сайте без отправки реплик.</p>
+<div id="memory-first-lens">FIRST_LENS_QUESTIONS</div>
 <label id="memory-label" for="memory-query">Что вам запомнилось?</label>
 <div class="memory-controls">
 <input type="search" id="memory-query" maxlength="300" placeholder="Например, разбирали горницу">
 <button id="memory-send" class="button" type="submit">Найти</button>
 <button class="button secondary" type="reset">Начать заново</button></div>
 <div class="memory-actions" id="memory-actions" hidden>
+<p id="memory-lens-task" aria-live="polite"></p>
 <button class="button secondary" type="button" data-question="Что разбирает мастерская?">О чём поговорим?</button>
 <button class="button secondary" type="button" data-question="Где сверить источник?">Где сверить источник?</button>
 <button class="button secondary" type="button" id="memory-safe">Без спойлеров</button></div>
@@ -85,4 +89,7 @@ WORKSHOP_MARKUP
 .memory-practice{display:block}
 </style>
 <script defer src="/assets/reader-workshop.js"></script><script defer src="/assets/reader-search.js"></script>'''
-    return body.replace('WORKSHOP_MARKUP', workshop_markup()).replace('ASSISTANT_ORIGIN', escape(SITE_ASSISTANT_ORIGIN, quote=True))
+    first_questions = lens_questions(
+        'Какая вещь, реплика или место помогают вам узнать книгу? Впишите одну запомнившуюся деталь.',
+        'Вспомните поступок, после которого вам захотелось пожалеть героя или поспорить с ним. Какую деталь можно ввести для поиска?')
+    return body.replace('FIRST_LENS_QUESTIONS', first_questions).replace('READING_LENS_PICKER', lens_picker()).replace('WORKSHOP_MARKUP', workshop_markup()).replace('ASSISTANT_ORIGIN', escape(SITE_ASSISTANT_ORIGIN, quote=True))

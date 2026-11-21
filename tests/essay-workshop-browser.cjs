@@ -431,11 +431,11 @@ async function exercise(page) {
   assert.equal(await labField('after').inputValue(), alternativeReading);
 
   await start();
-  assert.equal(await panel.locator('.ew-entry-choices button').count(), 3);
-  await page.locator('#ew-start-offer .ew-launch').click();
+  assert.equal(await panel.locator('#ew-situations [data-entry-situation]').count(), 7);
+  await page.locator('#ew-situations [data-entry-situation="quick"]').click();
   await page.locator('#ot-temy-do-vyvoda').waitFor({state:'visible'});
   await page.locator('#ew-back-start').click();
-  assert.ok(await panel.locator('.ew-entry-choices').isVisible());
+  assert.ok(await panel.locator('#ew-situations').isVisible());
   await action('route-read');
   await reading.selectOption(selectedReading);
   await action('shelf-capture');

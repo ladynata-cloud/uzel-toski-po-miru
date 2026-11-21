@@ -25,6 +25,8 @@ pre{max-height:24rem;overflow-y:auto}
 <header><h1>Разбор черновика</h1><p>Принеси весь текст или один абзац. Выбери место для правки самостоятельно или попроси GigaChat прочесть работу целиком.</p></header>
 <section class="panel" aria-labelledby="writing-title">
 <h2 id="writing-title">Моя работа</h2>
+<div class="field"><label for="review-lens">Ракурс разбора</label><select id="review-lens"><option value="secular">Общелитературный</option><option value="orthodox">Православный</option></select>
+<p id="lens-question" class="small" aria-live="polite"></p></div>
 <div class="field"><label for="topic">Тема сочинения</label><input id="topic" maxlength="500" placeholder="Перенеси сюда точную формулировку темы"></div>
 <details id="topic-picker"><summary>Выбрать тему из каталога</summary>
 <label for="topic-kind">Какие темы показать?</label>
@@ -136,6 +138,16 @@ const launcher = '__LOCAL_LAUNCHER_B64__';
 const guideAnimation='data:image/gif;base64,__KEY_GUIDE_GIF__';
 const byId = id => document.getElementById(id);
 const topic = byId('topic'), essay = byId('essay'), keyField = byId('gigakey'), consent = byId('consent');
+const lens = byId('review-lens');
+const lensKey = 'uzel-reading-lens-v1';
+const questions = {
+  secular: 'Какая реплика, деталь или перемена в поступке помогает доказать твою мысль?',
+  orthodox: 'О каком нравственном выборе хочется спросить в этой сцене? Найди реплику или поступок, по которым можно обсудить, например, милость, совесть или прощение.'
+};
+function validMode(value) { return value === 'orthodox' || value === 'secular'; }
+function rememberLens() {
+  try { localStorage.setItem(lensKey, lens.value); } catch {}
+}
 const storageKey = 'uzel.essay-review.draft.v1';
 const titles = {K1:'Соответствие теме',K2:'Аргументация и литературный материал',K3:'Композиция и логика',K4:'Качество письменной речи',K5:'Грамотность'};
 const reviewBundle=/*__REVIEW_BUNDLE__*/;
@@ -159,7 +171,7 @@ function normalChoice(value){
 function selectionNotice(item){
   return Array.isArray(item.cardIds)&&item.cardIds.some(id=>!bookById.has(id))?' Часть выбранных ранее карточек отсутствует в этой версии полки.':'';
 }
-function data() {return {topic:topic.value,essay:essay.value,...(chosen.length?{cardIds:[...chosen]}:{})};}
+function data() {return {topic:topic.value,essay:essay.value,mode:lens.value,...(chosen.length?{cardIds:[...chosen]}:{})};}
 function firstLine(text) {
   return text.trimStart().split(/[\r\n]/u,1)[0].trimEnd();
 }
@@ -179,7 +191,7 @@ function sameLocalDraft(a,b) {
   return exact(a,b)&&validHeading(a)===validHeading(b);
 }
 function exact(a,b) {
-  return Boolean(a&&b&&a.topic===b.topic&&a.essay===b.essay&&
+  return Boolean(a&&b&&a.topic===b.topic&&a.essay===b.essay&&(a.mode||'secular')===(b.mode||'secular')&&
     JSON.stringify(a.cardIds||[])===JSON.stringify(b.cardIds||[]));
 }
 function chosenCards(value){
@@ -187,7 +199,7 @@ function chosenCards(value){
 }
 function userMaterial(snap) {
   const cards=chosenCards(snap);
-  return {topic:snap.topic,essay:snap.essay,...(cards.length?{cards}:{})};
+  return {topic:snap.topic,essay:snap.essay,mode:snap.mode,...(cards.length?{cards}:{})};
 }
 function manualPrompt() {return reviewBundle.manualPrompt+'\n\n'+JSON.stringify(userMaterial(data()),null,2);}
 function words(value) {
@@ -393,6 +405,7 @@ byId('method-transfer').addEventListener('click',()=>{
 });
 function refresh() {
   const snapshot=data();
+  byId('lens-question').textContent=questions[lens.value];
   const material=userMaterial(snapshot);
   const local=localDraft(), first=firstLine(snapshot.essay);
   const matchesTopic=Boolean(first&&first===snapshot.topic.trim());
@@ -424,13 +437,28 @@ function onWriting() {
   refresh();
 }
 try {
+  const shared=localStorage.getItem(lensKey);
+  if(validMode(shared)) lens.value=shared;
   const saved=JSON.parse(localStorage.getItem(storageKey));
   if(saved && typeof saved.topic==='string' && typeof saved.essay==='string'){
+    if(!validMode(shared) && validMode(saved.mode)) lens.value=saved.mode;
     topic.value=saved.topic; essay.value=saved.essay;chosen=normalChoice(saved.cardIds);markedHeading=validHeading(saved);
     byId('saved').textContent='Восстановлена сохранённая работа.'+selectionNotice(saved);
   }
 } catch {byId('saved').textContent='Если браузер не сохранит работу, скачай TXT.';}
 renderTopicBooks();updateSelection();
+lens.addEventListener('change',()=>{
+  const hadLocalCheck=Boolean(localSnapshot);
+  rememberLens();onWriting();
+  if(hadLocalCheck) localCheck();
+  window.dispatchEvent(new CustomEvent('uzel-reading-lens',{detail:{mode:lens.value}}));
+});
+window.addEventListener('storage',event=>{
+  if(event.key!==lensKey || !validMode(event.newValue) || lens.value===event.newValue)return;
+  const hadLocalCheck=Boolean(localSnapshot);
+  lens.value=event.newValue;onWriting();
+  if(hadLocalCheck)localCheck();
+});
 topic.addEventListener('input',onWriting);
 essay.addEventListener('input',onWriting);
 byId('exclude-heading').addEventListener('change',event=>{
@@ -484,6 +512,7 @@ function localCheck() {
   const scene=sentences.find(s=>/под блюдцем|попросил[аи]?|(?:оставил|отказал|вернул|передал|увидел|спас|выбрал|защитил|помог|напомнил|сказал|показал|заметил|покраснел)[а-яё]*/iu.test(s));
   if(scene)card('Фраза для сверки с книгой',scene,'Назови поступок или деталь, которую можно проверить по книге. Что именно она объясняет в твоём ответе на тему?');
   else card('Литературный аргумент','','Выбери место, где вспоминаешь книгу. Отметь действие или слова героя. После них найди своё объяснение: почему этот пример помогает ответить на тему?');
+  card(lens.options[lens.selectedIndex].text+' разбор',scene||'',questions[lens.value]);
   const last=sentences.length>1?sentences.at(-1):'';
   if(last)card('Последняя фраза',last,'Вернись к первому утверждению. Читателю понятно, как литературная деталь привела тебя к этому выводу?');
   const meta=paragraphs.length+' абз. · '+count+' сл. ';
@@ -500,7 +529,7 @@ function download(name,blob){
 }
 function transferFile(value,name='rabota-dlya-perenosa.json'){
   const ids=normalChoice(value.cardIds);
-  const entry={format:'uzel-essay-review.1',topic:value.topic,essay:value.essay,...(ids.length?{cardIds:ids}:{})};
+  const entry={format:'uzel-essay-review.1',topic:value.topic,essay:value.essay,mode:validMode(value.mode)?value.mode:lens.value,...(ids.length?{cardIds:ids}:{})};
   const heading=validHeading(value);
   if(heading)entry.draftHeading=heading;
   download(name,new Blob([JSON.stringify(entry,null,2)],{type:'application/json;charset=UTF-8'}));
@@ -509,15 +538,17 @@ function validDraft(item){
   return item && typeof item.topic==='string' && typeof item.essay==='string' && item.topic.length<=500 && (item.topic.trim()||item.essay.trim()||normalChoice(item.cardIds).length);
 }
 function acceptImport(item){
+  if(validMode(item.mode)){lens.value=item.mode;rememberLens();}
   topic.value=item.topic;essay.value=item.essay;chosen=normalChoice(item.cardIds);markedHeading=validHeading(item);updateSelection();onWriting();
   awaitingImport=null;byId('import-conflict').hidden=true;
   byId('transfer-status').textContent='Работа открыта в редакторе.'+selectionNotice(item);
 }
 function proposeImport(item){
   if(!validDraft(item))return false;
+  if(!validMode(item.mode))item={...item,mode:lens.value};
   if(sameLocalDraft(item,localDraft()))return true;
   if(!validDraft(data())){acceptImport(item);return true;}
-  awaitingImport={topic:item.topic,essay:item.essay,draftHeading:validHeading(item),cardIds:Array.isArray(item.cardIds)?item.cardIds.filter(id=>typeof id==='string').slice(0,2):[]};
+  awaitingImport={topic:item.topic,essay:item.essay,mode:item.mode,draftHeading:validHeading(item),cardIds:Array.isArray(item.cardIds)?item.cardIds.filter(id=>typeof id==='string').slice(0,2):[]};
   byId('import-info').textContent='Входящая работа: '+(item.topic||'без темы')+' · примерно '+words(localBody(item))+' сл.';
   byId('import-conflict').hidden=false;
   return true;
@@ -582,6 +613,7 @@ byId('copy-prompt').addEventListener('click',async()=>{
 });
 function showReview(review,unverified){
   const out=byId('result');out.replaceChildren();
+  if(reviewed?.mode)out.append(el('p','Ракурс отправленной работы: '+lens.querySelector('[value="'+(reviewed.mode==='orthodox'?'orthodox':'secular')+'"]').text+'.','small'));
   out.append(el('p','Версия методики: '+review.methodVersion+'.','small'));
   if(review.books?.length)out.append(el('p','Карточки при разборе: '+review.books.map(c=>c.title).join(' · ')+'.','small'));
   out.append(el('p','Мнение модели для твоей правки. Факты о книге можно сверить с текстом произведения.','small'));
@@ -646,7 +678,7 @@ byId('review-form').addEventListener('submit',async event=>{
 });
 byId('review-download').addEventListener('click',()=>{
   if(!reviewed||!savedReview)return;
-  const lines=['Разбор черновика · Узел тоски по миру','Версия методики: '+savedReview.methodVersion,'Тема:',reviewed.topic,'','Текст, отправленный на разбор:',reviewed.essay];
+  const lines=['Разбор черновика · Узел тоски по миру','Версия методики: '+savedReview.methodVersion,'Ракурс: '+(reviewed.mode==='orthodox'?'православный':'общелитературный'),'Тема:',reviewed.topic,'','Текст, отправленный на разбор:',reviewed.essay];
   if(savedReview.books?.length){
     lines.push('','Карточки, переданные для разбора');
     for(const card of savedReview.books)lines.push(card.title,'Редакторский пересказ: '+card.fact,'Источник: '+card.url);

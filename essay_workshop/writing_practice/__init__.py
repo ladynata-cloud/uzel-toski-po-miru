@@ -38,6 +38,8 @@ def render_writing_practice():
                 raise ValueError('Invalid reading reference: ' + card['id'])
         if 'transfer' in card and not all(card['transfer'].get(k) for k in ('task', 'teacher_check')):
             raise ValueError('Incomplete transfer exercise: ' + card['id'])
+        if card['skill'] in ('retell', 'motive', 'quote') and not card.get('orthodox_question', '').strip():
+            raise ValueError('Missing reading question for the scene: ' + card['id'])
         seen.add(card['id'])
     if {c['skill'] for c in cards} != set(SKILLS):
         raise ValueError('Missing writing skill')

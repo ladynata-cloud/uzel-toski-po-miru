@@ -21,7 +21,7 @@ const EssayParagraphTrial = (() => {
         '<p class="ew-small" role="status" data-pt-status></p>';
     }
     return intro+'<h3 tabindex="-1" data-pt-result>Моя первая попытка</h3><div class="ew-text-card"><p class="ew-note" data-pt-first>'+escape(r.first)+'</p></div>'+
-      '<details><summary>Вопросы для самопроверки или обсуждения</summary><ul>'+prompts.map(q=>'<li>'+escape(q)+'</li>').join('')+'</ul></details>'+
+      EssayReadingLens.detail('paragraphTrial')+'<details><summary>Вопросы для самопроверки или обсуждения</summary><ul>'+prompts.map(q=>'<li>'+escape(q)+'</li>').join('')+'</ul></details>'+
       '<div class="ew-field"><label for="pt-notes">Что я хочу уточнить после перечитывания (по желанию)</label>'+
       '<textarea id="pt-notes" data-pt="notes" rows="3">\n'+escape(r.notes)+'</textarea></div><div class="ew-actions">'+
       '<button type="button" data-pt-action="download">Скачать для обсуждения (.txt)</button>'+rehearsal+'</div>';

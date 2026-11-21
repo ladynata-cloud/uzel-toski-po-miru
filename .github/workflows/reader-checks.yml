@@ -38,6 +38,7 @@ jobs:
           python3 -m unittest discover -s essay_workshop/personal-gigachat
           python3 -m unittest discover -s tests -p test_full_essay_review.py
           python3 -m unittest discover -s tests -p test_book_shelf_release.py
+          python3 -m unittest discover -s tests -p test_reading_lens_release.py
           node --check dist/assets/app.js
           node --check dist/assets/exam-practice.js
           node --check dist/assets/reader-search.js
@@ -94,6 +95,7 @@ jobs:
           NODE_PATH="$RUNNER_TEMP/reader-browser-deps/node_modules" node tests/essay-workshop-browser.cjs
           NODE_PATH="$RUNNER_TEMP/reader-browser-deps/node_modules" node tests/essay-workshop-integration.cjs
           NODE_PATH="$RUNNER_TEMP/reader-browser-deps/node_modules" node tests/essay-book-shelf-browser.cjs
+          NODE_PATH="$RUNNER_TEMP/reader-browser-deps/node_modules" node tests/essay-entry-browser.cjs
       - name: Save browser evidence
         if: always()
         uses: actions/upload-artifact@v4

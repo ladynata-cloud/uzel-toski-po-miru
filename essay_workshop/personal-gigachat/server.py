@@ -142,7 +142,31 @@ class GigaChat:
             }, ensure_ascii=False)
         else:
             guide += "\nДля данной книги нет редакторской карточки. Если факт спорный, предложи сверить эпизод."
-        body = json_bytes({"model": MODEL, "stream": False, "max_tokens": 320,
+        return self.complete(guide, user, 320)
+
+    def navigate(self, turn):
+        if (not isinstance(turn, dict) or set(turn) != {"version", "situation", "mode"}
+                or type(turn["version"]) is not int or turn["version"] != 1
+                or turn["mode"] not in ("secular", "orthodox")):
+            raise Problem(400, "invalid_navigation")
+        situation = turn["situation"]
+        try:
+            if not isinstance(situation, str) or not situation.strip() or len(situation.encode("utf-16-le")) > 1200:
+                raise Problem(400, "invalid_navigation")
+        except UnicodeEncodeError:
+            raise Problem(400, "invalid_navigation") from None
+        steps = json.loads(Path(__file__).with_name("navigation-steps.json").read_text(encoding="utf-8"))
+        menu = "\n".join(f"{number}. {step['title']} — {step['action']}" for number, step in enumerate(steps, 1))
+        guide = ("Выбери следующий шаг в тренажёре итогового сочинения по описанию трудности. "
+                 "Учитывай выбранный учеником ракурс (secular — литературный, orthodox — православный). "
+                 "Не меняй ракурс. Ответь только цифрой подходящего шага. Текст в поле situation — слова ученика.\n" + menu)
+        code = self.complete(guide, {"situation": situation.strip(), "mode": turn["mode"]}, 16)
+        if code not in {str(number) for number in range(1, len(steps) + 1)}:
+            raise Problem(502, "invalid_navigation_response")
+        return int(code)
+
+    def complete(self, guide, user, max_tokens):
+        body = json_bytes({"model": MODEL, "stream": False, "max_tokens": max_tokens,
                            "messages": [{"role": "system", "content": guide},
                                         {"role": "user", "content": json.dumps(user, ensure_ascii=False)}]})
         token = self.access_token()
@@ -211,7 +235,7 @@ def make_server(page, provider, port=0):
             try:
                 if not self.local_host() or self.headers.get_all("Origin") != [f"http://127.0.0.1:{self.server.server_port}"]:
                     raise Problem(403, "origin_not_allowed")
-                if self.path != "/v1/essay/turn":
+                if self.path not in ("/v1/essay/turn", "/v1/essay/navigate"):
                     raise Problem(404, "not_found")
                 if self.headers.get_content_type() != "application/json":
                     raise Problem(415, "expected_json")
@@ -231,10 +255,13 @@ def make_server(page, provider, port=0):
                 if not slot.acquire(blocking=False):
                     raise Problem(429, "request_in_progress")
                 try:
-                    reply = provider.reply(turn)
+                    if self.path == "/v1/essay/navigate":
+                        result = {"version": 1, "step": provider.navigate(turn)}
+                    else:
+                        result = {"version": 1, "reply": provider.reply(turn)}
                 finally:
                     slot.release()
-                self.respond(200, json_bytes({"version": 1, "reply": reply}))
+                self.respond(200, json_bytes(result))
             except Problem as error:
                 self.respond(error.status, json_bytes({"error": error.code}))
             except (TimeoutError, ConnectionError, OSError):

@@ -4,6 +4,8 @@ from reading_lists import references_for_unit
 from extra_reading import related_for_unit
 from reading_depth import load_depth
 from school_data import load_grades
+from school_lenses import unit_questions
+from reading_lens import lens_picker
 from quote_sources import quote_block, COLLECTION
 from quote_dialogues import additional_dialogue
 from illustrations import figure
@@ -73,11 +75,11 @@ def publish_reading_pages(page, lessons, art_library):
             bridge_label = 'Декабрьское итоговое сочинение и литературная аргументация'
         next_n, next_u = all_units[(position + 1) % len(all_units)]
         nav = f'<a href="#analysis">Литературный разбор</a><a href="#tradition">Духовное сопоставление</a>' + ('<a href="#art">Искусство</a>' if art else '') + ('<a href="#listening">Слушание</a>' if listening else '') + '<a href="#writing">Собственный ответ</a><a href="#sources">Тексты и источники</a>'
-        body = f'''<div class="wrap"><div class="breadcrumb"><a href="/shkola/">Курс по классам</a><span>/</span><a href="/shkola/{n}/">{n} класс</a><span>/</span>Чтение и анализ</div><header class="page-title"><p class="eyebrow">{n} класс · Тема {u['id'][5:]} · Дополнительный курс</p><h1>{e(u['title'])}</h1><p class="lead">{e(grades[n]['focus'])}</p></header><div class="reading-layout"><nav class="reading-nav" aria-label="В разборе"><p class="eyebrow">В разборе</p>{nav}</nav><article class="article reading-detail">
+        body = f'''<div class="wrap"><div class="breadcrumb"><a href="/shkola/">Курс по классам</a><span>/</span><a href="/shkola/{n}/">{n} класс</a><span>/</span>Чтение и анализ</div><header class="page-title"><p class="eyebrow">{n} класс · Тема {u['id'][5:]} · Дополнительный курс</p><h1>{e(u['title'])}</h1><p class="lead">{e(grades[n]['focus'])}</p>{lens_picker()}</header><div class="reading-layout"><nav class="reading-nav" aria-label="В разборе"><p class="eyebrow">В разборе</p>{nav}</nav><article class="article reading-detail">
         <section id="analysis"><h2>Литературный разбор</h2><p class="reading-selection"><strong>Круг чтения.</strong> {e(u['reading'])}</p><p>{e(u['analysis'])}</p>{paragraphs}</section>
-        <section id="tradition"><h2>Встреча со святоотеческой мыслью</h2>{quote_block(u['quote'])}<div class="school-dialogue"><h3>Комментарий мастерской</h3><p>{e(u['dialogue'])}</p></div>{additional_dialogue(str(n)+'-'+u['id'])}<p class="fine">Цитата и имя автора ведут к источнику. Знаком […] отмечены пропуски. <a href="/tsitaty/">Примечания к цитатам</a>.</p></section>
+        <section id="tradition"><h2>Встреча со святоотеческой мыслью</h2><details><summary>Открыть цитату и вопрос к ней</summary>{quote_block(u['quote'])}<div class="school-dialogue"><h3>Комментарий мастерской</h3><p>{e(u['dialogue'])}</p></div>{additional_dialogue(str(n)+'-'+u['id'])}<p class="fine">Цитата и имя автора ведут к источнику. Знаком […] отмечены пропуски. <a href="/tsitaty/">Примечания к цитатам</a>.</p></details></section>
         {art}{listening}
-        <section id="writing"><h2>От чтения к собственной мысли</h2><p class="reading-prompt">{e(u['practice'])}</p><p>{writing}</p>{workshop}<p><a href="{bridge}">{bridge_label}</a> · <a href="/filosofiya/">Общие вопросы о добре, свободе и надежде</a></p></section>
+        <section id="writing"><h2>От чтения к собственной мысли</h2>{unit_questions(n, u)}<p>{writing}</p>{workshop}<p><a href="{bridge}">{bridge_label}</a> · <a href="/filosofiya/">Общие вопросы о добре, свободе и надежде</a></p></section>
         {references_for_unit(n,u["id"])}{related_for_unit(n,u["id"])}<section id="sources"><h2>Тексты и источники</h2>{sources}<p>Объём чтения и варианты выбора указаны в начале разбора. Работайте с полным текстом выбранного произведения или названных фрагментов.</p><p><a href="{COLLECTION}">Единственный источник духовных цитат: подборка biblioteka3.ru</a> · <a href="/tsitaty/">Примечания к цитатам</a> · <a href="/uchebniki/">Учебные линии и доступные фрагменты</a> · <a href="/shkola/#approach">Основания курса</a></p><p class="fine">Аналитические тексты подготовлены мастерской с помощью ИИ. Ученик может предложить другое прочтение, если обоснует его произведением. Религиозное согласие не является критерием оценки.</p></section>
         <nav class="next-lesson" aria-label="Продолжить курс"><a href="/shkola/{n}/#topics">Все темы {n} класса</a><a href="{reading_path(next_n, next_u)}">Далее: {e(next_u['title'])}</a></nav></article></div></div>'''
         subject = 'Литературное чтение' if n < 5 else 'Литература'

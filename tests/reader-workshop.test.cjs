@@ -195,14 +195,16 @@ function uiHarness(storage, fetcher) {
   element('reading-modes').children = modes;
   const calls = [];
   let aiCalls = 0;
-  const window = {SiteDialogueClient:{ask() {aiCalls++; throw new Error('No model calls allowed');}}};
+  const windowListeners = {};
+  const window = {addEventListener(name, fn) {windowListeners[name] = fn;}, SiteDialogueClient:{ask() {aiCalls++; throw new Error('No model calls allowed');}}};
   Object.defineProperty(window, 'localStorage', {get() {if (storage instanceof Error) throw storage; return storage;}});
   const document = {baseURI:'https://reader.example/prefix/poisk-po-pamyati/', getElementById:element,
     createElement:() => new Element(), dispatchEvent() {}};
   const context = {window, document, URL, location:{origin:'https://reader.example'}, CustomEvent:class {constructor(type) {this.type=type;}},
     fetch:(url, options) => {calls.push({url,options}); return fetcher(url,options);}};
   vm.runInNewContext(fs.readFileSync(runtimePath, 'utf8'), context, {filename:runtimePath});
-  return {element, modes, window, calls, aiCalls:() => aiCalls};
+  return {element, modes, window, calls, aiCalls:() => aiCalls,
+    setLens(mode) {windowListeners['uzel-reading-lens']({detail:{mode}});}};
 }
 
 test('the UI opens no fragment or saved note until a mode is selected and renders notes as text', async () => {
@@ -396,4 +398,43 @@ test('entering practice while the optional client is loading cannot send a queue
   ui.head.children[0].onload(); await flushMicrotasks();
   assert.equal(calls, 0);
   assert.equal(ui.element('memory-form').hidden, true);
+});
+
+test('both perspectives retain the source boundary for every reading stage', () => {
+  for (const p of packets) {
+    const {secular, orthodox} = p.lenses;
+    for (const task of [secular, orthodox]) {
+      assert.match(task.question, /\?/u);
+      assert.ok(task.check.length > 25);
+    }
+    assert.notEqual(secular.question, orthodox.question);
+    if (p.work_id === 'work-chudesnyy-doktor') {
+      assert.doesNotMatch(JSON.stringify(p.lenses), /Мерцалов|блюдц|купюр|Пирогов/iu);
+      if (p.mode === 'before') assert.doesNotMatch(JSON.stringify(p.lenses), /витрин|мальчик/iu);
+    }
+    if (p.work_id === 'work-vorona-i-lisitsa' && p.mode === 'before') {
+      assert.doesNotMatch(JSON.stringify(p.lenses), /сыр|лис|лест|ворон/iu);
+    }
+  }
+});
+
+test('changing perspective preserves a reading note, selected branch and step', async () => {
+  const p = packet('work-chudesnyy-doktor', 'after');
+  const ui = uiHarness(memoryStorage(), async () => response(p));
+  ui.window.ReaderWorkshop.open({id:p.work_id, title:p.source.title});
+  await ui.modes[2].fire('click');
+  await ui.element('reading-branches').children[0].fire('click');
+  await ui.element('reading-next').fire('click');
+  ui.element('reading-note').value = 'Они смеются, а ноги у них мёрзнут.';
+  await ui.element('reading-note').fire('input');
+  const selectedStep = ui.element('reading-prompt').textContent;
+  assert.equal(ui.element('reading-lens-question').textContent, p.lenses.secular.question);
+  ui.setLens('orthodox');
+  assert.equal(ui.element('reading-lens-question').textContent, p.lenses.orthodox.question);
+  assert.equal(ui.element('reading-lens-feedback').textContent, p.lenses.orthodox.check);
+  assert.equal(ui.element('reading-prompt').textContent, selectedStep);
+  assert.equal(ui.element('reading-note').value, 'Они смеются, а ноги у них мёрзнут.');
+  assert.equal(ui.calls.length, 1);
+  ui.setLens('secular');
+  assert.equal(ui.element('reading-lens-question').textContent, p.lenses.secular.question);
 });
