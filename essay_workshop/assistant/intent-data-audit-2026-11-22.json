@@ -1,0 +1,62 @@
+{
+  "created_on": "2026-11-22",
+  "provenance": "Synthetic OpenAI examples with a separate model review and an independent assistant semantic review; no pupil data or human teacher validation.",
+  "base": "2f2e670aabd34e4a004bf090e396992234abbf77",
+  "generated": 252,
+  "old_examples": 372,
+  "accepted_new": 224,
+  "total_training": 596,
+  "excluded_indices": [
+    4,
+    11,
+    13,
+    16,
+    21,
+    22,
+    24,
+    29,
+    30,
+    84,
+    98,
+    100,
+    101,
+    110,
+    137,
+    144,
+    150,
+    155,
+    159,
+    194,
+    196,
+    197,
+    199,
+    200,
+    201,
+    222,
+    226,
+    248
+  ],
+  "exact_overlap_indices": [],
+  "accepted_by_class": {
+    "thesis": 27,
+    "scene": 42,
+    "explain": 41,
+    "wording": 36,
+    "counter": 37,
+    "other": 41
+  },
+  "automated_label_review_rejections": 0,
+  "control_sha256": {
+    "intent-control-2026-11-22.json": "7223d6655f5997e080a0572354deb8d2beee969e38fc384645984815cbf7ca34",
+    "intent-sealed-2026-11-22.json": "78baaebc44b7719d74bf24df815705e02bbc58aee1f6ff2dbe1434a1d034f768"
+  },
+  "generation_source_sha256": {
+    "candidates.json": "87a9ae2bc1390f59f0d3c95913c5e9e3e87415d1459466b0cc4a80f19e47cc12",
+    "supplement-candidates.json": "abddb4983f705d9c6c9f6bef86a84fbbc995629cc9244a389a4da6a55faae114"
+  },
+  "limitations": [
+    "The second API model accepted all labels; the independent assistant audit rejected ambiguous and defective examples.",
+    "New unrelated-topic coverage remains limited; original other-class examples are replayed.",
+    "This classifier selects the type of help from a request and does not grade an essay."
+  ]
+}
