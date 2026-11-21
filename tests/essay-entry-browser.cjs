@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const {pathToFileURL} = require('node:url');
 const {chromium} = require('playwright');
+const {checkComparison, checkStorageFailure} = require('./essay-conclusion-check.cjs');
 
 const base = (process.env.READER_BASE_URL || 'http://127.0.0.1:8074').replace(/\/?$/, '/');
 const workshop = new URL('k-sochineniyu/itogovoe/pomoshchnik/', base).href;
@@ -185,6 +186,7 @@ async function online(page) {
   await page.goto(workshop + '#ot-temy-do-vyvoda');
   await page.locator(targets.quick).waitFor();
   await capture(page, 'essay-direct-writing-practice');
+  await checkComparison(page, workshop, {extended:page.viewportSize().width === 390});
   assert.deepEqual(submissions, []);
 }
 
@@ -220,6 +222,7 @@ async function offline(browser, folder) {
         await page.locator('#local-check').click();
         assert.ok((await page.locator('#local-result').innerText()).trim());
       }
+      await checkComparison(page, file);
       assert.deepEqual(outgoing, [], 'The extracted or standalone workshop must work without network requests');
     } finally { await context.close(); }
   }
@@ -310,6 +313,7 @@ async function personal(browser, folder) {
       page.setDefaultTimeout(6500);
       try { await online(page); } finally { await page.close(); }
     }
+    await checkStorageFailure(browser, workshop);
     const shared = await browser.newPage();
     try { await sharedReadingLens(shared); } finally { await shared.close(); }
     await offline(browser, folder);

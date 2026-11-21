@@ -72,3 +72,9 @@
 .ew .ew-route-topic h4{font:600 1.18rem/1.35 Georgia,serif;margin:.3rem 0}
 .ew .ew-route-topic button,.ew #ta-catalog .ew-library-filters{margin-top:.8rem}
 @media(max-width:480px){.ew-topic-interests{grid-template-columns:1fr}}
+
+.ew .ew-evidence-comparison{margin:1rem 0;padding:1rem;border:1px solid var(--rule);border-radius:5px;background:var(--paper);overflow-wrap:anywhere}
+.ew .ew-evidence-comparison h3{margin-top:0}.ew .ew-comparison-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+.ew .ew-comparison-pair .ew-text-card{margin:0;min-width:0}.ew .ew-comparison-pair h4{margin:0 0 .5rem;font-size:1.05rem}
+.ew .ew-comparison-pair .ew-actions{margin-bottom:0}
+@media(max-width:620px){.ew .ew-comparison-pair{grid-template-columns:1fr}.ew .ew-evidence-comparison{padding:.75rem}}

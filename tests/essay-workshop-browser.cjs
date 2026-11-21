@@ -3,6 +3,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const {chromium} = require('playwright');
+const {checkComparison} = require('./essay-conclusion-check.cjs');
 
 const base = (process.env.READER_BASE_URL || 'http://127.0.0.1:8074').replace(/\/?$/, '/');
 const url = new URL('k-sochineniyu/itogovoe/pomoshchnik/', base).href;
@@ -497,7 +498,10 @@ async function exercise(page) {
     for (const width of [320, 1280]) {
       const page = await browser.newPage({viewport:{width, height:900}, acceptDownloads:true});
       page.setDefaultTimeout(7000);
-      try { await exercise(page); }
+      try {
+        await exercise(page);
+        if (width === 320) await checkComparison(page, url);
+      }
       catch (error) { throw new Error('Essay workshop at ' + width + 'px: ' + error.message, {cause:error}); }
       finally { await page.close(); }
       console.log('Essay workshop passed at ' + width + 'px');

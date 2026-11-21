@@ -779,13 +779,36 @@
   const evidenceTasks = {
     position:{title:'Мой ответ на вопрос темы',criterion:'К1',hint:'Что ты сам отвечаешь на вопрос темы? Сформулируй ответ в одном предложении.'},
     detail:{title:'Деталь из произведения',criterion:'К2',hint:'Вернись к книге. Какой поступок, реплика или деталь служит примером для твоей мысли?'},
-    reasoning:{title:'Почему деталь доказывает мысль',criterion:'К2',hint:'Что становится понятно из выбранной детали? Свяжи её с собственным ответом на тему.'}
+    reasoning:{title:'Почему деталь доказывает мысль',criterion:'К2',hint:'Что становится понятно из выбранной детали? Свяжи её с собственным ответом на тему.'},
+    conclusion:{title:'Мой вывод из рассуждения',criterion:'К3',hint:'К какому выводу тебя привели аргументы? Его можно отметить в любой части текста; отдельный заключительный абзац не нужен.'}
   };
   function evidenceIsCurrent(mark,draft) {
-    return mark && !mark.stale && !mark.missing && draft.replace(/\r\n?/g,'\n').slice(mark.start,mark.end)===mark.quote;
+    const source=draft.replace(/\r\n?/g,'\n');
+    return mark && !mark.stale && !mark.missing && Number.isInteger(mark.start) && Number.isInteger(mark.end) &&
+      mark.start>=0 && mark.end>mark.start && mark.end<=source.length && typeof mark.quote==='string' &&
+      source.slice(mark.start,mark.end)===mark.quote;
+  }
+  function evidenceComparison(n) {
+    const cards=[['position','Мой ответ на тему'],['conclusion','Мой вывод из рассуждения']].map(([key,title])=>{
+      const mark=n.evidence?.[key], current=evidenceIsCurrent(mark,n.draft);
+      const message=mark && !mark.missing ? 'Текст изменился. Отметь фразу заново.' :
+        mark?.missing ? 'Пока не нашёл. Можно продолжить самопроверку.' : 'Фраза пока не отмечена. Можно продолжить самопроверку.';
+      return '<div class="ew-text-card"'+(mark?' data-evidence-result="'+key+'"':'')+'><h4>'+title+'</h4>'+
+        (current?'<p class="ew-note" data-comparison-quote="'+key+'">«'+h(mark.quote)+'»</p>':
+          '<p data-comparison-state="'+key+'">'+message+'</p>')+
+        actions(button('evidence-reselect-'+key,current?'Выделить другую фразу':mark && !mark.missing?'Выделить заново':'Отметить фразу'),
+          ...(current?[button('evidence-edit-'+key,'Править эту фразу')]:[]),
+          ...(mark?[button('evidence-remove-'+key,'Снять отметку')]:[]))+'</div>';
+    }).join('');
+    return '<section class="ew-evidence-comparison" data-evidence-comparison aria-labelledby="ew-comparison-title">'+
+      '<h3 id="ew-comparison-title">Мой ответ на тему и мой вывод</h3><p class="ew-topic">'+h(topic().title)+'</p>'+
+      '<div class="ew-comparison-pair">'+cards+'</div>'+
+      '<p>Что в твоём рассуждении привело к этому выводу? Как он связан с ответом на тему?</p>'+
+      '<details><summary>Как сопоставить две фразы</summary><p>Вывод может развивать или уточнять твою мысль. Совпадение формулировок само по себе не показывает, достаточно ли обоснования. Вывод можно отметить в любой части текста.</p></details>'+
+      actions(button('evidence-compare-continue','Продолжить самопроверку',true),button('evidence-compare-edit','Вернуться к правке'))+'</section>';
   }
   function evidenceFindings(n) {
-    return Object.entries(evidenceTasks).map(([key,task])=>{
+    return evidenceComparison(n)+Object.entries(evidenceTasks).filter(([key])=>key!=='position' && key!=='conclusion').map(([key,task])=>{
       const mark=n.evidence?.[key];
       if(!mark)return '';
       const current=evidenceIsCurrent(mark,n.draft);
@@ -813,6 +836,38 @@
     }
     const n=note(), select=panel.querySelector('#ew-evidence-kind');
     if(!select)return;
+    if(action==='evidence-compare-continue'){
+      panel.querySelector('[data-check]')?.focus();
+      return;
+    }
+    if(action==='evidence-compare-edit'){
+      const key=evidenceIsCurrent(n.evidence?.conclusion,n.draft)?'conclusion':
+        evidenceIsCurrent(n.evidence?.position,n.draft)?'position':'conclusion';
+      handleEvidence('evidence-edit-'+key);
+      return;
+    }
+    if(action.startsWith('evidence-reselect-')){
+      const key=action.slice('evidence-reselect-'.length);
+      if(!Object.hasOwn(evidenceTasks,key))return;
+      select.value=key;
+      const source=panel.querySelector('#ew-evidence-draft'), mark=n.evidence?.[key];
+      const current=evidenceIsCurrent(mark,source.value);
+      source.focus();
+      source.setSelectionRange(current?mark.start:0,current?mark.end:0);
+      panel.querySelector('#ew-evidence-status').textContent='Выдели фразу: «'+evidenceTasks[key].title+'».';
+      return;
+    }
+    if(action.startsWith('evidence-remove-')){
+      const key=action.slice('evidence-remove-'.length);
+      if(!Object.hasOwn(evidenceTasks,key))return;
+      if(n.evidence)delete n.evidence[key];
+      select.value=key;
+      save();
+      panel.querySelector('#ew-evidence-results').innerHTML=evidenceFindings(n);
+      panel.querySelector('#ew-evidence-status').textContent='Отметка «'+evidenceTasks[key].title+'» снята. Текст не изменён.';
+      panel.querySelector('[data-act="evidence-reselect-'+key+'"]')?.focus();
+      return;
+    }
     if(action.startsWith('evidence-edit-')){
       const key=action.slice('evidence-edit-'.length);
       if(!Object.hasOwn(evidenceTasks,key))return;
@@ -834,6 +889,7 @@
       return;
     }
     const key=select.value, task=evidenceTasks[key];
+    if(!task)return;
     const source=panel.querySelector('#ew-evidence-draft'), status=panel.querySelector('#ew-evidence-status');
     const missing=action==='evidence-missing';
     let start=source.selectionStart, end=source.selectionEnd;
