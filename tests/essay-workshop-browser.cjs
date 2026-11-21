@@ -41,6 +41,42 @@ async function exercise(page) {
   }
 
   await fits();
+  await page.getByRole('link',{name:'Начать с одной фразы'}).click();
+  const skill = page.locator('#wp-skill'), exercise = page.locator('#wp-exercise');
+  const writing = page.locator('#wp-response'), hint = page.locator('#wp-self-check');
+  await skill.selectOption('motive');
+  await exercise.selectOption('U02');
+  const motive = 'Доктор наверняка боялся огласки.';
+  const personalRevision = 'Доктор не назвал себя в коридоре. Я могу лишь предположить, почему он так ответил.';
+  await writing.fill(motive);
+  await page.locator('#wp-compare').click();
+  assert.match(await hint.innerText(), /основание написать «наверняка»/u);
+  await page.locator('#wp-revise').click();
+  await writing.fill(personalRevision);
+  await page.locator('#wp-compare').click();
+  assert.equal(await page.locator('#wp-before').textContent(), motive);
+  assert.equal(await page.locator('#wp-after').textContent(), personalRevision);
+  assert.match(await hint.innerText(), /предположение о его мотиве/u);
+  for (const qualified of ['Он точно не хотел огласки.', 'Я не думаю, что он наверняка боялся огласки.']) {
+    await writing.fill(qualified);
+    await page.locator('#wp-compare').click();
+    assert.doesNotMatch(await hint.innerText(), /основание написать/u);
+  }
+  await skill.selectOption('quote');
+  await exercise.selectOption('U03');
+  await writing.fill('По памяти я записал «Я вас поблагодарю».');
+  await page.locator('#wp-compare').click();
+  assert.match(await hint.innerText(), /ты можешь подтвердить по книге/u);
+  await writing.fill('Я передаю содержание реплики своими словами.');
+  await page.locator('#wp-compare').click();
+  assert.match(await page.locator('#wp-before').textContent(), /По памяти/u);
+  assert.doesNotMatch(await hint.innerText(), /подтвердить по книге/u);
+  await skill.selectOption('retell');
+  await exercise.selectOption('U01');
+  await writing.fill('Сначала доктор пришёл, потом осмотрел девочку и ушёл.');
+  await page.locator('#wp-compare').click();
+  assert.match(await hint.innerText(), /достоинства Мерцалова/u);
+  await start();
   await action('route-read');
   await action('reading-apply');
   assert.ok((await panel.locator('#ew-reading-status').textContent()).trim(), 'An empty reading note needs guidance');
