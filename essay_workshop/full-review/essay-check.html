@@ -18,6 +18,8 @@ pre{max-height:24rem;overflow-y:auto}
 #topic-picker select{max-width:100%;font:inherit;color:var(--ink);background:white;border:1px solid #91a298;border-radius:6px;padding:.4rem .6rem;margin-bottom:.6rem}
 .topic-match{border-top:1px solid var(--line);padding:.55rem 0}.topic-match button{display:block;width:100%;text-align:left}.topic-match .small{display:block;margin-top:.25rem}
 .share-consent{margin:.9rem 0;padding:.25rem .8rem;border:1px solid var(--line);border-radius:6px}.share-consent legend{padding:0 .3rem;font-weight:650}
+#result,.quote-location{overflow-wrap:anywhere}
+.quote-location{margin-top:1rem;padding:1rem;background:var(--tint);border:1px solid var(--line);border-radius:8px;scroll-margin-top:1rem}.quote-location h3{margin:0 0 .45rem}.quote-location h3:focus{outline:3px solid #aa692f;outline-offset:3px}.reviewed-text{position:relative;max-height:22rem;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:.8rem;margin:.65rem 0}.reviewed-text mark{background:#fae39a;color:#243832;border-bottom:2px solid #805b15;font-weight:600}.quote-status{font-weight:650}.quote-location p+p{margin-top:.35rem}
 </style>
 </head>
 <body>
@@ -127,8 +129,19 @@ pre{max-height:24rem;overflow-y:auto}
 <p class="status" id="online-status" role="status" aria-live="polite"></p>
 <section class="panel" id="review-panel" aria-labelledby="review-title" hidden>
 <h2 id="review-title">Замечания GigaChat</h2>
-<p id="stale" class="warn" hidden>После отправки изменились текст, тема или выбор карточек. Это замечания к прежней версии.</p>
-<div id="result"></div><div class="buttons"><button id="review-download" type="button">Скачать разбор и проверенный текст (.txt)</button></div></section>
+<p id="stale" class="warn" hidden>После отправки изменились текст, тема, ракурс или выбор карточек. Это замечания к прежней версии.</p>
+<div id="result"></div>
+<section id="quote-location" class="quote-location" aria-labelledby="quote-location-title" hidden>
+<h3 id="quote-location-title" tabindex="-1">Фраза в проверенной версии</h3>
+<p id="quote-topic" class="small"></p>
+<p id="quote-version-note" class="small"></p>
+<p id="quote-status" class="quote-status" role="status"></p>
+<div class="buttons" id="quote-matches" hidden><button id="quote-previous" type="button">Предыдущее совпадение</button><button id="quote-next" type="button">Следующее совпадение</button></div>
+<div id="reviewed-text" class="reviewed-text" tabindex="0" aria-label="Отправленная версия сочинения с выделенной цитатой"></div>
+<div class="buttons"><button id="quote-edit" type="button" class="primary">Продолжить править мой текст</button><button id="quote-back" type="button">Вернуться к замечанию</button></div>
+</section>
+<div class="buttons"><button id="review-download" type="button">Скачать разбор и проверенный текст (.txt)</button></div>
+<p class="small"><a href="https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/kak-proveryali/#kak-proveryaetsya-podskazka">Что подтверждает проверка цитат</a></p></section>
 <section class="panel" aria-labelledby="method-heading"><h2 id="method-heading">Методика разбора</h2>
 <p>В эту копию встроена версия <strong id="method-version"></strong>. Для обновления скачай <a href="https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/proverka-gigachat.zip">актуальный семейный комплект</a>. Перед заменой сохрани работу для переноса, затем открой её из файла в новой версии.</p>
 <div class="buttons"><button id="method-transfer" type="button">Перейти к переносу работы</button></div>
@@ -139,6 +152,7 @@ pre{max-height:24rem;overflow-y:auto}
 (() => {
 'use strict';
 /*__COACH_WORD_COUNTER__*/
+/*__QUOTE_EVIDENCE__*/
 const launcher = '__LOCAL_LAUNCHER_B64__';
 const guideAnimation='data:image/gif;base64,__KEY_GUIDE_GIF__';
 const byId = id => document.getElementById(id);
@@ -170,7 +184,7 @@ for(const [key,scene] of Object.entries(reviewBundle.sceneCards||{})){
 }
 const methodVersion=reviewBundle.method.version;
 let chosen=[];
-let available = false, pending = false, reviewed = null, localSnapshot = null, savedReview = null;
+let available = false, pending = false, reviewed = null, localSnapshot = null, savedReview = null, activeQuote = null;
 let awaitingImport = null;
 let markedHeading = '';
 function normalChoice(value){
@@ -442,6 +456,9 @@ function refresh() {
   byId('size-warning').textContent=snapshot.essay.length>20000?'В черновике больше 20 000 знаков. Можно сохранить полный текст в TXT и выбрать для API более короткую версию.':'';
   byId('send').disabled=pending||!available||!mayShare||!keyField.value.trim()||!snapshot.topic.trim()||!snapshot.essay.trim()||snapshot.essay.length>20000;
   byId('stale').hidden=!reviewed||exact(reviewed,snapshot);
+  byId('quote-version-note').textContent=reviewed&&!exact(reviewed,snapshot)
+    ? 'Это прежняя отправленная версия. Твои новые правки остаются в поле «Мой черновик».'
+    : 'Это версия, отправленная на разбор. Продолжить работу можно в поле «Мой черновик».';
 }
 function onWriting() {
   renderTopicBooks();
@@ -637,7 +654,48 @@ byId('copy-prompt').addEventListener('click',async()=>{
     byId('copy-status').textContent='Задание выделено. Используй команду «Копировать» на своём устройстве.';
   }
 });
+function drawQuote(){
+  if(!activeQuote||!reviewed)return;
+  const {row,matches,index}=activeQuote, start=matches[index];
+  const text=byId('reviewed-text'), mark=el('mark',row.quote);
+  text.replaceChildren(document.createTextNode(reviewed.essay.slice(0,start)),mark,
+    document.createTextNode(reviewed.essay.slice(start+row.quote.length)));
+  byId('quote-location-title').textContent=row.id+' · Фраза в проверенной версии';
+  byId('quote-topic').textContent='Тема отправленной работы: '+reviewed.topic;
+  byId('quote-status').textContent='Совпадение '+(index+1)+' из '+matches.length+'. '+
+    (matches.length>1?'Эти слова повторяются; выбери нужное место.':'Эти слова есть в отправленном тексте.');
+  byId('quote-matches').hidden=matches.length<2;
+  const focused=document.activeElement;
+  byId('quote-previous').disabled=index===0;
+  byId('quote-next').disabled=index===matches.length-1;
+  if(focused===byId('quote-next')&&focused.disabled)byId('quote-previous').focus();
+  else if(focused===byId('quote-previous')&&focused.disabled)byId('quote-next').focus();
+  byId('quote-location').hidden=false;
+  refresh();
+  text.scrollTop=Math.max(0,mark.offsetTop-text.clientHeight/3);
+}
+function openQuote(row,button){
+  const matches=EssayQuoteEvidence.findAll(reviewed?.essay,row.quote);
+  if(!matches.length)return;
+  activeQuote={row,button,matches,index:0};
+  drawQuote();
+  byId('quote-location-title').focus({preventScroll:true});
+  byId('quote-location').scrollIntoView({block:'start'});
+}
+byId('quote-previous').addEventListener('click',()=>{
+  if(activeQuote&&activeQuote.index>0){activeQuote.index--;drawQuote();}
+});
+byId('quote-next').addEventListener('click',()=>{
+  if(activeQuote&&activeQuote.index+1<activeQuote.matches.length){activeQuote.index++;drawQuote();}
+});
+byId('quote-edit').addEventListener('click',()=>{
+  essay.focus({preventScroll:true});essay.scrollIntoView({block:'center'});
+});
+byId('quote-back').addEventListener('click',()=>{
+  if(activeQuote?.button.isConnected){activeQuote.button.focus();activeQuote.button.scrollIntoView({block:'center'});}
+});
 function showReview(review,unverified){
+  activeQuote=null;byId('quote-location').hidden=true;
   const out=byId('result');out.replaceChildren();
   if(reviewed?.mode)out.append(el('p','Ракурс отправленной работы: '+lens.querySelector('[value="'+(reviewed.mode==='orthodox'?'orthodox':'secular')+'"]').text+'.','small'));
   out.append(el('p','Версия методики: '+review.methodVersion+'.','small'));
@@ -649,10 +707,16 @@ function showReview(review,unverified){
   for(const row of review.criteria){
     const section=el('section',undefined,'criterion');section.dataset.criterion=row.id;
     section.append(el('h3',row.id+' · '+titles[row.id]));
-    if(row.quote)section.append(el('blockquote',row.quote));
+    if(row.quote){
+      section.append(el('blockquote',row.quote));
+      const locate=el('button','Показать в моём тексте');locate.type='button';
+      locate.setAttribute('aria-controls','quote-location');
+      locate.addEventListener('click',()=>openQuote(row,locate));
+      const actions=el('div',undefined,'buttons');actions.append(locate);section.append(actions);
+    }
     if(row.comment)section.append(el('p',row.comment));
     if(row.action){const step=el('p');step.append(el('strong','Попробуй. '),document.createTextNode(row.action));section.append(step);}
-    if(unverified.includes(row.id))section.append(el('p','Цитату из этого замечания не удалось найти в отправленной работе. Сверь этот пункт сам.','small'));
+    if(unverified.includes(row.id))section.append(el('p','Цитату из этого замечания не удалось найти в отправленной работе. Замечание снято. Выбери в своей работе фразу, которую хочешь обсудить.','small'));
     out.append(section);
   }
   byId('review-panel').hidden=false;
@@ -684,19 +748,12 @@ byId('review-form').addEventListener('submit',async event=>{
     const res=await fetch('/api/review',{method:'POST',headers:{'Content-Type':'application/json'},body:packet,cache:'no-store',credentials:'omit',redirect:'error',referrerPolicy:'no-referrer'});
     const json=await res.json();
     if(!res.ok){status.textContent=Object.hasOwn(errorText,json?.error)?errorText[json.error]:'Не удалось получить разбор. Проверь подключение к местной программе.';return;}
-    const result=json?.review, rows=result?.criteria;
-    if(!Array.isArray(rows)||rows.length!==5||new Set(rows.map(r=>r?.id)).size!==5||!rows.every(r=>Object.hasOwn(titles,r?.id)&&['quote','comment','action'].every(k=>typeof r[k]==='string'))||typeof result.priority!=='string'){status.textContent=errorText.invalid_response;return;}
+    const checked=EssayQuoteEvidence.checkReview(json?.review,current.essay,json?.unverifiedQuotes);
+    if(!checked){status.textContent=errorText.invalid_response;return;}
     if(json.methodVersion!==methodVersion||json.materialsId!==reviewBundle.materialsId){status.textContent='Методика или полка в полученном ответе отличаются от этой страницы. Сохрани черновик и открой HTML и программу из одного комплекта.';return;}
     reviewed=current;
-    const unverified=Array.isArray(json.unverifiedQuotes)?json.unverifiedQuotes.slice():[];
-    const checked=rows.map(r=>{
-      if(unverified.includes(r.id))return {id:r.id,quote:'',comment:'',action:''};
-      if(!r.quote||current.essay.includes(r.quote))return r;
-      unverified.push(r.id);
-      return {id:r.id,quote:'',comment:'',action:''};
-    });
-    savedReview={criteria:checked,priority:result.priority,unverified,methodVersion,books:chosenCards(current)};
-    showReview(savedReview,unverified);status.textContent='Разбор получен.';
+    savedReview={...checked,methodVersion,books:chosenCards(current)};
+    showReview(savedReview,savedReview.unverified);status.textContent='Разбор получен.';
     try{localStorage.setItem('uzel.essay-review.report.v1',JSON.stringify({draft:reviewed,review:savedReview}));}
     catch{status.textContent='Разбор получен. Чтобы сохранить его до закрытия, скачай TXT.';}
   }catch{status.textContent='Не удалось связаться с местной программой. Убедись, что её окно открыто. Текст остался в редакторе.';}
@@ -723,11 +780,12 @@ const isLocal=['http:','https:'].includes(location.protocol)&&['127.0.0.1','loca
 function restoreReview(){
   try{
     const entry=JSON.parse(localStorage.getItem('uzel.essay-review.report.v1'));
-    const review=entry?.review, rows=review?.criteria;
-    if(!validDraft(entry?.draft)||typeof review?.methodVersion!=='string'||typeof review.priority!=='string'||!Array.isArray(rows)||rows.length!==5||
-      !rows.every(r=>Object.hasOwn(titles,r?.id)&&['quote','comment','action'].every(k=>typeof r[k]==='string'))||
+    const review=entry?.review;
+    if(!validDraft(entry?.draft)||typeof review?.methodVersion!=='string'||
       !Array.isArray(review.unverified)||!Array.isArray(review.books)||!review.books.every(c=>c&&['id','title','fact','url'].every(k=>typeof c[k]==='string')))return;
-    reviewed=entry.draft;savedReview=review;showReview(review,review.unverified);
+    const checked=EssayQuoteEvidence.checkReview(review,entry.draft.essay,review.unverified);
+    if(!checked)return;
+    reviewed=entry.draft;savedReview=checked;showReview(savedReview,savedReview.unverified);
   }catch{/* The writing area remains usable when a stored report is unreadable. */}
 }
 async function detect(){

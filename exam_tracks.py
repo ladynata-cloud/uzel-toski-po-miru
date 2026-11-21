@@ -164,9 +164,15 @@ def publish(page, routes):
          'Упражнения для 11 класса. Начните с одного абзаца, выберите литературный пример или напишите сочинение целиком. Есть самопроверка, сохранение черновика и версия для скачивания.',
          essay_workshop_body(), active='exam')
     study_path = ESSAY_WORKSHOP + 'kak-proveryali/'
+    study_body = (BASE / 'essay_workshop/about-practice.html').read_text(encoding='utf-8')
+    quote_demo = (BASE / 'essay_workshop/quote-evidence-demo.html').read_text(encoding='utf-8')
+    quote_script = (BASE / 'essay_workshop/quote-evidence.js').read_text(encoding='utf-8')
+    if study_body.count('{{QUOTE_EVIDENCE_DEMO}}') != 1:
+        raise ValueError('Missing or ambiguous quote evidence demonstration marker')
+    study_body = study_body.replace('{{QUOTE_EVIDENCE_DEMO}}', '<script>' + quote_script + '</script>' + quote_demo)
     page(study_path, 'Как проверяли помощника по итоговому сочинению',
          'Проверка подсказок на учебных черновиках и пример правки по «Ревизору».',
-         (BASE / 'essay_workshop/about-practice.html').read_text(encoding='utf-8'), active='exam')
+         study_body, active='exam')
     paths = [GUIDE, ESSAY_WORKSHOP, study_path] + publish_resources(page)
     for slug in ORDER:
         route = by_slug[slug]
