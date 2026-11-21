@@ -121,6 +121,8 @@ async function exercise(page) {
   await panel.locator('#ew-custom').fill(topic);
   await panel.locator('#ew-custom-form button').click();
   assert.equal(await panel.locator('.ew-topic').textContent(), topic, 'Custom topic must become active');
+  const guidance=panel.getByText('Тренажёр подсказывает, что можно уточнить. Смысл ответа и факты сверяй с произведением.',{exact:true});
+  assert.ok(await guidance.isVisible(), 'Explain the scope before the first check');
   const outgoing = [];
   const recordRequest = request => outgoing.push(request.url());
   page.on('request', recordRequest);
@@ -139,6 +141,7 @@ async function exercise(page) {
   assert.notEqual(await observationText(), firstObservation, 'A copied question and a proposed thesis need different observations');
   assert.ok((await feedback.locator('[data-answer-before]').textContent()).includes(topic));
   assert.ok((await feedback.locator('[data-answer-after]').textContent()).includes(thesis));
+  assert.ok(await guidance.isVisible(), 'Keep the same guidance next to the comparison');
   page.off('request', recordRequest);
   assert.deepEqual(outgoing, [], 'Checking and revising the thesis works without an outgoing request');
   const step = name => page.locator('#ew-steps [data-act="page-'+name+'"]').click();
