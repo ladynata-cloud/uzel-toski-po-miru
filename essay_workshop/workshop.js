@@ -149,7 +149,7 @@
       routeButton('read','Смутно помню книгу','Вспомни один эпизод и сохрани деталь для своего аргумента.')+
       routeButton('draftReader','У меня есть черновик','Вставь свой абзац, найди в нём мысль и попробуй одну правку.')+
       routeButton('full','Хочу написать сочинение целиком','Выбери тему, собери план и открой лист для текста.')+'</div>'+
-      '<div class="ew-entry-return"><a href="#knizhnaya-polka" data-act="page-library">Найти книгу на книжной полке</a><a href="#temy-sochineniya">Выбрать тему сочинения</a></div>'+
+      '<div class="ew-entry-return"><a href="#knizhnaya-polka" data-act="page-library">Найти книгу на книжной полке</a><a href="#temy-sochineniya" data-act="page-themeAtlas">Выбрать тему сочинения</a></div>'+
       '<p class="ew-small ew-entry-store">Записи сохраняются в этом браузере, если он разрешает сохранение. Копию сочинения можно скачать в разделе «Самопроверка».</p>'+
       '<h3 class="ew-entry-heading">Продолжить подготовку</h3><div class="ew-entry-tools">'+
       button('page-shelf','Открыть мою полку сцен')+button('route-quick','Подобрать аргумент к теме')+button('route-thesisLab','Уточнить свой тезис')+
@@ -907,7 +907,11 @@
     }
   });
   root.addEventListener('click',event=>{
-    const b=event.target.closest('button[data-act]');if(!b)return;
+    const b=event.target.closest('button[data-act], a[data-act]');if(!b)return;
+    if (b.matches('a')) {
+      if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey || event.button !== 0) return;
+      event.preventDefault();
+    }
     const action=b.dataset.act;
     if(action==='open-full-review'||action==='export-review-draft'){
       const n=note(), target='proverka-sochineniya.html';

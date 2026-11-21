@@ -397,7 +397,7 @@ async function exercise(page) {
   await start();
   assert.equal(await panel.locator('.ew-entry-choices button').count(), 3);
   await page.locator('#ew-start-offer .ew-launch').click();
-  assert.ok(await page.locator('#ot-temy-do-vyvoda').isVisible());
+  await page.locator('#ot-temy-do-vyvoda').waitFor({state:'visible'});
   await page.locator('#ew-back-start').click();
   assert.ok(await panel.locator('.ew-entry-choices').isVisible());
   await action('route-read');
