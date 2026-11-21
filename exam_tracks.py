@@ -7,6 +7,8 @@ from html import escape as e
 from site_config import assistant_origin
 from quote_sources import quote_block
 from essay_workshop.catalogue import load_catalog
+from essay_workshop.writing_practice import render_writing_practice
+from essay_workshop.theme_practice.bundle import planner_script
 from exam_cases import exam_case
 from exam_argumentation import PATH as GUIDE, body as guide_body
 from exam_resources import PATH as RESOURCES, route_box, hub_callout, publish as publish_resources
@@ -48,7 +50,9 @@ def essay_workshop_body(personal=False):
         'DRILL_CONTRAST': read('drill-contrast.js'),
         'THESIS_LAB': read('thesis-lab.js'),
         'SHELF': read('shelf.js'),
-        'THEME_ATLAS': read('theme-atlas.js'),
+        'STUDY_URL': ('https://usel-toski-po-miru.art' if personal else '') + ESSAY_WORKSHOP + 'kak-proveryali/',
+        'THEME_ATLAS': planner_script() + '\n' + read('theme-atlas.js'),
+        'WRITING_PRACTICE': render_writing_practice(),
         'DRAFT_READER': read('draft-reader.js'),
         'PARAGRAPH_TRIAL': read('paragraph-trial.js'),
         'INTENTS': read('intent-model.js'),
@@ -78,7 +82,7 @@ def home_section():
         groups.append(f'<div><h3>{grade} класс</h3><ul>{entries}</ul></div>')
     return f'''<section class="home-exams home-section">
     <h2>Подготовка к экзаменам</h2>
-    <p>Итоговое сочинение в 11 классе · <a class="button" href="{ESSAY_WORKSHOP}">Мне нужно подготовиться</a></p>
+    <p><a class="button" href="{ESSAY_WORKSHOP}">Открыть тренажёр итогового сочинения</a> Выбери книгу, поправь абзац или начни писать свою работу.</p>
     <div class="home-exam-routes">{''.join(groups)}</div>
     <ul class="home-index-links">
       <li><a href="/k-sochineniyu/">Обзор экзаменационных маршрутов</a></li>
@@ -115,7 +119,7 @@ def route_body(route, track):
     pitfalls = ''.join(f'<li>{e(x)}</li>' for x in track['pitfalls'])
     lens, repair = track['lens'], track['repair']
     prayer_note = '<p class="fine">Слова святителя относятся к молитве. С вниманием к тексту мы сопоставляем их по аналогии; это толкование мастерской.</p>' if route['quote'] == 'vnimanie' else ''
-    workshop_link = (f'<p><a class="button" href="{ESSAY_WORKSHOP}">Открыть помощника по итоговому сочинению</a></p>'
+    workshop_link = (f'<p><a class="button" href="{ESSAY_WORKSHOP}">Открыть тренажёр итогового сочинения</a></p>'
                      if slug == 'itogovoe' else '')
     return f'''<div class="wrap"><div class="breadcrumb"><a href="/k-sochineniyu/">К экзаменам</a><span>/</span>{e(route['stage'])}</div><header class="page-title"><p class="eyebrow">{e(route['stage'])} · 6 занятий и итоговая тренировка</p><h1>{e(route['title'])}</h1><p class="lead">{e(track['summary'])}</p>{workshop_link}</header>{nav(slug)}<div class="reading-layout"><nav class="reading-nav" aria-label="В этой ветке"><p class="eyebrow">Подготовка</p><a href="#format">Что требуется</a><a href="#materials">Документы и задания</a><a href="#lessons">Шесть занятий</a><a href="#lens">Православное прочтение</a><a href="#repair">Как улучшить ответ</a><a href="#worked-case">Развёрнутый пример</a><a href="#practice">Мой черновик</a><a href="#sources">Источники</a></nav><article class="article exam-article">
 <section id="format"><h2>Что предстоит сделать</h2><p>{e(track['format'])}</p><div class="context-note">{e(track['version_note'])}</div><dl class="exam-facts">{facts}</dl><p><strong>Начните с короткой попытки:</strong> {e(track['lessons'][0]['task'])} Сохраните её и сравните со своей работой после шестого занятия.</p></section>
@@ -133,10 +137,14 @@ def route_body(route, track):
 def publish(page, routes):
     by_slug = {r['slug']: r for r in routes}
     page('/k-sochineniyu/', 'Подготовка к экзаменам: шесть веток', 'Собеседование, ОГЭ по русскому и литературе, итоговое сочинение, ЕГЭ по русскому и литературе: 36 занятий с практикой и разбором.', hub(), active='exam')
-    page(ESSAY_WORKSHOP, 'Помощник по итоговому сочинению',
-         'Подготовка к итоговому сочинению для любого одиннадцатиклассника. Выберите книгу и разберите эпизод со своей точки зрения. Православный комментарий мастерской доступен по желанию.',
+    page(ESSAY_WORKSHOP, 'Тренажёр итогового сочинения для 11 класса',
+         'Упражнения для 11 класса. Начните с одного абзаца, выберите литературный пример или напишите сочинение целиком. Есть самопроверка, сохранение черновика и версия для скачивания.',
          essay_workshop_body(), active='exam')
-    paths = [GUIDE, ESSAY_WORKSHOP] + publish_resources(page)
+    study_path = ESSAY_WORKSHOP + 'kak-proveryali/'
+    page(study_path, 'Как проверяли помощника по итоговому сочинению',
+         'Проверка подсказок на учебных черновиках и пример правки по «Ревизору».',
+         (BASE / 'essay_workshop/about-practice.html').read_text(encoding='utf-8'), active='exam')
+    paths = [GUIDE, ESSAY_WORKSHOP, study_path] + publish_resources(page)
     for slug in ORDER:
         route = by_slug[slug]
         path = f'/k-sochineniyu/{slug}/'

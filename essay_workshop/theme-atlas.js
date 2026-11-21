@@ -69,7 +69,7 @@ const EssayThemeAtlas = (() => {
       (pub.scope?'<p>'+escape(pub.scope)+'</p>':'')+'<p>'+references.map(([url,title])=>'<a target="_blank" rel="noopener noreferrer" href="'+escape(url)+'">'+escape(title)+'</a>').join(' · ')+'</p></details>';
     return '<section id="ew-theme-atlas"><h2 id="ew-title" tabindex="-1">Библиотека тем итогового сочинения</h2>'+
       '<p class="ew-sub">Можно взять опубликованную тему, потренироваться на вопросе мастерской или записать свой. Состав предстоящего экзаменационного комплекта заранее неизвестен.</p>'+
-      info+
+      EssayThemePlanner.render()+info+
       '<details id="ta-own"><summary>Мой вопрос · ввести свою тему</summary><form data-ta-own-form><label for="ta-own-title">Формулировка моей темы</label>'+
       '<input id="ta-own-title" data-ta-field="own" required maxlength="500" value="'+escape(view.own)+'"><div class="ew-actions"><button type="submit" data-ta-act="own">Писать на свою тему</button></div></form></details>'+
       '<div class="ew-library-filters"><div><label for="ta-search">Найти тему</label><input type="search" id="ta-search" value="'+escape(view.query)+'" placeholder="Слова темы, код, автор или книга" autocomplete="off"></div>'+
@@ -80,7 +80,7 @@ const EssayThemeAtlas = (() => {
       '<div class="ew-actions"><button type="button" data-ta-act="more" hidden>Показать ещё темы</button><button type="button" data-ta-act="subsection-workshop" hidden>Показать учебные темы этого подраздела</button></div>'+
       '<div id="ta-editorial-examples"></div></section>';
   }
-  function mount(panel,catalog,sectionNames,select){
+  function mount(panel,catalog,sectionNames,select,plannerContext){
     const host=panel.querySelector('#ew-theme-atlas'),pub=catalog.publicTopics||{sources:[],sections:[],topics:[]};
     const works=new Map(catalog.works.map(w=>[w.id,w]));
     const sources=new Map(pub.sources.map(s=>[s.id,s]));
@@ -151,6 +151,7 @@ const EssayThemeAtlas = (() => {
         (view.source===publicGroup||view.source===r.source)&&terms.every(q=>r.search.includes(q)));
       host.querySelector('#ta-editorial-examples').innerHTML=examples.length?'<details><summary>Опубликованные вопросы по выбору мастерской</summary><p>Мастерская предлагает обсудить эти вопросы в подразделе '+escape(view.subsection)+'. В публикациях каждого вопроса такая привязка не указана.</p>'+examples.map(card).join('')+'</details>':'';
     }
+    EssayThemePlanner.mount(host,catalog,plannerContext);
     subsectionOptions();show();
     host.addEventListener('input',event=>{
       if(event.target.hasAttribute('data-ta-book-search')){fillBookOptions(event.target.closest('[data-ta-book-box]'));return;}
