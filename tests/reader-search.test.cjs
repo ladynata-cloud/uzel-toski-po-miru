@@ -196,3 +196,17 @@ test('unsupported page requests give the source boundary first and link to the a
   const source = afterReadingReply(forest, 'Где посмотреть разворот?');
   assert.equal(source.links[0].kind, 'primary_fragment');
 });
+
+test('every discussion offers both lenses only in its after-reading record', () => {
+  const root = path.resolve(__dirname, '..', 'dist', 'assistant', 'v1');
+  const safe = JSON.parse(fs.readFileSync(path.join(root, 'before-reading.json'), 'utf8'));
+  const publicCards = safe.records;
+  for (const card of publicCards) {
+    assert.equal(card.lens_questions, undefined);
+    const data = JSON.parse(fs.readFileSync(path.join(root, 'after-reading', card.id + '.json'), 'utf8'));
+    const pair = data.record.lens_questions;
+    assert.ok(pair.secular.length > 20 && pair.orthodox.length > 20);
+    assert.notEqual(pair.orthodox, pair.secular);
+    if (card.id === 'work-potaennyy-les') assert.match(pair.orthodox, /странице 9/u);
+  }
+});

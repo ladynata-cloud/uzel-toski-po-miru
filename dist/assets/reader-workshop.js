@@ -10,6 +10,8 @@
     const source = packet.source;
     if (!source || !['title', 'author', 'text', 'scope', 'url'].every(k => typeof source[k] === 'string' && source[k].trim())) return false;
     try { if (new URL(source.url).protocol !== 'https:') return false; } catch { return false; }
+    if (packet.lenses && !['secular', 'orthodox'].every(lens =>
+      ['question', 'check'].every(k => typeof packet.lenses[lens]?.[k] === 'string' && packet.lenses[lens][k].trim()))) return false;
     const branches = packet.task?.branches;
     if (typeof packet.task?.goal !== 'string' || !Array.isArray(branches) || !branches.length || branches.length > 8) return false;
     const ids = new Set();
@@ -83,6 +85,8 @@
   const loader = createLoader((url, options) => fetch(url, options));
   let storage;
   try { storage = window.localStorage; } catch { storage = null; }
+  let lens = 'secular';
+  try { if (storage?.getItem('uzel-reading-lens-v1') === 'orthodox') lens = 'orthodox'; } catch {}
   let selected = null;
   let packet = null;
   let state = null;
@@ -110,7 +114,21 @@
     element('step-title').focus();
   }
 
+  function showLens() {
+    const task = packet?.lenses?.[lens];
+    element('lens-question').textContent = task?.question || '';
+    element('lens-check').hidden = !task;
+    element('lens-check').open = false;
+    element('lens-feedback').textContent = task?.check || '';
+  }
+  window.addEventListener?.('uzel-reading-lens', event => {
+    if (!['secular', 'orthodox'].includes(event.detail?.mode)) return;
+    lens = event.detail.mode;
+    showLens();
+  });
+
   function showPacket() {
+    showLens();
     element('content').hidden = false;
     element('scope').textContent = packet.source.scope;
     element('source-text').textContent = packet.source.text;
@@ -140,6 +158,7 @@
     if (!selected || !MODES.includes(mode)) return;
     packet = null; state = null;
     element('content').hidden = true;
+    showLens();
     for (const name of ['source-text', 'scope', 'source-credit', 'goal', 'prompt', 'explanation', 'saved']) element(name).textContent = '';
     element('branches').replaceChildren(); element('note').value = '';
     element('source-link').removeAttribute('href');
@@ -166,6 +185,7 @@
     loader.cancel(); selected = packet = state = null;
     panel.hidden = true;
     element('content').hidden = true;
+    showLens();
     // Old text is removed as well as hidden, including on a return to first reading.
     for (const name of ['source-text', 'scope', 'source-credit', 'goal', 'prompt', 'explanation', 'saved', 'status']) element(name).textContent = '';
     element('branches').replaceChildren(); element('note').value = '';

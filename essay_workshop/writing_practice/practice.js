@@ -80,6 +80,11 @@
     }
     return card.self_check;
   }
+  function lensQuestion(card) {
+    const mode = EssayReadingLens.current();
+    return mode === 'orthodox' && card.orthodox_question
+      ? card.orthodox_question : EssayReadingLens.question(card.skill, mode);
+  }
   function showReview(visible) {
     const card = active(), rec = current();
     el('review').hidden = !visible;
@@ -104,12 +109,24 @@
       quote: 'Помоги различить цитату, пересказ и собственный вывод. Для дословной цитаты нужна возможность сверить слова и их автора по источнику.'
     };
     el('prompt').value = [
-      method.instructions, method.sections[card.skill] || literature[card.skill],
+      method.instructions, 'Ракурс вопросов: ' + EssayReadingLens.label(EssayReadingLens.current()) + '. ' + lensQuestion(card),
+      method.sections[card.skill] || literature[card.skill],
       'Учебный навык: ' + skills[card.skill], 'Тема: ' + card.topic, 'Материал для сверки: ' + card.context,
       card.draft && 'Учебный черновик: ' + card.draft,
       rec.keep ? 'Моё обоснование сохранённой фразы: ' + rec.reason : 'Моя собственная версия: ' + rec.answer
     ].filter(Boolean).join('\n\n');
   }
+  function refreshLens() {
+    const card = active();
+    const lens = EssayReadingLens.label(EssayReadingLens.current());
+    text('lens-question', lens + '. ' + lensQuestion(card));
+    if (!el('review').hidden) {
+      const open = el('prompt-wrap').open;
+      showReview(true);
+      el('prompt-wrap').open = open;
+    }
+  }
+  window.addEventListener('essay-practice-lens', refreshLens);
   function markSelection() {
     const card = active();
     const listOption = el('exercise').selectedOptions[0];
@@ -142,6 +159,7 @@
     el('response').value = response(rec);
     labelResponse();
     text('question', card.question);
+    text('lens-question', EssayReadingLens.label(EssayReadingLens.current()) + '. ' + lensQuestion(card));
     el('hint').open = false;
     el('transfer').open = false;
     text('transfer-task', card.transfer ? card.transfer.task : '');

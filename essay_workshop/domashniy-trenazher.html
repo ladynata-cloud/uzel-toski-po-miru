@@ -117,6 +117,11 @@ button:disabled { opacity: .6; cursor: default; }
   .foot { margin-top: 23px; }
 }
 
+.home-controls { display:flex; flex-wrap:wrap; align-items:center; gap:12px 24px; margin-bottom:18px; }
+.lens-picker { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-weight:650; }
+.lens-picker select { width:auto; padding:6px 8px; font-size:16px; }
+.home-controls .mode-tabs { margin:0; }
+#side .home-step { text-align:left; font:inherit; color:var(--green-dark); border:0; background:transparent; padding:3px 0; text-decoration:underline; text-underline-offset:3px; }
 .mode-tabs { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 18px; }
 .mode-tabs button { padding:8px 14px; border:1px solid #a3aa9b; border-radius:20px; color:var(--green-dark); background:transparent; font-weight:600; font-size:15px; }
 .mode-tabs button[aria-pressed="true"] { background:var(--green); color:white; border-color:var(--green); }
@@ -153,7 +158,20 @@ details p, .wordcount { overflow-wrap:anywhere; }
 <main class="page">
 <div class="intro"><div class="intro-copy"><p class="kicker">Домашний тренажёр</p><h1>Итоговое сочинение</h1><p class="intro-desc">Начни с одной своей мысли или принеси готовое сочинение на проверку.</p></div><div class="book-art" aria-hidden="true"><div class="shelf"><b></b><b></b><b></b></div></div></div>
 <noscript><p>Для ввода текста открой этот файл в браузере с включённым JavaScript.</p></noscript>
-<nav class="mode-tabs" aria-label="Как начать занятие"><button id="modeGuide" type="button">Писать по шагам</button><button id="modePaste" type="button">Вставить готовое сочинение</button></nav>
+<div class="home-controls"><label class="lens-picker" for="homeReadingLens">Ракурс чтения <select id="homeReadingLens"><option value="secular">Общелитературный</option><option value="orthodox">Православный</option></select></label>
+<nav class="mode-tabs" aria-label="Как начать занятие"><button id="modeGuide" type="button">Писать по шагам</button><button id="modePaste" type="button">Вставить готовое сочинение</button></nav></div>
+<details class="hint" id="homeGuide">
+  <summary>Помочь выбрать шаг с ГигаЧатом</summary>
+  <label class="field-label" for="homeSituation">Что у тебя уже есть и где возникла трудность?</label>
+  <textarea id="homeSituation" rows="2" maxlength="600" placeholder="Книгу помню, но пока получается только пересказ"></textarea>
+  <label class="field-label" for="homeNavMessage">Задание для чата</label>
+  <textarea id="homeNavMessage" readonly rows="5"></textarea>
+  <div class="actions"><button class="secondary" type="button" id="copyHomeNav">Скопировать задание</button><a href="https://giga.chat/" target="_blank" rel="noopener noreferrer">Открыть ГигаЧат</a></div>
+  <p id="homeNavStatus" role="status"></p>
+  <label class="field-label" for="homeDestination">Какой шаг открыть?</label>
+  <select id="homeDestination"></select>
+  <button class="secondary" type="button" id="openHomeDestination">Перейти к шагу</button>
+</details>
 <div class="workspace"><section class="work-card" id="card" aria-labelledby="heading"></section><aside class="side-card" id="side"></aside></div>
 </main>
 <footer class="foot"><span>Литературный кружок «Узел тоски по миру»</span><a id="downloadApp" href="domashniy-trenazher.html" download="domashniy-trenazher.html" hidden>Скачать тренажёр для занятий без интернета</a><span>Писать и сохранять можно без интернета</span></footer>
@@ -168,16 +186,19 @@ details p, .wordcount { overflow-wrap:anywhere; }
         "author": "А. И. Куприн",
         "title": "Чудесный доктор",
         "scene": "Мерцалов рассказывает незнакомцу в саду о больной дочери. Доктор идёт с ним домой, осматривает девочку и выписывает лекарство. Под рецептом семья находит деньги.",
-        "question": "Почему для семьи Мерцаловых так важно, что вместе с рецептом доктор оставил деньги?"
+        "question": "Почему для семьи Мерцаловых так важно, что вместе с рецептом доктор оставил деньги?",
+        "orthodoxQuestion": "После ухода доктора семья находит деньги. Как эта деталь помогает тебе подумать о милосердии?"
       },
       {
         "id": "captive",
         "author": "Л. Н. Толстой",
         "title": "Кавказский пленник",
         "scene": "Жилин сидит в глубокой яме. Ночью Дина приносит длинный шест и спускает его пленнику. Когда Жилин выбирается, он просит её унести шест, пока никто не заметил пропажи.",
-        "question": "Чем рисковала Дина, когда помогала Жилину выбраться из ямы?"
+        "question": "Чем рисковала Дина, когда помогала Жилину выбраться из ямы?",
+        "orthodoxQuestion": "Дина приносит шест человеку, которого держат в плену. Что в её поступке заставляет тебя задуматься о любви к ближнему?"
       }
-    ]
+    ],
+    "orthodoxThought": "Милосердие бывает тихим. По какому поступку в твоём примере можно о нём судить?"
   },
   {
     "id": "conscience",
@@ -189,16 +210,19 @@ details p, .wordcount { overflow-wrap:anywhere; }
         "author": "А. С. Пушкин",
         "title": "Капитанская дочка",
         "scene": "После захвата крепости Пугачёв предлагает Гринёву служить ему. Молодой офицер помнит свою присягу императрице и прямо говорит об этом Пугачёву.",
-        "question": "Почему сказать правду именно Пугачёву для Гринёва опасно?"
+        "question": "Почему сказать правду именно Пугачёву для Гринёва опасно?",
+        "orthodoxQuestion": "Какие слова Гринёва в разговоре с Пугачёвым помогут тебе рассуждать о верности данному слову?"
       },
       {
         "id": "sentry",
         "author": "Н. С. Лесков",
         "title": "Человек на часах",
         "scene": "Часовой Постников слышит крики тонущего в Неве. Уходить с поста запрещено. Постников всё же сбегает на лёд и вытаскивает человека.",
-        "question": "Что могло случиться, если бы Постников выполнил приказ и остался на месте?"
+        "question": "Что могло случиться, если бы Постников выполнил приказ и остался на месте?",
+        "orthodoxQuestion": "В какой момент тонущий человек становится для Постникова важнее опасности наказания?"
       }
-    ]
+    ],
+    "orthodoxThought": "Когда послушание и забота о ближнем тянут в разные стороны, что помогает человеку сделать выбор?"
   },
   {
     "id": "family",
@@ -210,16 +234,19 @@ details p, .wordcount { overflow-wrap:anywhere; }
         "author": "К. Г. Паустовский",
         "title": "Телеграмма",
         "scene": "Катерина Петровна просит дочь приехать. Настя занята выставкой художника в Ленинграде. Когда она наконец приезжает в деревню, мать уже похоронили.",
-        "question": "Что Настя ещё могла сделать, когда получила письмо матери?"
+        "question": "Что Настя ещё могла сделать, когда получила письмо матери?",
+        "orthodoxQuestion": "Что письмо Катерины Петровны позволяет заметить о заботе, которую можно отложить слишком надолго?"
       },
       {
         "id": "stationmaster",
         "author": "А. С. Пушкин",
         "title": "Станционный смотритель",
         "scene": "В конце повести мальчик рассказывает о барыне, приехавшей с тремя детьми. Она спрашивает о старом смотрителе, узнаёт о его смерти и долго лежит на его могиле.",
-        "question": "По какой детали в рассказе мальчика видно, что встреча с отцом была важна для Дуни? Почему теперь эта встреча невозможна?"
+        "question": "По какой детали в рассказе мальчика видно, что встреча с отцом была важна для Дуни? Почему теперь эта встреча невозможна?",
+        "orthodoxQuestion": "Что рассказ мальчика даёт узнать о позднем приезде Дуни и о чём он позволяет только догадываться?"
       }
-    ]
+    ],
+    "orthodoxThought": "Что в повседневной жизни даёт близкому почувствовать, что его любят?"
   },
   {
     "id": "opinion",
@@ -231,16 +258,19 @@ details p, .wordcount { overflow-wrap:anywhere; }
         "author": "А. С. Грибоедов",
         "title": "Горе от ума",
         "scene": "На балу у Фамусова расходится слух о сумасшествии Чацкого. Загорецкий добавляет свою подробность: будто дядя уже упёк Чацкого в больницу.",
-        "question": "Почему подробность, которую добавил Загорецкий, могла убедить других гостей?"
+        "question": "Почему подробность, которую добавил Загорецкий, могла убедить других гостей?",
+        "orthodoxQuestion": "Как слова Загорецкого отражаются на человеке, о котором он говорит в его отсутствие?"
       },
       {
         "id": "chameleon",
         "author": "А. П. Чехов",
         "title": "Хамелеон",
         "scene": "Хрюкин показывает укушенный палец. Пока люди спорят, генеральская ли это собака, надзиратель Очумелов то требует избавиться от неё, то обвиняет самого Хрюкина.",
-        "question": "Почему для Очумелова слова о хозяине собаки оказываются важнее того, как произошёл укус?"
+        "question": "Почему для Очумелова слова о хозяине собаки оказываются важнее того, как произошёл укус?",
+        "orthodoxQuestion": "Как в обращении Очумелова с Хрюкиным сказывается его отношение к власти?"
       }
-    ]
+    ],
+    "orthodoxThought": "Как меняется твоя ответственность за чужую репутацию, если ты повторяешь чужие слова?"
   },
   {
     "id": "change",
@@ -252,16 +282,19 @@ details p, .wordcount { overflow-wrap:anywhere; }
         "author": "Л. Н. Толстой",
         "title": "После бала",
         "scene": "На балу Иван Васильевич любуется полковником, который танцует с дочерью. Утром он видит того же полковника во время жестокого наказания солдата.",
-        "question": "Почему утро после бала изменило отношение Ивана Васильевича к военной службе?"
+        "question": "Почему утро после бала изменило отношение Ивана Васильевича к военной службе?",
+        "orthodoxQuestion": "Какая деталь утренней сцены побуждает тебя задуматься, за что человек отвечает, когда видит чужое страдание?"
       },
       {
         "id": "war-peace",
         "author": "Л. Н. Толстой",
         "title": "Война и мир",
         "scene": "Перед Аустерлицем князь Андрей мечтает отличиться. Раненый, он лежит на поле и смотрит в высокое небо. Рядом останавливается Наполеон, которым князь прежде восхищался.",
-        "question": "Почему встреча с Наполеоном теперь так мало значит для князя Андрея?"
+        "question": "Почему встреча с Наполеоном теперь так мало значит для князя Андрея?",
+        "orthodoxQuestion": "Что в восприятии Наполеона раненым князем Андреем даёт повод задуматься о цене земной славы?"
       }
-    ]
+    ],
+    "orthodoxThought": "По каким словам или поступкам человека можно заметить, что он пересмотрел прежние ценности?"
   },
   {
     "id": "nature",
@@ -273,16 +306,19 @@ details p, .wordcount { overflow-wrap:anywhere; }
         "author": "Н. А. Некрасов",
         "title": "Дедушка Мазай и зайцы",
         "scene": "Во время разлива Мазай собирает зайцев в лодку. Заметив ещё нескольких на плывущем бревне, он цепляет бревно багром и тянет за лодкой к берегу.",
-        "question": "Что показывает эпизод с бревном о том, как Мазай относится к попавшим в беду зайцам?"
+        "question": "Что показывает эпизод с бревном о том, как Мазай относится к попавшим в беду зайцам?",
+        "orthodoxQuestion": "Мазай замечает зайцев на плывущем бревне. Какая деталь его поступка помогает тебе говорить о бережном отношении к живому?"
       },
       {
         "id": "flower",
         "author": "А. П. Платонов",
         "title": "Неизвестный цветок",
         "scene": "Даша замечает на пустыре цветок, выросший между камнем и глиной. Она приводит ребят из лагеря. Несколько дней они удобряют землю на пустыре.",
-        "question": "Почему ребята решили изменить землю на пустыре? Кому это могло помочь?"
+        "question": "Почему ребята решили изменить землю на пустыре? Кому это могло помочь?",
+        "orthodoxQuestion": "Как меняется забота Даши, когда она приводит на пустырь других ребят?"
       }
-    ]
+    ],
+    "orthodoxThought": "Как можно распорядиться своей силой, когда рядом оказывается живое существо, которое от тебя зависит?"
   }
 ]
 </script>
@@ -328,7 +364,7 @@ function mountAiReview(root, getWork, onFeedback) {
   }
 
   function prepareMessage() {
-    const { topic, essay } = getWork();
+    const { topic, essay, lens } = getWork();
     if (!topic.trim() || !essay.trim()) {
       message.value = '';
       showStatus(!topic.trim() ? 'Впиши тему сочинения в поле выше.' : 'Сначала напиши или вставь сочинение в поле выше.');
@@ -339,6 +375,9 @@ function mountAiReview(root, getWork, onFeedback) {
       'Коротко и доброжелательно разбери пять сторон работы: К1 — отвечаю ли я на вопрос темы; К2 — подтверждаю ли мысль примером из литературы и объясняю ли связь; К3 — понятны ли ход рассуждения, переходы и вывод; К4 — точны и ясны ли формулировки; К5 — есть ли конкретные грамматические, орфографические и пунктуационные ошибки.',
       'Достаточно одного литературного произведения. Если текст короче 250 слов или ещё не закончен, рассматривай его как учебный черновик и подскажи, какую мысль можно развить. Для полного сочинения минимум 250 слов, рекомендовано от 350. Не выноси экзаменационный вердикт и не оценивай самостоятельность по стилю.',
       'Назови одно удачное место и предложи одну или две самые важные правки. Для каждой укажи мою короткую дословную фразу и задай вопрос, который поможет мне самому её исправить. Если приводишь ошибку, привяжи её к точному месту моего текста. Если сомневаешься в детали книги или цитате, предложи сверить её с оригиналом. Не выдумывай цитаты, поступки и мотивы. Не пиши за меня готовые фразы или абзацы.',
+      lens === 'orthodox'
+        ? 'Ракурс чтения — православный. Если он помогает разобрать мой пример, задай один вопрос о поступке или словах героя, которые поддерживают либо ставят под сомнение моё прочтение. Не приписывай герою веру, мотив или покаяние. Оценивай по тем же критериям и сохраняй моё право на другое объяснение.'
+        : 'Ракурс чтения — общелитературный. Обсуди мой пример через детали произведения и мой вывод; оставь выбор интерпретации за мной.',
       '\nТема сочинения:\n' + topic,
       '\nМой текст:\n' + essay
     ].join('\n');
@@ -374,6 +413,7 @@ function mountAiReview(root, getWork, onFeedback) {
   transfer.addEventListener('toggle', () => {
     if (transfer.open) prepareMessage();
   });
+  root.addEventListener('lens-updated', () => { if (transfer.open) prepareMessage(); });
   message.addEventListener('focus', () => {
     if (prepareMessage()) message.select();
   });
@@ -416,6 +456,13 @@ function mountAiReview(root, getWork, onFeedback) {
   const topics = JSON.parse(document.getElementById('topics').textContent);
   const key = 'uzel.home-essay.v1';
   const steps = ['Моя мысль', 'Поступок героя', 'Что доказывает пример', 'Моё сочинение'];
+  const guideSteps = [
+    'Ответить на вопрос темы своей фразой',
+    'Выбрать книгу и записать поступок героя',
+    'Объяснить связь эпизода с мыслью',
+    'Перечитать и поправить собранное сочинение',
+    'Вставить и проверить готовое сочинение'
+  ];
   const $ = id => document.getElementById(id);
   const escape = value => String(value ?? '').replace(/[&<>"']/g, char =>
     ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'})[char]);
@@ -427,7 +474,18 @@ function mountAiReview(root, getWork, onFeedback) {
     return {mode:'guide', topicId:topics[0].id, drafts:[], paste:{topic:'', essay:'', feedback:''}};
   }
   const state = readState();
-  if (location.hash === '#proverka') state.mode = 'paste';
+  const lensKey = 'uzel-reading-lens-v1';
+  let lens = 'secular';
+  try { if (localStorage.getItem(lensKey) === 'orthodox') lens = 'orthodox'; } catch (_) {}
+  const routes = ['#mysl', '#epizod', '#svyaz', '#redaktor'];
+  function readRoute() {
+    if (location.hash === '#proverka') { state.mode = 'paste'; return true; }
+    const step = routes.indexOf(location.hash);
+    if (step < 0) return false;
+    state.mode = 'guide';
+    draft().step = step + 1;
+    return true;
+  }
   const onlinePage = ['https:', 'http:'].includes(location.protocol);
   $('downloadApp').hidden = !onlinePage;
   let blocked = false;
@@ -464,6 +522,81 @@ function mountAiReview(root, getWork, onFeedback) {
   const field = (id,label,value,placeholder='') =>
     '<label class="field-label" for="'+id+'">'+escape(label)+'</label><textarea id="'+id+'" placeholder="'+escape(placeholder)+'">'+escape(value)+'</textarea>';
   const hint = (title,body) => '<details class="hint"><summary>'+escape(title)+'</summary><p>'+escape(body)+'</p></details>';
+  const readingHint = title => '<details class="hint"><summary>'+escape(title)+'</summary><p id="readingHint"></p></details>';
+  function refreshLens() {
+    const orthodox = lens === 'orthodox';
+    $('homeReadingLens').value = lens;
+    const t = currentTopic(), book = selectedBook(), step = draft().step;
+    const box = $('readingHint');
+    if (box && step === 1) box.textContent = orthodox ? t.orthodoxThought : t.thoughtHint;
+    if (box && step === 2) box.textContent = orthodox
+      ? 'В чём для героя состоял выбор? Назови действие или точные слова из сцены, от которых отталкиваешься.'
+      : 'По какому поступку, жесту или реплике читатель узнает этот эпизод?';
+    if (box && step === 3) box.textContent = book
+      ? (orthodox ? book.orthodoxQuestion : book.question)
+      : (orthodox ? 'Как поступок или слова героя помогают тебе рассуждать о нравственном выборе в этой сцене?' : 'Что герой мог сделать иначе? Почему выбранный им поступок важен для твоей мысли?');
+    if ($('reviewLens')) $('reviewLens').textContent = orthodox
+      ? 'Какая деталь подтверждает твоё понимание нравственного выбора героя?'
+      : 'Какая деталь в тексте связывает твой пример с ответом на тему?';
+    updateGuideMessage();
+    if ($('aiReview')) $('aiReview').dispatchEvent(new Event('lens-updated'));
+  }
+  function applyLens(mode) {
+    if (mode !== 'secular' && mode !== 'orthodox') return;
+    lens = mode;
+    refreshLens();
+  }
+  $('homeReadingLens').addEventListener('change', event => {
+    const mode = event.target.value;
+    try { localStorage.setItem(lensKey, mode); } catch (_) {}
+    window.dispatchEvent(new CustomEvent('uzel-reading-lens', {detail:{mode}}));
+  });
+  window.addEventListener('uzel-reading-lens', event => applyLens(event.detail?.mode));
+  window.addEventListener('storage', event => {
+    if (event.key === lensKey || event.key === null) applyLens(event.newValue === 'orthodox' ? 'orthodox' : 'secular');
+  });
+  function updateGuideMessage() {
+    const situation = $('homeSituation').value.trim();
+    const selectedLens = lens === 'orthodox' ? 'православный' : 'общелитературный';
+    $('homeNavMessage').value = [
+      'Помоги выбрать один следующий шаг в домашнем тренажёре итогового сочинения.',
+      'Выбранный ракурс — '+selectedLens+'.',
+      'Моя ситуация: '+(situation || '[опиши, на чём остановился]'),
+      ...guideSteps.map((title,i) => (i+1)+'. '+title),
+      'Назови номер и объясни выбор одной короткой фразой. Тезис и абзац я напишу сам.'
+    ].join('\n');
+    $('homeNavStatus').textContent = '';
+  }
+  $('homeSituation').value = typeof state.situation === 'string' ? state.situation : '';
+  $('homeSituation').addEventListener('input', event => {
+    state.situation = event.target.value;
+    updateGuideMessage();
+    save();
+  });
+  $('homeDestination').innerHTML = guideSteps.map((title,i) => '<option value="'+(i+1)+'">'+(i+1)+'. '+title+'</option>').join('');
+  $('openHomeDestination').addEventListener('click', () => {
+    const step = Number($('homeDestination').value);
+    $('homeGuide').open = false;
+    if (step === 5) {
+      clearRoute();
+      state.mode = 'paste'; save(); render(); focusHeading();
+    } else {
+      showStep(step);
+    }
+  });
+  $('copyHomeNav').addEventListener('click', async () => {
+    const message = $('homeNavMessage');
+    message.focus();
+    message.select();
+    let copied = false;
+    try { copied = document.execCommand('copy'); } catch (_) {}
+    if (!copied && navigator.clipboard?.writeText) {
+      try { await navigator.clipboard.writeText(message.value); copied = true; } catch (_) {}
+    }
+    $('homeNavStatus').textContent = copied
+      ? 'Задание скопировано. Вставь его в чат. Вернись сюда и выбери номер шага из ответа.'
+      : 'Задание выделено. Скопируй его вручную и вставь в чат. Вернувшись, выбери номер шага.';
+  });
   function setField(id, callback) {
     $(id).addEventListener('input', event => { callback(event.target.value); save(); });
   }
@@ -472,7 +605,14 @@ function mountAiReview(root, getWork, onFeedback) {
     heading.focus({preventScroll:true});
     if (heading.getBoundingClientRect().top < 0) $('card').scrollIntoView({block:'start'});
   }
+  function clearRoute() {
+    if (routes.includes(location.hash) || location.hash === '#proverka') {
+      try { history.replaceState(null, '', location.href.split('#')[0]); } catch (_) { location.hash=''; }
+    }
+  }
   function showStep(number) {
+    clearRoute();
+    state.mode='guide';
     draft().step = number;
     save();
     render();
@@ -505,8 +645,8 @@ function mountAiReview(root, getWork, onFeedback) {
       topics.map(x=>'<option value="'+escape(x.id)+'" '+(x.id===t.id?'selected':'')+'>'+escape(x.title)+'</option>').join('')+
       '</select></details>'+
       field('thought','Что ты думаешь? Ответь одним-двумя предложениями.',d.thought,'Я думаю, что…')+
-      hint('Трудно начать?',t.thoughtHint)+nav(1,'Выбрать книгу');
-    $('theme').onchange = event => { state.topicId=event.target.value; draft().step=1; save(); render(); focusHeading(); };
+      readingHint('Трудно начать?')+nav(1,'Выбрать книгу');
+    $('theme').onchange = event => { clearRoute(); state.topicId=event.target.value; draft().step=1; save(); render(); focusHeading(); };
     setField('thought',value=> { d.thought=value; });
     bindNav(1,()=>requireText('thought','Для начала хватит одной твоей мысли. Запиши её в поле выше.'));
   }
@@ -517,7 +657,7 @@ function mountAiReview(root, getWork, onFeedback) {
       '<fieldset><legend>Выбери книгу, которую помнишь</legend><div class="choice-list">'+options.map(b=>
       '<label class="choice"><input type="radio" name="book" value="'+escape(b.id)+'" '+(b.id===d.bookId?'checked':'')+'><span><strong>'+escape(b.title)+'</strong>'+(b.author?'<small>'+escape(b.author)+'</small>':'')+'</span></label>').join('')+'</div></fieldset>'+
       (book?hint('Напомнить эпизод',book.scene):'<label class="field-label" for="ownBook">Автор и название книги</label><input id="ownBook" type="text" value="'+escape(d.customBook)+'">')+
-      field('episode','Назови книгу и опиши один поступок героя своими словами.',ent.episode,'Кто что сделал? В какой ситуации?')+nav(2,'Объяснить поступок');
+      field('episode','Назови книгу и опиши один поступок героя своими словами.',ent.episode,'Кто что сделал? В какой ситуации?')+readingHint('Что искать в эпизоде?')+nav(2,'Объяснить поступок');
     for (const radio of document.querySelectorAll('input[name="book"]')) radio.onchange = () => {
       d.bookId = radio.value; save(); render();
       const selected = document.querySelector('input[name="book"]:checked');
@@ -529,12 +669,12 @@ function mountAiReview(root, getWork, onFeedback) {
       requireText('episode','Вспомни один поступок и запиши его своими словами.'));
   }
   function showLink() {
-    const t = currentTopic(), d = draft(), ent = bookNotes(), book = selectedBook();
+    const t = currentTopic(), d = draft(), ent = bookNotes();
     $('card').innerHTML = stepHeader(3,'Как этот поступок помогает ответить на вопрос темы?')+
       '<div class="context"><p><strong>'+escape(t.title)+'</strong></p><p class="preserved">'+escape(d.thought)+'</p></div>'+
       '<details class="topic-picker"><summary>Прочитать свой пример</summary><p class="preserved">'+escape(ent.episode)+'</p></details>'+
       field('linkText','Объясни связь своими словами.',ent.linkText,'Этот поступок показывает, что…')+
-      hint('О чём подумать?',book ? book.question : 'Что герой мог сделать иначе? Почему выбранный им поступок важен для твоей мысли?')+nav(3,'Собрать сочинение');
+      readingHint('О чём подумать?')+nav(3,'Собрать сочинение');
     setField('linkText',value=> { ent.linkText=value; });
     bindNav(3,()=>requireText('linkText','Объясни хотя бы одним предложением, что показывает твой пример.'));
   }
@@ -569,14 +709,20 @@ function mountAiReview(root, getWork, onFeedback) {
     });
     $('download').onclick=downloadText;
     if ($('prev')) $('prev').onclick=()=>showStep(3);
-    mountAiReview($('aiReview'),()=>({topic:finalTopic(),essay:finalText(),feedback:d.feedback}),value=> { d.feedback=value; save(); });
+    mountAiReview($('aiReview'),()=>({topic:finalTopic(),essay:finalText(),feedback:d.feedback,lens}),value=> { d.feedback=value; save(); });
   }
   function showSide(paste,n) {
+    const links = steps.map((label, index) => {
+      const step = index + 1;
+      const current = !paste && n === step ? ' aria-current="step"' : '';
+      return '<li'+current+'><button type="button" class="home-step" data-home-step="'+step+'">'+label+'</button></li>';
+    });
+    const guide = '<nav aria-label="Навигатор по занятию"><h2>Навигатор по занятию</h2><ol>'+links.join('')+'</ol></nav>';
     if (paste || n===4) {
-      $('side').innerHTML='<h2>Перед проверкой</h2><ul class="notes"><li>Я ответил на вопрос темы.</li><li>Я назвал произведение и привёл пример из него.</li><li>Я объяснил, что доказывает этот пример.</li></ul>'+
+      $('side').innerHTML=guide+'<h3>Перед проверкой</h3><ul class="notes"><li>Я ответил на вопрос темы.</li><li>Я назвал произведение и привёл пример из него.</li><li>Я объяснил, что доказывает этот пример.</li></ul><p id="reviewLens"></p>'+
         '<details class="hint"><summary>Сколько нужно слов?</summary><p>На экзамене минимум — 250 слов. ФИПИ рекомендует от 350. Здесь можно потренироваться и на одном абзаце.</p><a href="https://doc.fipi.ru/itogovoe-sochinenie/2026/04_Kriterii_it_soch.pdf" target="_blank" rel="noopener noreferrer">Критерии ФИПИ</a></details>';
     } else {
-      $('side').innerHTML='<h2>План занятия</h2><ol>'+steps.map((s,i)=>'<li'+(i+1===n?' aria-current="step"':'')+'>'+s+'</li>').join('')+'</ol>'+
+      $('side').innerHTML=guide+
         '<div class="draft-piece"><p>В конце можно скачать сочинение или попросить ГигаЧат проверить его целиком.</p></div>';
     }
   }
@@ -589,20 +735,22 @@ function mountAiReview(root, getWork, onFeedback) {
     else if (n===3) showLink();
     else showThought();
     showSide(paste,n);
+    refreshLens();
   }
+  $('side').addEventListener('click', event => {
+    const button = event.target.closest('[data-home-step]');
+    if (button) showStep(Number(button.dataset.homeStep));
+  });
   for (const [id,mode] of [['modeGuide','guide'],['modePaste','paste']]) $(id).onclick=()=>{
     if (state.mode===mode) return;
     state.mode=mode;
-    if (mode === 'guide' && location.hash === '#proverka') {
-      try { history.replaceState(null, '', location.href.split('#')[0]); } catch (_) { location.hash = ''; }
-    }
+    clearRoute();
     save(); render(); focusHeading();
   };
   window.addEventListener('hashchange', () => {
-    if (location.hash === '#proverka' && state.mode !== 'paste') {
-      state.mode = 'paste'; save(); render(); focusHeading();
-    }
+    if (readRoute()) { save(); render(); focusHeading(); }
   });
+  readRoute();
   render();
   if (state.paste.essay || state.drafts.some(d => d.thought)) save();
 })();

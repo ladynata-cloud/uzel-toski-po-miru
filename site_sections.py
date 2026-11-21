@@ -1,4 +1,5 @@
 """Course map, complete workshop catalogue, and editorial method."""
+from reading_lens import lens_picker, lens_questions
 from html import escape as esc
 from course import ERAS, MODULES
 from quote_sources import COLLECTION
@@ -16,13 +17,27 @@ def publish_sections(page, lessons, lesson_row, link):
     def readings(items):
         return '<ul class="reading-items">'+''.join(f'<li><strong>{esc(title)}</strong><span>{esc(question)}</span></li>' for title,question in items)+'</ul>'
     modules=[]
+    orthodox_tasks = {
+        'first': 'Кто в сказке откликается на чужую нужду? Покажите помощь одним действием и подумайте, была ли она свободным даром.',
+        'old': 'Как молитва, обращение или повтор задают отношение повествователя к поступку? Приведите одно выражение.',
+        'romantic': 'Как соотносятся свобода героя и его ответственность перед другим? Найдите момент, когда между ними возникает напряжение.',
+        'pushkin-gogol': 'Как увидит эту встречу читатель, для которого важно достоинство каждого человека? Выберите одну реплику для проверки своей мысли.',
+        'realism': 'В какой сцене герой получает возможность проявить милость? Что в его выборе вы можете подтвердить по тексту?',
+        'lyric-nineteen': 'Что помогает услышать в стихотворении благодарность, жалобу или надежду? Сверьте первое впечатление с интонацией строки.',
+        'short-prose': 'Найдите маленький жест, понятный как забота о ближнем. Какие другие объяснения этого жеста оставляет рассказ?',
+        'silver': 'Как меняется смысл образа, если прочесть его рядом с духовным источником? Где проходит граница такого сопоставления?',
+        'twentieth-prose': 'Что в выбранном эпизоде помогает разглядеть достоинство человека в тяжёлых обстоятельствах? Назовите поступок или деталь.',
+        'late': 'Какая подробность помогает услышать совесть или сомнение героя? Уточните, кому принадлежат слова, на которые вы опираетесь.',
+        'world': 'Как в этом тексте показано отношение к чужому человеку? Сопоставьте его с мыслью о ближнем и назовите одно различие.',
+        'tradition': 'Возьмите одно высказывание духовного автора. К какому действию оно обращает читателя и каким словом это выражено?',
+    }
     for m in MODULES:
         ready=''.join(f'<li><a href="/masterskaya/{s}/">{esc(by_slug[s]["title"])}</a><span>{esc(by_slug[s]["author"])} · «{esc(by_slug[s]["work"])}»</span></li>' for s in m['lessons'])
         available=f'<h3>Пройти занятие</h3><ul class="ready-lessons">{ready}</ul>' if ready else '<p class="fine">Этот раздел пока представлен маршрутом чтения. Подробные занятия к нему ещё не опубликованы.</p>'
         main_label='Для начала' if m['id']=='tradition' else 'Основа маршрута'
-        modules.append(f'''<section class="course-module" id="{m['id']}"><p class="eyebrow">{m['number']} · {m['stage']}</p><h2>{m['title']}</h2><p>{m['lead']}</p><div class="reading-columns"><div><h3>{main_label}</h3>{readings(m['core'])}</div><div class="additional-reading"><h3>Расширить чтение</h3>{readings(m['extra'])}</div></div><div class="course-outcome"><strong>Чему учимся</strong><p>{esc(m['result'])}</p></div>{available}</section>''')
+        modules.append(f'''<section class="course-module" id="{m['id']}"><p class="eyebrow">{m['number']} · {m['stage']}</p><h2>{m['title']}</h2><p>{m['lead']}</p><div class="reading-columns"><div><h3>{main_label}</h3>{readings(m['core'])}</div><div class="additional-reading"><h3>Расширить чтение</h3>{readings(m['extra'])}</div></div><div class="course-outcome"><strong>Чему учимся</strong><p>{esc(m['result'])}</p>{lens_questions(m['core'][0][1], orthodox_tasks[m['id']])}</div>{available}</section>''')
     course_nav=''.join(f'<a href="#{m["id"]}"><span>{m["number"]}</span> {m["title"]}</a>' for m in MODULES)
-    course=f'''<div class="wrap"><div class="breadcrumb"><a href="/">Главная</a><span>/</span>Карта курса</div><header class="page-title"><p class="eyebrow">Основной и дополнительный круг чтения</p><h1>От первой сказки<br>к большому разговору</h1><p class="lead">Двенадцать маршрутов по литературе 5–11 классов: русская классика, поэзия, литература народов России и мира, отдельный круг духовного чтения.</p></header>
+    course=f'''<div class="wrap"><div class="breadcrumb"><a href="/">Главная</a><span>/</span>Карта курса</div><header class="page-title"><p class="eyebrow">Основной и дополнительный круг чтения</p><h1>От первой сказки<br>к большому разговору</h1><p class="lead">Двенадцать маршрутов по литературе 5–11 классов: русская классика, поэзия, литература народов России и мира, отдельный круг духовного чтения.</p>{lens_picker()}</header>
     <div class="catalogue-intro"><p>Это авторская карта мастерской. Она охватывает основные эпохи и линии школьного курса, но не воспроизводит полный обязательный перечень или календарное планирование. «Основа» и «Расширить чтение» обозначают порядок нашего маршрута.</p><p>Готовых занятий в мастерской: {len(lessons)}. В списках ниже есть и произведения для самостоятельного чтения: к ним дан вопрос, а ссылка на подробный разбор появляется только там, где занятие уже готово. Точный объём школьного чтения и экзаменационные требования сверяйте с <a href="#course-sources">официальными документами</a>.</p></div>
     <div class="course-layout"><nav class="course-nav" aria-label="Разделы курса"><p class="eyebrow">Куда пойти</p>{course_nav}<a href="#course-sources">Источники карты</a></nav><article class="article">{''.join(modules)}
     <section id="course-sources"><h2>Источники и границы карты</h2><p>При составлении маршрута использованы федеральные рабочие программы и методическое письмо на 2026/27 учебный год. Произведения по выбору и дополнительные сопоставления на этой странице не превращаются в обязательный школьный список. Подборка вопросов и последовательность чтения принадлежат мастерской.</p><ul class="sources"><li><a href="https://edsoo.ru/wp-content/uploads/2025/07/2025_ooo_frp_literatura_5-9.pdf">Федеральная рабочая программа по литературе, 5–9 классы (редакция 2025 года, PDF)</a></li><li><a href="https://edsoo.ru/wp-content/uploads/2025/07/2025_soo_frp_literatura_10_11_baz.pdf">Федеральная рабочая программа, 10–11 классы, базовый уровень (2025, PDF)</a></li><li><a href="https://edsoo.ru/wp-content/uploads/2026/08/literatura2-2.pdf">Методическое письмо по литературе на 2026/27 учебный год: изменения и уточнения (PDF)</a></li><li><a href="https://fipi.ru/ege/demoversii-specifikacii-kodifikatory">ФИПИ: демоверсии, спецификации и кодификаторы ЕГЭ</a></li></ul><p class="fine">Карта подготовлена 2 октября 2026 года. Полные тексты современных произведений используйте в доступном законном издании; мастерская публикует собственные разборы и задания.</p><a class="button" href="/masterskaya/">Перейти к готовым занятиям</a></section></article></div></div>'''

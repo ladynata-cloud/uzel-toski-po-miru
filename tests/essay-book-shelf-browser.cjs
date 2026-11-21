@@ -73,7 +73,7 @@ async function collectTransfer(page) {
   await page.locator('#transfer-save').click();
   const download = await downloading;
   const json = JSON.parse(await fs.readFile(await download.path(), 'utf8'));
-  assert.deepEqual(json, {format:'uzel-essay-review.1', topic, essay, cardIds:selected});
+  assert.deepEqual(json, {format:'uzel-essay-review.1', topic, essay, mode:'secular', cardIds:selected});
   return json;
 }
 
@@ -267,7 +267,7 @@ async function family(page, browser, release) {
   await topicPicker(page);
   await page.locator('#book-shelf > summary').click();
   const preview = async () => JSON.parse(await page.locator('#preview').textContent());
-  assert.deepEqual(await preview(), {topic, essay});
+  assert.deepEqual(await preview(), {topic, essay, mode:'secular'});
   await page.locator('#local-check').click();
   const withoutCards = await page.locator('#local-result').textContent();
   const query = page.locator('#book-search');
@@ -293,7 +293,7 @@ async function family(page, browser, release) {
   await page.locator('#consent').check();
   await page.locator('#send').click();
   await page.locator('#review-panel').waitFor({state:'visible'});
-  assert.deepEqual(requests, [{key,topic,essay,cardIds:selected}]);
+  assert.deepEqual(requests, [{key,topic,essay,mode:'secular',cardIds:selected}]);
   assert.equal(await page.locator('#gigakey').inputValue(), '');
   assert.equal(await page.locator('#essay').inputValue(), essay);
   const persistent = await page.evaluate(() => JSON.stringify([Object.entries(localStorage),Object.entries(sessionStorage)]));
@@ -322,7 +322,7 @@ async function family(page, browser, release) {
     assert.deepEqual(JSON.parse(await offline.locator('#preview').textContent()), material);
     await offline.locator('#book-shelf > summary').click();
     await offline.locator('#shelf-clear').click();
-    assert.deepEqual(JSON.parse(await offline.locator('#preview').textContent()), {topic,essay});
+    assert.deepEqual(JSON.parse(await offline.locator('#preview').textContent()), {topic,essay,mode:'secular'});
     assert.deepEqual(outgoing, [], 'Opening and importing a file does not contact a provider');
   } finally {await offline.close();}
 }

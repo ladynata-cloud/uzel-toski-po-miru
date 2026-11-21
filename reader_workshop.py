@@ -5,6 +5,8 @@ from pathlib import Path
 import re
 from urllib.parse import urlsplit
 
+from reader_lens_tasks import QUESTIONS
+
 SOURCE = Path(__file__).with_name('reader_workshop_cards')
 WORKS = {
     'work-student': ('kb-reader-student-opening-before', [
@@ -80,6 +82,8 @@ def packets(cards):
             scope = 'Только первая фраза. Дальнейший сюжет здесь не обсуждается.' if mode == 'before' else (
                 'Только показанное начало. Это не полный текст произведения и не его развязка.')
             result.append({'version': 1, 'kind': 'local_reader_workshop', 'work_id': work_id, 'mode': mode,
+                           'lenses': {lens: {'question': task[0], 'check': task[1]}
+                                      for lens, task in QUESTIONS[work_id][mode].items()},
                            'source': {'title': catalogue[work_id]['title'], 'author': catalogue[work_id]['author'],
                                       'text': text, 'url': links[0], 'scope': scope},
                            'task': {'goal': public['learning_goal'] if approved_mode else
@@ -118,6 +122,8 @@ def workshop_markup():
 <blockquote class="quote"><p id="reading-source-text"></p><cite id="reading-source-credit"></cite></blockquote>
 <a id="reading-source-link" target="_blank" rel="noopener noreferrer">Полный текст у источника — возможны спойлеры</a>
 <p id="reading-goal"></p>
+<p id="reading-lens-question"></p>
+<details id="reading-lens-check"><summary>Как проверить свою заметку?</summary><p id="reading-lens-feedback"></p></details>
 <p>Какая ситуация вам подходит? Выбор можно поменять.</p>
 <div id="reading-branches" class="memory-actions" aria-label="Выберите ситуацию"></div>
 <section id="reading-step" hidden aria-labelledby="reading-step-title">

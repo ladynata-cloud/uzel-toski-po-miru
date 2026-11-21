@@ -120,7 +120,9 @@ def utf16_length(text):
 
 
 def check_input(data):
-    if not isinstance(data, dict) or set(data) - {"cardIds"} != set(INPUT_LIMITS):
+    if not isinstance(data, dict) or set(data) - {"cardIds", "mode"} != set(INPUT_LIMITS):
+        raise Problem(400, "invalid_input")
+    if data.get("mode", "secular") not in ("secular", "orthodox"):
         raise Problem(400, "invalid_input")
     for name, limit in INPUT_LIMITS.items():
         s = data[name]
@@ -198,6 +200,8 @@ def request_review(data, post):
     if not isinstance(token, str) or not token or not token.isascii() or not token.isprintable() or any(ch.isspace() for ch in token):
         raise Problem(502, "invalid_response")
     material = {"topic": data["topic"], "essay": data["essay"]}
+    if "mode" in data:
+        material["mode"] = data["mode"]
     if data.get("cardIds"):
         material["cards"] = [CARD_BY_ID[cid] for cid in data["cardIds"]]
     user = json.dumps(material, ensure_ascii=False)

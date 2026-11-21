@@ -107,3 +107,33 @@ test('checking a quotation goes to the source before grading or writing advice',
     assert.match(reply(message), /без кавычек/u);
   }
 });
+
+test('shared reading lens preserves older personal settings and both questions for each writing skill', () => {
+  const stored = new Map();
+  const storage = {getItem:key => stored.get(key),setItem:(key,val) => stored.set(key,val)};
+  const events = [];
+  class Event { constructor(type, params) { this.type=type; this.detail=params.detail; } }
+  const lens = runInNewContext(read('reading-lens.js')+'\nEssayReadingLens', {
+    localStorage:storage,CustomEvent:Event,window:{dispatchEvent:event => events.push(event)}
+  });
+  assert.equal(lens.restore('orthodox'),'orthodox');
+  lens.select('secular');
+  assert.equal(stored.get('uzel-reading-lens-v1'),'secular');
+  assert.equal(events[0].detail.mode,'secular');
+  assert.equal(lens.restore('orthodox'),'secular');
+  for (const skill of ['topic','thesis','retell','motive','quote','transition','ending','precision','alternative']) {
+    const questions=['secular','orthodox'].map(mode=>lens.question(skill,mode));
+    assert.notEqual(...questions);
+    assert.ok(questions.every(q=>q.includes('?')));
+  }
+  const card={fact:'Первая сцена.',orthodox:'Вопрос о первой сцене?'};
+  assert.equal(lens.routeQuestion({scene:card.fact,why:'Семья'},card,'Моя тема'),card.orthodox);
+  assert.notEqual(lens.routeQuestion({scene:'Другая сцена.',why:'Семья'},card,'Моя тема'),card.orthodox);
+  const unavailable = runInNewContext(read('reading-lens.js')+'\nEssayReadingLens', {
+    localStorage:{getItem(){throw Error('disabled');},setItem(){throw Error('disabled');}},
+    CustomEvent:Event,window:{dispatchEvent(){}}
+  });
+  assert.equal(unavailable.restore('broken'),'secular');
+  unavailable.select('orthodox');
+  assert.equal(unavailable.current(),'orthodox');
+});

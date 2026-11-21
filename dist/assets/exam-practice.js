@@ -2,6 +2,14 @@
   'use strict';
   const select = document.querySelector('.practice select');
   const area = document.querySelector('.practice textarea');
+  const questions = document.querySelectorAll('[data-exam-lens-task]');
+  if (select && questions.length) {
+    const showTask = () => {
+      for (const group of questions) group.hidden = group.dataset.examLensTask !== select.value;
+    };
+    select.addEventListener('change', showTask);
+    showTask();
+  }
   if (new URLSearchParams(window.location.search).get('practice') === 'external') {
     const externalOption = select?.querySelector('[data-external-practice]');
     if (externalOption) {

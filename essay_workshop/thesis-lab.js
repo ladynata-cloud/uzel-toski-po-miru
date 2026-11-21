@@ -73,7 +73,7 @@ const EssayThesisLab = (() => {
         (r.editing?field('after','Мой вариант после разбора',r.after,5):actions(button('revise','Попробовать другую формулировку')))+
         actions(button('back','К тренировочной фразе'),button('download','Скачать для обсуждения (.txt)'));
     }
-    return '<section data-tl-step="'+escape(r.step)+'">'+body+'<p role="status" class="ew-small" data-tl-status></p></section>';
+    return '<section data-tl-step="'+escape(r.step)+'">'+body+(r.step==='transfer'?'':EssayReadingLens.detail(r.step==='claim'?'thesis':r.step==='deed'?'episode':r.step==='review'?'review':'link'))+'<p role="status" class="ew-small" data-tl-status></p></section>';
   }
   function download(r) {
     const parts=['Уточни свой тезис · Узел тоски по миру','Книга: '+(r.ownBook?r.ownTitle:r.book.title),

@@ -1,11 +1,32 @@
 <style>{{ESSAY_CSS}}
 .ew[data-essay-assistant-origin="personal"] .ew-home-trainer{display:none}
 </style>
+<script>{{ESSAY_LENS}}</script>
 <div class="ew" id="essay-workshop" data-essay-assistant-origin="{{ESSAY_ORIGIN}}">
   <header class="ew-head">
     <div><p class="ew-kicker">Узел тоски по миру <span> / </span> 11 класс</p><h1>Итоговое сочинение</h1>
-      <div id="ew-start-offer">
-        <section class="ew-text-card ew-home-trainer" aria-labelledby="ew-home-title">
+
+    </div>
+    <aside class="ew-date"><strong>2 декабря 2026</strong><span>Основной день · 3 ч 55 мин</span><a href="#ew-exam-guide">Памятка выпускнику</a></aside>
+  </header>
+  <div class="ew-mode"><label for="ew-mode">Ракурс вопросов к тексту</label>
+    <select id="ew-mode" aria-describedby="ew-mode-help"><option value="secular">Общелитературный разбор</option><option value="orthodox">Православный ракурс</option></select>
+    <p id="ew-mode-help" class="ew-small">В обоих ракурсах свой вывод нужно обосновать текстом. Критерии сочинения общие.</p>
+  </div>
+  <noscript>Для работы с черновиком включи JavaScript. <a href="https://fipi.ru/itogovoe-sochinenie">Материалы ФИПИ</a> доступны отдельно.</noscript>
+  <div class="ew-layout">
+    <aside class="ew-sidenav">
+      <h2>Моя работа</h2>
+      <nav id="ew-steps" aria-label="Шаги сочинения"></nav>
+      <p id="ew-save" class="ew-save" role="status"></p>
+    </aside>
+    <div class="ew-sheet" id="knizhnaya-polka">
+      <button type="button" class="ew-back-start" id="ew-back-start" data-act="entry-navigator" hidden>Выбрать по своей ситуации</button>
+      <div id="ew-current"></div>
+      <div id="ew-practice-screen" hidden>{{ESSAY_WRITING_PRACTICE}}</div>
+    </div>
+  </div>
+  <section class="ew-text-card ew-home-trainer" aria-labelledby="ew-home-title">
           <h2 id="ew-home-title">Домашний тренажёр</h2>
           <p>Напиши сочинение по шагам или вставь готовое для проверки в бесплатном ГигаЧате. Для занятий без интернета скачай файл и открой его двойным щелчком.</p>
           <div class="ew-entry-return">
@@ -13,29 +34,6 @@
             <a href="domashniy-trenazher.html" download="domashniy-trenazher.html">Скачать для занятий без интернета</a>
           </div>
         </section>
-        <p>За пять минут попробуй улучшить одну фразу в учебном черновике. Если трудно начать, открой вопрос помощника.</p>
-        <a class="ew-launch" href="#ot-temy-do-vyvoda" data-act="page-writingPractice">Начать с одной фразы</a>
-        <span class="ew-entry-access">Без регистрации и ключа ИИ</span>
-      </div>
-    </div>
-    <aside class="ew-date"><strong>2 декабря 2026</strong><span>Основной день · 3 ч 55 мин</span><a href="#ew-exam-guide">Памятка выпускнику</a></aside>
-  </header>
-  <noscript>Для работы с черновиком включи JavaScript. <a href="https://fipi.ru/itogovoe-sochinenie">Материалы ФИПИ</a> доступны отдельно.</noscript>
-  <div class="ew-layout">
-    <aside class="ew-sidenav">
-      <h2>Моя работа</h2>
-      <nav id="ew-steps" aria-label="Шаги сочинения"></nav>
-      <div class="ew-mode"><label for="ew-mode">Какие подсказки показывать?</label>
-        <select id="ew-mode" aria-describedby="ew-mode-help"><option value="secular">Литературный разбор</option><option value="orthodox">Православный ракурс</option></select></div>
-      <p id="ew-mode-help" class="ew-small">Православный комментарий мастерской можно включить по желанию. С любой подсказкой можно спорить.</p>
-      <p id="ew-save" class="ew-save" role="status"></p>
-    </aside>
-    <div class="ew-sheet" id="knizhnaya-polka">
-      <button type="button" class="ew-back-start" id="ew-back-start" data-act="page-start" hidden>К началу занятий</button>
-      <div id="ew-current"></div>
-      <div id="ew-practice-screen" hidden>{{ESSAY_WRITING_PRACTICE}}</div>
-    </div>
-  </div>
   <section class="ew-exam-guide" id="ew-exam-guide" aria-labelledby="ew-guide-title">
     <h2 id="ew-guide-title">Памятка выпускнику на 2026/27 год</h2>
     <p><a href="https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/pamyatka-2026-27.pdf">Скачать памятку для печати (PDF, 3 страницы)</a></p>
@@ -71,6 +69,8 @@
 <script>{{ESSAY_COACH}}</script>
 <script>{{ESSAY_REVISION}}</script>
 <script>{{ESSAY_MODELC}}</script>
+<script>{{ESSAY_ENTRY_ROUTER}}</script>
+<script>{{ESSAY_GIGA_NAVIGATOR}}</script>
 <script>{{ESSAY_REHEARSAL}}</script>
 <script>{{ESSAY_ANSWER_FEEDBACK}}</script>
 <script>{{ESSAY_DRILL_CONTRAST}}</script>
