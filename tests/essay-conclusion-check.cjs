@@ -37,7 +37,48 @@ function controls(page) {
     assert.ok(await source.isVisible(), 'Continue must stay on the self-check page');
   }
   const selection = element => element.evaluate(el => [el === document.activeElement, el.selectionStart, el.selectionEnd]);
-  return {panel, source, editor, role, comparison, button, quote, state, mark, continued, selection};
+  async function reviewRange(start, end, transferred = true) {
+    const evidence = () => page.evaluate(key => {
+      const saved = JSON.parse(localStorage.getItem(key));
+      return saved.notes[saved.active].evidence;
+    }, storageKey);
+    const previousEvidence = await evidence();
+    const text = await editor.inputValue();
+    assert.ok(await editor.evaluate(el => el === document.activeElement));
+    await page.keyboard.press('ControlOrMeta+End');
+    for (let i = text.length; i > end; i--) await page.keyboard.press('ArrowLeft');
+    for (let i = end; i > start; i--) await page.keyboard.press('Shift+ArrowLeft');
+    assert.deepEqual(await selection(editor), [true, start, end], 'The pupil selects the range with native keys');
+    const review = button('page-review');
+    for (let i = 0; i < 12 && !(await review.evaluate(el => el === document.activeElement)); i++) {
+      await page.keyboard.press('Tab');
+    }
+    assert.ok(await review.evaluate(el => el === document.activeElement), 'Review must be reachable with Tab');
+    assert.deepEqual(await selection(editor), [false, start, end]);
+    await page.keyboard.press('Enter');
+    assert.equal(await source.inputValue(), text, 'Carrying a selection must preserve the entire draft');
+    assert.deepEqual(await evidence(), previousEvidence, 'Navigation must not create, replace or revive evidence');
+    if (transferred) {
+      assert.ok(await role.evaluate(el => el === document.activeElement));
+      assert.deepEqual((await selection(source)).slice(1), [start, end], 'Review must carry the exact occurrence');
+      assert.match(await panel.locator('#ew-evidence-status').textContent(), /Выделенная фраза перенесена/u);
+    } else {
+      assert.deepEqual((await selection(source)).slice(1), [0, 0]);
+      assert.doesNotMatch(await panel.locator('#ew-evidence-status').textContent(), /перенесена/u);
+    }
+  }
+  async function markTransferredConclusion(start, end) {
+    await page.keyboard.press('End');
+    assert.equal(await role.inputValue(), 'conclusion');
+    await page.keyboard.press('Tab');
+    assert.deepEqual(await selection(source), [true, start, end]);
+    await page.keyboard.press('Tab');
+    assert.ok(await button('evidence-mark').evaluate(el => el === document.activeElement));
+    assert.deepEqual(await selection(source), [false, start, end], 'Native Tab must preserve the carried range');
+    await page.keyboard.press('Enter');
+  }
+  return {panel, source, editor, role, comparison, button, quote, state, mark, continued, selection,
+    reviewRange, markTransferredConclusion};
 }
 
 async function checkComparison(page, url, {extended = false} = {}) {
@@ -93,66 +134,6 @@ async function checkComparison(page, url, {extended = false} = {}) {
       return copy.textContent.replace(/\s+/g, ' ').trim();
     });
     const expectedCopy = await neutralCopy();
-    if (extended) {
-      const trace = async phase => {
-        const state = await c.source.evaluate(el => ({
-          focus:document.activeElement?.id || document.activeElement?.dataset.act || '',
-          start:el.selectionStart, end:el.selectionEnd,
-          status:document.querySelector('#ew-evidence-status')?.textContent || '',
-        }));
-        console.log('Essay conclusion keyboard probe', JSON.stringify({phase, ...state}));
-        return state;
-      };
-      const extend = async phase => {
-        for (let i = 0; i < position.length; i++) await page.keyboard.press('Shift+ArrowRight');
-        const selected = await trace(phase);
-        await page.keyboard.press('Tab');
-        await trace(phase + ':tab-to-mark');
-        const markFocused = await c.button('evidence-mark').evaluate(el => el === document.activeElement);
-        if (selected.start === positionStart && selected.end === positionStart + position.length && markFocused) {
-          await page.keyboard.press('Enter');
-          console.log('Essay conclusion keyboard probe', JSON.stringify({
-            phase:phase + ':marked', matches:(await c.quote('conclusion').textContent()) === '«' + position + '»',
-            status:await c.panel.locator('#ew-evidence-status').textContent(),
-          }));
-          await c.mark('conclusion', conclusionStart, conclusionStart + conclusion.length);
-        } else {
-          await page.keyboard.press('Shift+Tab');
-        }
-        return selected;
-      };
-      const fromHome = async phase => {
-        await page.keyboard.press('ControlOrMeta+Home');
-        await trace(phase + ':home');
-        await page.keyboard.press('ArrowRight');
-        await trace(phase + ':right');
-        return extend(phase + ':extended');
-      };
-      await c.role.focus();
-      await page.keyboard.press('End');
-      await page.keyboard.press('Tab');
-      await trace('tab:focused');
-      const first = await fromHome('tab');
-      if (first.start !== positionStart || first.end !== positionStart + position.length) {
-        await page.keyboard.press('ControlOrMeta+A');
-        await trace('all:selected');
-        await page.keyboard.press('ArrowLeft');
-        await trace('all:left');
-        await page.keyboard.press('ArrowRight');
-        await trace('all:right');
-        await extend('all:extended');
-      }
-      await c.button('evidence-reselect-conclusion').focus();
-      await page.keyboard.press('Enter');
-      await trace('reselect:focused');
-      await fromHome('reselect');
-      assert.equal(await c.source.inputValue(), draft, 'The keyboard probe must preserve the draft');
-      await c.role.focus();
-      await page.keyboard.press('End');
-      await page.keyboard.press('Tab');
-      await page.keyboard.press('ControlOrMeta+A');
-      await trace('restored:all');
-    }
     // Verify native select-all and preserve the range while tabbing to the mark button.
     // This covers keyboard marking, not arbitrary substring selection with arrow keys.
     await c.role.focus();
@@ -181,7 +162,15 @@ async function checkComparison(page, url, {extended = false} = {}) {
       await assertQuote('conclusion', draft.slice(start, end).trim());
       assert.equal(await neutralCopy(), expectedCopy, 'Overlap, length and word differences must not grade an essay');
     }
-    await c.mark('conclusion', secondDetail, secondDetail + detail.length);
+    await c.button('evidence-remove-conclusion').click();
+    await c.button('evidence-compare-edit').click();
+    await c.reviewRange(secondDetail, secondDetail + detail.length);
+    assert.equal(await c.quote('conclusion').count(), 0, 'Carrying a range must not create a conclusion mark');
+    await assertQuote('position', position);
+    assert.ok(await c.panel.locator('#ew-evidence-selection-help').isVisible());
+    assert.match(await c.source.getAttribute('aria-describedby'), /ew-evidence-selection-help/u);
+    await c.markTransferredConclusion(secondDetail, secondDetail + detail.length);
+    await assertQuote('conclusion', detail);
     await c.button('evidence-reselect-conclusion').click();
     assert.deepEqual(await c.selection(c.source), [true, secondDetail, secondDetail + detail.length]);
     await c.button('evidence-compare-edit').click();
@@ -199,7 +188,15 @@ async function checkComparison(page, url, {extended = false} = {}) {
     await c.button('evidence-reselect-conclusion').click();
     assert.equal(await c.role.inputValue(), 'conclusion');
     assert.deepEqual(await c.selection(c.source), [true, 0, 0], 'Stale marks must not relocate automatically');
-    await c.mark('conclusion', secondDetail, secondDetail + detail.length);
+    await c.button('evidence-compare-edit').click();
+    await c.reviewRange(secondDetail, secondDetail + detail.length);
+    for (const key of ['position', 'conclusion']) {
+      assert.equal(await c.quote(key).count(), 0, 'Carrying a range must not revive stale evidence');
+      assert.match(await c.state(key).textContent(), /Отметь фразу заново/u);
+    }
+    await c.markTransferredConclusion(secondDetail, secondDetail + detail.length);
+    await assertQuote('conclusion', detail);
+    assert.equal(await c.quote('position').count(), 0, 'Marking a conclusion must leave the stale answer unchanged');
     await c.button('evidence-remove-conclusion').click();
     assert.equal(await c.quote('conclusion').count(), 0);
     assert.ok(await c.button('evidence-reselect-conclusion').evaluate(el => el === document.activeElement),
@@ -236,7 +233,12 @@ async function checkComparison(page, url, {extended = false} = {}) {
       assert.deepEqual(await c.selection(c.editor), [true, changed.length, changed.length],
         'With neither mark, edit still opens the pupil’s unchanged draft');
       assert.equal(await c.editor.inputValue(), changed);
-      await c.button('page-review').click();
+      for (const [start, end] of [[changed.length, changed.length], [0, 1]]) {
+        if (!(await c.editor.count())) await c.button('evidence-compare-edit').click();
+        await c.reviewRange(start, end, false);
+        assert.equal(await c.comparison.locator('[data-comparison-quote]').count(), 0,
+          'An empty or whitespace-only editor range must not create evidence');
+      }
     }
     const overflow = await c.comparison.evaluate(root => [...root.querySelectorAll('button,summary')].filter(el => {
       const rect = el.getBoundingClientRect();

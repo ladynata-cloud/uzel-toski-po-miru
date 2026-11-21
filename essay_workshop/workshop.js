@@ -823,8 +823,9 @@
     const pending=tasks.find(t=>!n.evidence?.[t.id] || n.evidence[t.id].stale)?.id;
     return '<section aria-labelledby="ew-evidence-title"><h3 id="ew-evidence-title">Проверь, чем ты доказал свою мысль</h3>'+
       '<label for="ew-evidence-kind">Что ищешь в своей работе?</label><select id="ew-evidence-kind">'+options(tasks,pending)+'</select>'+
+      '<p class="ew-small" id="ew-evidence-selection-help">С клавиатуры: выдели фразу на странице правки и нажми «Проверить работу». Выделение появится здесь для отметки.</p>'+
       '<div class="ew-field"><label for="ew-evidence-draft">Выдели нужные слова в черновике</label>'+
-      '<textarea id="ew-evidence-draft" readonly rows="7">\n'+h(n.draft)+'</textarea></div>'+
+      '<textarea id="ew-evidence-draft" readonly rows="7" aria-describedby="ew-evidence-selection-help">\n'+h(n.draft)+'</textarea></div>'+
       actions(button('evidence-mark','Отметить выделенную фразу',true),button('evidence-missing','Пока не нашёл'))+
       '<p role="status" id="ew-evidence-status"></p><div id="ew-evidence-results">'+evidenceFindings(n)+'</div></section>';
   }
@@ -1264,7 +1265,28 @@
       state.active=action.slice(5);takeLibraryWork(selected);go(pageAfterTopic());return;
     }
     if(action==='page-library'){if(state.notes[state.active])booksForThisTopic();else wholeLibrary();return;}
-    if(action.startsWith('page-')){if(action==='page-review')state.reviewKind='draft';go(action.slice(5));return;}
+    if(action==='page-review'){
+      const editor=sourceField('draft');
+      let selected=null;
+      if(editor){
+        const text=editor.value, start=editor.selectionStart, end=editor.selectionEnd;
+        if(start>=0 && end>start && end<=text.length && text.slice(start,end).trim()){
+          selected={text,start,end,direction:editor.selectionDirection};
+        }
+      }
+      state.reviewKind='draft';
+      go('review');
+      const source=panel.querySelector('#ew-evidence-draft');
+      // Both textarea values have normalized line endings. Carry the exact range only;
+      // existing evidence stays unchanged until the learner explicitly marks it.
+      if(selected && source?.value===selected.text){
+        source.setSelectionRange(selected.start,selected.end,selected.direction);
+        panel.querySelector('#ew-evidence-kind').focus();
+        panel.querySelector('#ew-evidence-status').textContent='Выделенная фраза перенесена из черновика. Выбери её роль и нажми «Отметить выделенную фразу».';
+      }
+      return;
+    }
+    if(action.startsWith('page-')){go(action.slice(5));return;}
     if(action.startsWith('route-')){
       const route=action.slice(6);
       if(route==='drills'||route==='read'||route==='rehearsal'||route==='thesisLab'||route==='draftReader'||route==='themeAtlas'){go(route);return;}
