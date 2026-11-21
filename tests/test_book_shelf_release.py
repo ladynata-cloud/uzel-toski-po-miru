@@ -107,6 +107,38 @@ class BookShelfReleaseTests(unittest.TestCase):
                 self.assertEqual(downloaded_catalog[group], self.catalog[group])
             self.assertEqual(read_catalog(download.read("index.html").decode()), self.catalog)
 
+    def test_rechecked_doctor_passage_keeps_the_corridor_reply_and_two_money_episodes(self):
+        reading = next(r for r in self.catalog["readings"] if r["id"] == "doctor")
+        self.assertIn("из другого конца коридора", reading["context"])
+        self.assertIn("имени не называет", reading["context"])
+        self.assertNotIn("Доктор уже ушёл", reading["context"])
+        # These two facts must also reach the card sent by the family checker.
+        card = self.server.CARD_BY_ID["doctor"]["fact"]
+        self.assertIn("три рубля на еду", card)
+        self.assertRegex(card, r"под чайным блюдцем.*крупные кредитные билеты")
+
+    def test_rechecked_bykov_card_and_linked_article_include_the_guard(self):
+        card = self.server.CARD_BY_ID["shelf-senior-010"]
+        self.assertRegex(card["fact"], r"часовой.*до приезда комиссара его не выпустят")
+        topic = next(t for t in self.catalog["topics"] if t["work"] == card["id"])
+        self.assertIn("под охраной", topic["title"])
+        article = (ROOT / "dist/chtenie/razbory/senior-010/index.html").read_text(encoding="utf-8")
+        self.assertIn("рядом стоит часовой", article)
+        self.assertIn("до приезда комиссара его не выпустят", article)
+        for old_claim in ("ничто не мешает уйти", "внутренним решением ждать"):
+            self.assertNotIn(old_claim, article + json.dumps(topic, ensure_ascii=False))
+
+    def test_rechecked_adamovich_card_and_linked_article_recognize_the_comrades(self):
+        card = self.server.CARD_BY_ID["shelf-senior-001"]
+        self.assertRegex(card["fact"], r"узнаёт голоса партизан своего отряда")
+        topic = next(t for t in self.catalog["topics"] if t["work"] == card["id"])
+        self.assertIn("голоса товарищей", topic["title"])
+        article = (ROOT / "dist/chtenie/razbory/senior-001/index.html").read_text(encoding="utf-8")
+        self.assertIn("зовут по имени", article)
+        self.assertIn("узнаёт голоса партизан своего отряда", article)
+        for old_claim in ("пассажиры видят в незнакомце", "Как случайная встреча"):
+            self.assertNotIn(old_claim, article + json.dumps(topic, ensure_ascii=False))
+
     def test_shortlists_follow_the_actual_prompt_including_its_restrictions(self):
         catalog = self.catalog
         public = catalog["publicTopics"]
