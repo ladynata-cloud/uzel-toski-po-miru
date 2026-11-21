@@ -367,7 +367,7 @@ async function exercise(page) {
   await rehearsal('confirm');
   await rehearsal('review');
   assert.equal(await panel.locator('#ew-title').textContent(), 'Самопроверка');
-  assert.equal(await panel.locator('.ew-topic').textContent(), examTopic, 'Review shows the selected topic');
+  assert.equal(await panel.locator(':scope > .ew-topic').textContent(), examTopic, 'Review shows the selected topic');
   assert.equal(await source.inputValue(), examDraft, 'First review opens a working copy of the submission');
   await action('page-draft');
   const editedCopy = examDraft+' Именно этот выбор я считаю проявлением заботы.';

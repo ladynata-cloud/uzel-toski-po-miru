@@ -93,16 +93,24 @@ async function checkComparison(page, url, {extended = false} = {}) {
       return copy.textContent.replace(/\s+/g, ' ').trim();
     });
     const expectedCopy = await neutralCopy();
-    // Keyboard selection of the very same phrase is allowed in both roles.
-    await c.role.selectOption('conclusion');
-    await c.source.focus();
-    await page.keyboard.press('Control+Home');
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.down('Shift');
-    for (let i = 0; i < position.length; i++) await page.keyboard.press('ArrowRight');
-    await page.keyboard.up('Shift');
-    await c.button('evidence-mark').focus();
+    // Verify native select-all and preserve the range while tabbing to the mark button.
+    // This covers keyboard marking, not arbitrary substring selection with arrow keys.
+    await c.role.focus();
+    await page.keyboard.press('End');
+    assert.equal(await c.role.inputValue(), 'conclusion');
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('ControlOrMeta+A');
+    assert.deepEqual(await c.selection(c.source), [true, 0, draft.length]);
+    await page.keyboard.press('Tab');
+    assert.ok(await c.button('evidence-mark').evaluate(el => el === document.activeElement));
+    assert.deepEqual(await c.selection(c.source), [false, 0, draft.length],
+      'The keyboard-selected range must survive focus moving to the mark button');
     await page.keyboard.press('Enter');
+    assert.match(await c.panel.locator('#ew-evidence-status').textContent(), /Отметка «Мой вывод из рассуждения» добавлена/u);
+    await assertQuote('conclusion', draft.trim());
+    assert.equal(await neutralCopy(), expectedCopy, 'A keyboard-selected range must not produce a quality verdict');
+    // Both roles may also refer to the exact same phrase.
+    await c.mark('conclusion', positionStart, positionStart + position.length);
     await assertQuote('conclusion', position);
     assert.equal(await neutralCopy(), expectedCopy, 'Identical words must not produce a quality verdict');
     for (const [start, end] of [
