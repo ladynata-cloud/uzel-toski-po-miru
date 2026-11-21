@@ -48,6 +48,38 @@
   function labelResponse() {
     text('response-label', el('keep').checked ? 'Почему я сохраняю эту фразу' : 'Моя версия');
   }
+  function reviewQuestion(card, rec) {
+    if (!['retell','motive','quote'].includes(card.skill)) return card.self_check;
+    const answer = response(rec).trim();
+    if (rec.keep) return card.self_check;
+    const norm = value => value.toLowerCase().replaceAll('ё','е').replace(/[^а-яa-z0-9]+/gu,' ').trim();
+    if (norm(answer) === norm(card.draft)) return card.question;
+    // Inspect the learner's narration, excluding words presented as a quotation.
+    const unquoted = answer.replace(/«[^»]*»|"[^"]*"/gu,' ');
+    const narration = norm(unquoted);
+    if (card.skill === 'quote' && /[«"]/u.test(answer) &&
+        /по памяти|не помню|не уверен|кажется|вроде|примерно|не сверил/u.test(narration)) {
+      return 'Какие слова из твоей записи в кавычках ты можешь подтвердить по книге?';
+    }
+    if (card.skill === 'motive') {
+      const sentences = unquoted.split(/[.!?…\n]+/u);
+      for (const sentence of sentences) {
+        const words = norm(sentence);
+        const certainty = words.match(/(?:^| )(наверняка|точно|несомненно)(?= |$)/u);
+        const motive = /(?:^| )(боял|побоял|мечтал|хотел|стыдил|надеял)[а-я]*(?= |$)/u.exec(words);
+        const tentative = /(?:^| )(?:не (?:дума[а-я]*|зна[а-я]*|могу|уверен[а-я]*|сказа[а-я]*)|если бы|может быть|возможно)(?: |$)/u.test(words);
+        if (certainty && motive && !tentative && !words.slice(0, motive.index).endsWith(' не')) {
+          return 'Какой поступок или реплика героя даёт тебе основание написать «'+certainty[1]+'»?';
+        }
+      }
+    }
+    if (card.skill === 'retell' && /(?:^| )сначала /u.test(narration) &&
+        / (?:потом|затем|после этого) /u.test(narration) &&
+        !/потому что|это (?:показывает|значит|важно)|поэтому|я (?:думаю|считаю|вижу)|для меня/u.test(narration)) {
+      return card.question;
+    }
+    return card.self_check;
+  }
   function showReview(visible) {
     const card = active(), rec = current();
     el('review').hidden = !visible;
@@ -56,15 +88,16 @@
     text('copy-status', '');
     el('transfer').hidden = !visible || !card.transfer;
     if (!visible) return;
-    const before = rec.first ? rec.first.value : card.draft;
-    text('before-label', rec.first ? (rec.first.keep ? 'Моё первое обоснование' : 'Моя первая версия') : 'Было в черновике');
+    const first = rec.first && (rec.first.value !== response(rec) || Boolean(rec.first.keep) !== Boolean(rec.keep)) ? rec.first : null;
+    const before = first ? first.value : card.draft;
+    text('before-label', first ? (first.keep ? 'Моё первое обоснование' : 'Моя первая версия') : 'Было в черновике');
     text('before', before);
     el('before-box').hidden = !before;
     text('after-label', rec.keep ? 'Моё решение' : 'Моя новая версия');
     text('after', rec.keep ? card.draft : rec.answer);
     text('why', rec.keep ? 'Почему я оставляю эту фразу. ' + rec.reason : '');
     el('why').hidden = !rec.keep;
-    text('self-check', card.self_check);
+    text('self-check', reviewQuestion(card, rec));
     const literature = {
       retell: 'Попроси объяснить, что именно деталь действия помогает понять в теме.',
       motive: 'Попроси разделить наблюдаемый поступок и предположение о намерениях героя.',
@@ -128,6 +161,13 @@
     if (available.some(card => card.id === preferredId)) el('exercise').value = preferredId;
     showCard();
   }
+  function editResponse(changes) {
+    const rec = current();
+    if (rec.reviewed && !rec.first && response(rec).trim()) {
+      changes.first = {value: response(rec), keep: Boolean(rec.keep)};
+    }
+    return update(active().id, {...changes, reviewed:false});
+  }
   function editsInvalidateReview() {
     text('action-status', '');
     showReview(false);
@@ -143,7 +183,7 @@
   });
   el('exercise').addEventListener('change', showCard);
   el('keep').addEventListener('change', () => {
-    const rec = update(active().id, {keep: el('keep').checked, reviewed: false});
+    const rec = editResponse({keep: el('keep').checked});
     el('response').value = response(rec);
     labelResponse();
     editsInvalidateReview();
@@ -151,7 +191,7 @@
   });
   el('response').addEventListener('input', () => {
     const field = el('keep').checked ? 'reason' : 'answer';
-    update(active().id, {[field]: el('response').value, reviewed: false});
+    editResponse({[field]: el('response').value});
     editsInvalidateReview();
     el('export').disabled = !el('response').value.trim() && !cards.some(item => hasWriting(read(item.id)));
   });
@@ -171,8 +211,9 @@
     el('review-title').focus();
   });
   el('revise').addEventListener('click', () => {
-    update(active().id, {reviewed: false});
+    editResponse({});
     showReview(false);
+    toggleActions();
     markSelection();
     el('response').focus();
   });

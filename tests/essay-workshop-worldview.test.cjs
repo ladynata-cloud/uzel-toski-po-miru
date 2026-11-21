@@ -95,3 +95,15 @@ test('offers a lens only when asked and keeps literary discussion separate', () 
     assert.doesNotMatch(reply(message), /в переключателе|о своих убеждениях|ФИПИ допускает/iu, message);
   }
 });
+
+test('checking a quotation goes to the source before grading or writing advice', () => {
+  const inputs = [
+    'Я не помню точную цитату из рассказа. Как проверить, что это слова героя?',
+    'Не помню точных слов. Как проверить цитату в моём тексте?',
+    'В черновике цитата по памяти. Проверь, говорил ли это герой?'
+  ];
+  for (const message of inputs) {
+    assert.match(reply(message), /Можешь найти в книге именно те слова/u);
+    assert.match(reply(message), /без кавычек/u);
+  }
+});
