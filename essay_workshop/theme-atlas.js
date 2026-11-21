@@ -60,6 +60,12 @@ const EssayThemeAtlas = (() => {
     const year=source.year?String(source.year):'';
     return source.title+(year&&!source.title.includes(year)?' · '+year:'');
   }
+  function editorialReading(reading,title){
+    return '<div class="ew-text-card" data-editorial-reading><p class="ew-small">Материал к теме по выбору мастерской</p>'+
+      '<p><strong>'+escape(title)+'</strong> · '+escape(reading.passage)+'</p><p>'+escape(reading.observation)+'</p>'+
+      '<p><strong>Вопрос мастерской</strong> · '+escape(reading.question)+'</p>'+
+      '<a target="_blank" rel="noopener noreferrer" href="'+escape(reading.url)+'">Прочитать в источнике</a></div>';
+  }
   function render(catalog,sections){
     const pub=catalog.publicTopics||{sources:[],sections:[],topics:[]};
     const sources=[[publicGroup,'Все опубликованные подборки'],[authorGroup,'Учебные темы мастерской'],...pub.sources.map(s=>[s.id,sourceLabel(s)])];
@@ -93,7 +99,8 @@ const EssayThemeAtlas = (() => {
     const byKey=new Map(rows.map(row=>[row.key,row]));
     for(const r of rows){
       const source=sources.get(r.source);
-      r.search=clean([r.title,r.code||'',r.section,r.date||'',r.region||'',r.zone||'',source?.year||'',source?.title||'',...r.books.map(id=>works.get(id)?.title||'')].join(' '));
+      const readingTitle=r.editorialReading?.ownTitle||works.get(r.editorialReading?.work)?.title||'';
+      r.search=clean([r.title,r.code||'',r.section,r.date||'',r.region||'',r.zone||'',source?.year||'',source?.title||'',readingTitle,...r.books.map(id=>works.get(id)?.title||'')].join(' '));
     }
     function subsectionOptions(){
       const choices=pub.sections.filter(s=>String(s.id).includes('.')&&(!view.section||String(s.id).startsWith(view.section+'.')));
@@ -124,16 +131,24 @@ const EssayThemeAtlas = (() => {
       const matches=[...works.values()].filter(w=>query.split(/\s+/u).every(word=>clean(w.title).includes(word)));
       box.querySelector('[data-ta-book-count]').textContent=matches.length?'Найдено книг: '+matches.length+'.':'Книга не найдена. Укажи своё произведение или измени запрос.';
       const field=box.querySelector('[data-ta-book-choice]'),open=box.querySelector('[data-ta-act="book-choice"]');
-      field.innerHTML=options(matches.map(w=>[w.id,w.title]),'');field.disabled=open.disabled=!matches.length;
+      const selected=field.value;
+      field.innerHTML='<option value="">Выбери книгу</option>'+options(matches.map(w=>[w.id,w.title]),selected);
+      field.disabled=!matches.length;
+      open.disabled=!field.value;
     }
-    function chooseBook(card,query){
+    function chooseBook(card,row,query){
       const box=card.querySelector('[data-ta-book-box]'),key=card.dataset.taCard;
+      if(!box.hidden){box.querySelector('[data-ta-book-search]').focus();return;}
       box.hidden=false;
-      box.innerHTML='<p>Проверь, ограничивает ли вопрос выбор произведения, автора или исторической эпохи.</p>'+
+      const reading=row.editorialReading;
+      const suggestion=reading?'<div data-ta-route>'+editorialReading(reading,reading.ownTitle||works.get(reading.work).title)+
+        button('use-route',reading.ownTitle?'Взять этот текст как своё произведение':'Взять этот эпизод для своей темы')+'</div>':'';
+      box.innerHTML=suggestion+'<p>Проверь, ограничивает ли вопрос выбор произведения, автора или исторической эпохи.</p>'+
         '<label for="'+escape(key+'-find')+'">Найти книгу по автору или названию</label><input type="search" data-ta-book-search id="'+escape(key+'-find')+'" value="'+escape(query)+'">'+
         '<p data-ta-book-count role="status" class="ew-small"></p><label for="'+escape(key+'-book')+'">Мой выбор</label><select data-ta-book-choice id="'+escape(key+'-book')+'"></select>'+
         '<div class="ew-actions">'+button('book-choice','Открыть выбранную книгу')+button('ownBook','Указать другое произведение')+'</div>';
-      fillBookOptions(box);box.querySelector('[data-ta-book-search]').focus();
+      fillBookOptions(box);
+      box.querySelector(reading?'[data-ta-act="use-route"]':'[data-ta-book-search]').focus();
     }
     function show(){
       const terms=clean(view.query).split(/\s+/u).filter(Boolean);
@@ -159,6 +174,11 @@ const EssayThemeAtlas = (() => {
       view.query=event.target.value;view.limit=pageSize;show();
     });
     host.addEventListener('change',event=>{
+      if(event.target.hasAttribute('data-ta-book-choice')){
+        const open=event.target.closest('[data-ta-book-box]').querySelector('[data-ta-act="book-choice"]');
+        open.disabled=!works.has(event.target.value);
+        return;
+      }
       const key={'ta-section':'section','ta-subsection':'subsection','ta-source':'source'}[event.target.id];
       if(!key)return;view[key]=event.target.value;
       if(key==='section'){view.subsection='';subsectionOptions();}
@@ -179,13 +199,16 @@ const EssayThemeAtlas = (() => {
       }
       const item=b.closest('[data-ta-card]'),row=byKey.get(item?.dataset.taCard);
       if(!row)return;
+      if(mode==='use-route'&&row.editorialReading){
+        select(row,mode,[]);return;
+      }
       if(mode==='book-choice'){
         const id=item.querySelector('[data-ta-book-choice]').value;
-        if(works.has(id))select(row,'books',[id]);return;
+        if(works.has(id))select(row,'manual-book',[id]);return;
       }
       if(mode==='books'){
         const next=related(row,works);
-        if('search' in next)chooseBook(item,next.search);
+        if('search' in next)chooseBook(item,row,next.search);
         else select(row,mode,next.ids);
       }else select(row,mode,[]);
     });
@@ -196,5 +219,5 @@ const EssayThemeAtlas = (() => {
       view.own='';select({title,own:true},'write',[]);
     });
   }
-  return Object.freeze({render,mount});
+  return Object.freeze({render,mount,editorialReading});
 })();

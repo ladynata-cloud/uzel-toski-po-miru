@@ -47,6 +47,11 @@
     return n.args[key];
   }
   function argumentKey(n=note()) { return n.shelfChoice?'shelf:'+n.shelfChoice.id:n.work; }
+  // A suggested text outside the catalogue and the pupil's own alternative keep separate notes.
+  const editorialOwn='editorial-own';
+  function ownTitle(n=note()) {
+    return n.work===editorialOwn?editorialReadings.get(state.active)?.ownTitle:n.own;
+  }
   function leaveShelf(n) {
     if(!n.shelfChoice)return;
     n.work=n.shelfChoice.previousWork;
@@ -77,12 +82,12 @@
     const source=first?info?.url:(panel.querySelector('#ew-scene-source')?.value.trim()||info?.url);
     const quote=first?readingQuote(readingsById.get(state.reading)):
       (source===argument().quoteSource?argument().quote:'');
-    const result=EssayShelf.add({bookId:info?.id||'own',title:info?.title||note().own,
+    const result=EssayShelf.add({bookId:info?.id||'own',title:info?.title||ownTitle(),
       observation:first?state.readingNotes[state.reading]:argument().episode,quote,source});
     const status=panel.querySelector('[data-shelf-feedback]');
     status.textContent=result.message;
     if(!result.card){
-      if(!(info?.title||note().own)?.trim())panel.querySelector('#ew-own')?.focus();
+      if(!(info?.title||ownTitle())?.trim())panel.querySelector('#ew-own')?.focus();
       else if(!(first?state.readingNotes[state.reading]:argument().episode)?.trim())sourceField(first?'reading':'episode')?.focus();
       else panel.querySelector('#ew-scene-source')?.focus();
     }
@@ -90,7 +95,7 @@
   function shelfControls(first=false) {
     const w=first?null:work();
     const source=first?'':'<div class="ew-field"><label for="ew-scene-source">Где найти сцену в книге?</label>'+
-      '<input id="ew-scene-source" data-shelf-source placeholder="Глава, страница, издание или ссылка" value="'+h(argument().source||w?.url||'')+'"></div>';
+      '<input id="ew-scene-source" data-shelf-source placeholder="Глава, страница, издание или ссылка" value="'+h(argument().source||selectedEditorialReading()?.url||w?.url||'')+'"></div>';
     return source+actions(button('shelf-capture','Сохранить сцену на полку'),button('page-shelf','Открыть мою полку'))+
       '<p class="ew-small" data-shelf-feedback role="status"></p>';
   }
@@ -101,10 +106,10 @@
       EssayShelf.excerpt(a.quote,a.quoteSource||a.source)+actions(button('shelf-return','Вернуться к прежнему эпизоду этой темы'));
   }
   function work() { return catalog.works.find(w => w.id === note().work) || null; }
-  function selectedTitle() { return work()?.title || note().own || 'Своё произведение'; }
+  function selectedTitle() { return work()?.title || ownTitle() || 'Своё произведение'; }
   function lensLabel() { return state.mode==='orthodox'?'православный комментарий к тексту':'литературный разбор'; }
   function readerQuestionKey() {
-    return note().work==='own'?'readerQuestion:'+(note().own||'').trim().toLowerCase():'readerQuestion';
+    return work()?'readerQuestion':'readerQuestion:'+(ownTitle()||'').trim().toLowerCase();
   }
   function save() {
     try { localStorage.setItem(storageKey, JSON.stringify(state)); storageOK = true; } catch { storageOK = false; }
@@ -188,7 +193,7 @@
       '<label for="ew-topic">Тема сочинения</label><select id="ew-topic">'+opts+'</select><p class="ew-topic">'+h(topic().title)+'</p>'+
       (topic().focus && note().work===topic().work?'<p>'+h(topic().focus)+'</p>':'')+
       (work() && note().work!==topic().work?'<p>Книга для этой темы · '+h(selectedTitle())+'</p>':'')+
-      (note().shelfChoice?shelfCurrent():note().work==='own'?ownBookField()+(topic().work && topic().work!=='own'?actions(button('restore-topic-book','Вернуться к книге из карточки темы')):''):actions(button('choose-own-book','Взять своё произведение')))+
+      (note().shelfChoice?shelfCurrent():!work()?ownBookField()+(topic().work && topic().work!=='own'?actions(button('restore-topic-book','Вернуться к книге из карточки темы')):''):actions(button('choose-own-book','Взять своё произведение')))+
       '<details><summary>Начать со знакомой книги</summary><div><label for="ew-from-book">Какую книгу ты помнишь?</label><select id="ew-from-book">'+options(bookChoices,work()?.id||topic().work)+'</select><div id="ew-book-topics"></div></div></details>'+
       '<details><summary>Ввести свою тему</summary><div><form id="ew-custom-form"><label for="ew-custom">Формулировка темы</label><input id="ew-custom" required maxlength="500">'+actions('<button class="ew-primary">Работать с этой темой</button>')+'</form></div></details>'+
       actions(button('forward-topic',pageAfterTopic()==='thesis'?'Перейти к тезису':'Перейти к моему черновику',true));
@@ -199,6 +204,13 @@
     'Природа и культура в жизни человека'
   ];
   const libraryView = {query:'',section:'',limit:12,atlas:null};
+  const editorialReadings=new Map((catalog.publicTopics?.topics||[]).filter(t=>t.editorialReading).map(t=>['public-topic-'+t.id,t.editorialReading]));
+  function selectedEditorialReading(){
+    const reading=editorialReadings.get(state.active);
+    if(!reading || note().shelfChoice || note().editorialWork!==note().work)return null;
+    if(reading.work===note().work)return reading;
+    return note().work===editorialOwn&&ownTitle()===reading.ownTitle?reading:null;
+  }
   function selectAtlasTopic(row,mode,books){
     let id=row.id;
     if(row.own){
@@ -206,9 +218,13 @@
     }else if(row.official)id='public-topic-'+row.id;
     if(!allTopics().some(t=>t.id===id))state.custom.push({id,title:row.title,work:'own'});
     state.active=id;state.route='full';
-    if(mode==='books'){
+    if(mode==='use-route'){
+      const reading=row.editorialReading;
+      takeLibraryWork(reading.work||editorialOwn,true);
+      go('episode');
+    }else if(mode==='books'||mode==='manual-book'){
       const section=/^[1-3](?:\.|$)/u.test(row.section||'')?row.section[0]:'';
-      Object.assign(libraryView,{query:'',section:books.length?'':section,limit:12,atlas:{topic:id,ids:books}});
+      Object.assign(libraryView,{query:'',section:books.length?'':section,limit:12,atlas:{topic:id,ids:books,manual:mode==='manual-book'}});
       go('library');
     }else if(mode==='ownBook'){
       takeLibraryWork('own');go('episode');
@@ -226,7 +242,7 @@
     const fromAtlas=libraryView.atlas?.topic===state.active;
     return '<section data-library>'+heading('Книжная полка','Найди знакомую книгу или выбери сцену, с которой начнёшь работу.')+
       '<p class="ew-library-current"><strong>Моя тема</strong> · '+h(topic().title)+' '+button('page-topic','Сменить тему')+'</p>'+
-      (fromAtlas?'<p class="ew-small">'+(libraryView.atlas.ids.length?'Подборка мастерской для этой темы. Можно предложить другое произведение.':libraryView.section?'Показаны книги этого раздела. Найди эпизод, который помогает обосновать твою мысль.':'Раздел этой темы не указан. Найди знакомую книгу по автору или названию.')+'</p>'+actions(button('library-all','Все книги'),button('page-themeAtlas','Вернуться к подборке тем')):'')+
+      (fromAtlas?'<p class="ew-small">'+(libraryView.atlas.manual?'Книга, которую ты выбрал для этой темы.':libraryView.atlas.ids.length?'Подборка мастерской для этой темы. Можно предложить другое произведение.':libraryView.section?'Показаны книги этого раздела. Найди эпизод, который помогает обосновать твою мысль.':'Раздел этой темы не указан. Найди знакомую книгу по автору или названию.')+'</p>'+actions(button('library-all','Все книги'),button('page-themeAtlas','Вернуться к подборке тем')):'')+
       '<div class="ew-library-filters"><div><label for="ew-library-search">Автор или название</label>'+
       '<input id="ew-library-search" type="search" value="'+h(libraryView.query)+'" placeholder="Например, Чехов" autocomplete="off"></div>'+
       '<div><label for="ew-library-section">Раздел банка тем</label><select id="ew-library-section">'+
@@ -260,12 +276,13 @@
     count.textContent=matches.length?'Найдено книг: '+matches.length+'. Показано: '+Math.min(libraryView.limit,matches.length)+'.':'Книг с таким запросом нет. Измени запрос или раздел.';
     panel.querySelector('[data-act="library-more"]').hidden=matches.length<=libraryView.limit;
   }
-  function takeLibraryWork(id) {
+  function takeLibraryWork(id,editorial=false) {
     const n=note();
     if(n.work!==id || n.shelfChoice) {
-      n.libraryPrevious={forWork:id,work:n.work,own:n.own,shelfChoice:n.shelfChoice||null};
+      n.libraryPrevious={forWork:id,work:n.work,own:n.own,shelfChoice:n.shelfChoice||null,editorialWork:n.editorialWork};
       leaveShelf(n);n.work=id;
     }
+    n.editorialWork=editorial?id:undefined;
   }
   function libraryReturn() {
     const n=note();
@@ -295,7 +312,7 @@
     list.innerHTML=themes.length?actions(...themes.map(t=>button('pick-'+t.id,t.title))):actions(button('use-from-book','Взять эту книгу для моей темы'));
   }
   function context(stage) {
-    return {stage,mode:state.mode,topic:topic().title,work:work() || (note().own?{title:note().own}:null),thesis:note().thesis,episode:argument().episode,link:argument().link,draft:note().draft,draftHeading:note().draftHeading};
+    return {stage,mode:state.mode,topic:topic().title,work:work() || (ownTitle()?{title:ownTitle()}:null),thesis:note().thesis,episode:argument().episode,link:argument().link,draft:note().draft,draftHeading:note().draftHeading};
   }
   function conversationKey(stage) { return stage+'|'+((stage==='episode'||stage==='link')?argumentKey():'')+'|'+state.mode; }
   function turns(stage) { return note().turns[conversationKey(stage)] || []; }
@@ -324,7 +341,7 @@
   }
   function answerBook(stage) {
     if(stage==='reading'||stage==='drill') return '';
-    return JSON.stringify([note().work,note().work==='own'?(note().own||'').trim().toLowerCase():'']);
+    return JSON.stringify([note().work,work()?'':(ownTitle()||'').trim().toLowerCase()]);
   }
   function inspectAnswer(stage,text) {
     if(stage==='drill') {
@@ -564,14 +581,16 @@
     log.innerHTML=history(stage); log.lastElementChild?.scrollIntoView({block:'nearest'});
   }
   function ownBookField() {
-    return '<div class="ew-field"><label for="ew-own">Название произведения и автор, если он известен</label><input id="ew-own" data-field="own" value="'+h(note().own)+'"><p class="ew-small">Подойдёт и текст, которого нет в подборке. Если сомневаешься в детали, сверь эпизод с опубликованным текстом.</p></div>';
+    const suggested=note().work===editorialOwn;
+    return '<div class="ew-field"><label for="ew-own">Название произведения и автор, если он известен</label><input id="ew-own" data-field="own"'+(suggested?' readonly':'')+' value="'+h(ownTitle())+'"><p class="ew-small">Подойдёт и текст, которого нет в подборке. Если сомневаешься в детали, сверь эпизод с опубликованным текстом.</p></div>'+
+      (suggested?actions(button('library-own','Взять другую свою книгу')):'');
   }
   function workPicker() {
-    const w=work();
+    const w=work(),reading=selectedEditorialReading();
     if(note().shelfChoice)return '<p class="ew-small">Книга для аргумента · '+h(selectedTitle())+'</p>'+shelfCurrent();
-    return '<div class="ew-field"><label for="ew-work">Книга для аргумента</label><select id="ew-work">'+options([...catalog.works,{id:'own',title:'Моё произведение'}],note().work)+'</select></div>'+
+    return '<div class="ew-field"><label for="ew-work">Книга для аргумента</label><select id="ew-work">'+options([...catalog.works,{id:'own',title:'Моё произведение'}],w?.id||'own')+'</select></div>'+
       (w?'<div class="ew-text-card"><p><strong>'+h(w.title)+'</strong></p><p><a target="_blank" rel="noopener noreferrer" href="'+h(w.url)+'">К источнику</a></p><details><summary>Вспомнить сцену и получить вопрос</summary><div><p class="ew-small">Пересказ мастерской</p><p>'+h(w.fact)+'</p><p>'+h(w[state.mode])+'</p></div></details></div>':
-      ownBookField())+libraryReturn();
+      ownBookField())+(reading?EssayThemeAtlas.editorialReading(reading,selectedTitle()):'')+libraryReturn();
   }
   function outline() {
     const parts = [['Тезис',note().thesis],['Эпизод · '+selectedTitle(),argument().episode],['Что доказывает эпизод',argument().link]];
@@ -581,7 +600,9 @@
     const n=note(), a=argument();
     const copy={
       thesis:['Твой ответ на вопрос темы','Представь, что этот вопрос задал одноклассник. Запиши, что бы ты ему ответил и почему.','Мой тезис',n.thesis],
-      episode:['Одна сцена из книги','Выбери произведение, которое помнишь. Запиши одно действие героя и деталь, которую можно сверить с текстом.','Что произошло в этой сцене?',a.episode],
+      episode:n.work===editorialOwn?
+        ['Фрагмент для аргумента','Прочитай указанный фрагмент. Запиши одно наблюдение, которое сможешь обосновать словами автора.','Что ты заметил в тексте?',a.episode]:
+        ['Одна сцена из книги','Выбери произведение, которое помнишь. Запиши одно действие героя и деталь, которую можно сверить с текстом.','Что произошло в этой сцене?',a.episode],
       link:['Что доказывает эпизод?','Представь читателя, который знает сюжет, но ещё не согласен с твоим ответом на тему.','Как деталь помогает обосновать мой тезис?',a.link],
       draft:[state.route==='edit'?'Разбери свой черновик':'Напиши сочинение целиком',state.route==='edit'?'Вставь текст. Сохрани первую версию, затем выбери одну правку, с которой хочешь начать.':'Перед тобой отдельный лист. При необходимости раскрой свой план и попроси подсказку.','Мой текст',n.draft]
     }[stage];
@@ -736,7 +757,7 @@
   function thesisLab() {
     const n=note();
     n.thesisLab ||= {};
-    return EssayThesisLab.render({record:n.thesisLab,initial:n.thesis,work:work(),ownTitle:n.own});
+    return EssayThesisLab.render({record:n.thesisLab,initial:n.thesis,work:work(),ownTitle:ownTitle(n)});
   }
   function draftReaderContext() {
     const n=note();
@@ -862,7 +883,7 @@
     if(el.id==='ew-reading') state.reading=el.value;
     else if(el.id==='ew-mode') state.mode=el.value;
     else if(el.id==='ew-topic') state.active=el.value;
-    else if(el.id==='ew-work'){leaveShelf(note());note().work=el.value;}
+    else if(el.id==='ew-work'){leaveShelf(note());note().work=el.value;delete note().editorialWork;}
     else if(el.id==='ew-drill') state.exercise=el.value;
     else if(el.dataset.check){note().checks[el.dataset.check]=el.checked;save();return;}
     else return;
@@ -937,7 +958,8 @@
     if(action==='library-restore'){
       const n=note(),before=n.libraryPrevious;
       if(before?.forWork===n.work){
-        n.work=before.work;n.own=before.own;
+        n.work=before.work;n.editorialWork=before.editorialWork;
+        if(before.work==='own'||before.shelfChoice)n.own=before.own;
         if(before.shelfChoice)n.shelfChoice=before.shelfChoice;
         delete n.libraryPrevious;
         go('episode');
@@ -957,12 +979,12 @@
     }
     if(action.startsWith('evidence-')){handleEvidence(action);return;}
     if(action==='use-from-book'){
-      leaveShelf(note());note().work=panel.querySelector('#ew-from-book').value;
+      leaveShelf(note());note().work=panel.querySelector('#ew-from-book').value;delete note().editorialWork;
       render();save();panel.querySelector('#ew-topic').focus({preventScroll:true});return;
     }
     if(action==='choose-own-book'||action==='restore-topic-book'){
       const own=action==='choose-own-book';
-      leaveShelf(note());note().work=own?'own':topic().work;
+      leaveShelf(note());note().work=own?'own':topic().work;delete note().editorialWork;
       render();save();panel.querySelector(own?'#ew-own':'[data-act="choose-own-book"]')?.focus({preventScroll:true});return;
     }
     if(action==='focus-writing'){sourceField(state.page)?.focus();return;}

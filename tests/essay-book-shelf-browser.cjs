@@ -5,6 +5,7 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const {pathToFileURL} = require('node:url');
 const {chromium} = require('playwright');
+const {checkLocalReadingCases} = require('./essay-local-reading-cases.cjs');
 
 const base = (process.env.READER_BASE_URL || 'http://127.0.0.1:8074').replace(/\/?$/, '/');
 const workshop = new URL('k-sochineniyu/itogovoe/pomoshchnik/', base);
@@ -101,6 +102,95 @@ async function topicAtlas(page) {
     const expected = catalog.topics.filter(t => t.subsection === code).map(t => 'w:' + t.id);
     assert.ok(expected.length > 0);
     assert.deepEqual(await cards.evaluateAll(nodes => nodes.map(n => n.dataset.taCard)), expected);
+  }
+}
+
+const historicalPrompts = [
+  ['Какого исторического деятеля Вы бы назвали подлинно выдающимся?'],
+  ['Согласны ли Вы с утверждением М.В. Ломоносова: «Народ, не знающий своего прошлого, не имеет будущего»?'],
+  ['Произведение искусства, хранящее память о великом подвиге.'],
+  ['Событие отечественной истории, запечатленное в искусстве.'],
+  ['Какие уроки может преподать отечественная история?', 'shelf-senior-043'],
+  ['Какое достижение отечественной культуры XIX века представляется Вам наиболее значимым и почему?', 'classic-onegin'],
+  ['Как Вы думаете, почему в числе первых произведений отечественной письменной литературы были летописи?', 'own', 'Повесть временных лет'],
+  ['Какие события отечественной истории демонстрируют сплоченность общества?', 'classic-war-and-peace'],
+  ['Историк В.О. Ключевский утверждал: «Чтобы быть сознательно и добросовестно действующим гражданином, каждый из нас должен быть хоть немного историком». Как Вы понимаете это утверждение?', 'own', 'Курс русской истории'],
+];
+
+async function historicalRoutes(page, url) {
+  await page.goto(url + '#temy-sochineniya');
+  const catalog = JSON.parse(await page.locator('#ew-catalog').textContent());
+  const sample = 'fipi-sample-2026';
+  const history = 'fipi-history-2026';
+  const sources = new Map(catalog.publicTopics.sources.map(s => [s.id, s.url]));
+  const cases = historicalPrompts.map(([title, book, ownTitle], i) => ({
+    id: 'pub-' + history + '-' + (i + 1), source: history, title, book, ownTitle,
+  }));
+  cases.push({id: 'pub-' + sample + '-4', source: sample, book: 'classic-quiet-dawns',
+    title: 'Память о Великой Отечественной войне – ответственность перед прошлым и будущим.'});
+  const atlas = page.locator('#ew-steps [data-act="page-themeAtlas"]');
+  await page.locator('#ta-section').selectOption('');
+  await page.locator('#ta-search').fill('');
+
+  for (const {id, source, title, book, ownTitle} of cases) {
+    await atlas.click();
+    await page.locator('#ta-source').selectOption(source);
+    const row = page.locator('[data-ta-card="p:' + id + '"]');
+    assert.equal(await row.locator('h3').textContent(), title);
+    assert.equal(await row.locator('a').first().getAttribute('href'), sources.get(source));
+    if (source === sample) assert.match(await row.innerText(), /№ 407/u);
+    await row.locator('[data-ta-act="books"]').click();
+    const route = row.locator('[data-ta-route]');
+    const choice = row.locator('[data-ta-book-choice]');
+    const confirm = row.locator('[data-ta-act="book-choice"]');
+    assert.equal(await choice.inputValue(), '', title);
+    assert.equal(await confirm.isEnabled(), false, title);
+    assert.equal(await route.count(), book ? 1 : 0, title);
+    if (book) {
+      const expected = catalog.publicTopics.topics.find(t => t.id === id).editorialReading;
+      for (const part of [expected.passage, expected.observation, expected.question]) {
+        assert.ok(part && (await route.innerText()).includes(part), id);
+      }
+      assert.equal(await route.locator('a').getAttribute('href'), expected.url);
+      assert.notEqual(expected.url, sources.get(source));
+      await row.locator('[data-ta-act="use-route"]').click();
+      assert.equal(await page.locator('#ew-current .ew-topic').textContent(), title);
+      assert.equal(await page.locator('#ew-work').inputValue(), book);
+      if (ownTitle) assert.ok((await page.locator('#ew-own').inputValue()).includes(ownTitle));
+      const prompt = page.locator('[data-editorial-reading]');
+      assert.ok((await prompt.innerText()).includes(expected.question));
+      assert.equal(await prompt.locator('a').getAttribute('href'), expected.url);
+      assert.equal(await page.locator('[data-field="episode"]').inputValue(), '');
+      await atlas.click();
+      await page.locator('#ta-source').selectOption(source);
+      await row.locator('[data-ta-act="books"]').click();
+    }
+
+    // A deliberate choice can match the recommended book without inheriting its provenance.
+    const manualBook = book && book !== 'own' ? book : 'doctor';
+    const manualTitle = catalog.works.find(w => w.id === manualBook).title;
+    await row.locator('[data-ta-book-search]').fill(manualTitle);
+    assert.equal(await choice.inputValue(), '', 'Filtering to one title must not select it');
+    assert.equal(await confirm.isEnabled(), false);
+    await choice.selectOption(manualBook);
+    await confirm.click();
+    assert.deepEqual(await page.locator('[data-library-work]').evaluateAll(nodes => nodes.map(n => n.dataset.libraryWork)), [manualBook]);
+    assert.ok((await page.locator('[data-library]').innerText()).includes('Книга, которую ты выбрал для этой темы.'));
+    assert.doesNotMatch(await page.locator('[data-library]').innerText(), /Подборка мастерской для этой темы/u);
+    await page.locator('[data-act="library-use-' + manualBook + '"]').click();
+    assert.equal(await page.locator('#ew-current .ew-topic').textContent(), title);
+    assert.equal(await page.locator('#ew-work').inputValue(), manualBook);
+    assert.equal(await page.locator('[data-editorial-reading]').count(), 0);
+  }
+}
+
+async function downloadedHistoricalRoutes(browser) {
+  const page = await browser.newPage({offline:true});
+  try {
+    // The release parity test compares this file byte-for-byte to practice.html in the ZIP.
+    await historicalRoutes(page, pathToFileURL(path.join(dist, 'masterskaya.html')).href);
+  } finally {
+    await page.close();
   }
 }
 
@@ -212,9 +302,12 @@ async function family(page, browser, release) {
     page.setDefaultTimeout(6000);
     await library(page);
     await topicAtlas(page);
+    await historicalRoutes(page, workshop.href);
+    await downloadedHistoricalRoutes(browser);
     const pageHtml = await fs.readFile(path.join(dist, 'proverka-sochineniya.html'), 'utf8');
     const release = JSON.parse(pageHtml.match(/const reviewBundle\s*=\s*(\{[^\n]*\});/)[1]);
     await family(page,browser,release);
-    console.log('Shelf filters, per-book notes, optional cards and family transfer passed.');
+    await checkLocalReadingCases(browser);
+    console.log('Shelf filters, historical routes on site and offline, per-book notes, optional cards and family transfer passed.');
   } finally {await browser.close();}
 })().catch(error => { console.error(error); process.exitCode=1; });
