@@ -79,6 +79,7 @@ async function routes(page, url) {
   await page.locator('#dr-source').fill(myParagraph);
   await back(page);
   await enter(page, 'essay');
+  await page.locator('#ew-finished-topic').fill(myTopic);
   await page.locator('#ew-write-draft').fill(myEssay);
   const mode = page.locator('#ew-mode');
   const question = page.locator('[data-ew-lens-question="draft"] p');
@@ -112,7 +113,17 @@ async function routes(page, url) {
 
 async function openManual(page) {
   await page.locator('#ew-ai-entry > summary').click();
+  await page.locator('#ew-ai-situation').fill('Спасибо');
+  await page.locator('#ew-ai-local').click();
+  assert.equal(await page.locator('#ew-ai-choice').inputValue(), '');
+  assert.equal(await page.locator('#ew-ai-go').isEnabled(), false);
+  assert.match(await page.locator('#ew-ai-status').textContent(), /\?/u);
+  await page.locator('#ew-ai-situation').fill('У меня уже есть абзац, хочу его исправить');
+  await page.locator('#ew-ai-local').click();
+  assert.equal(await page.locator('#ew-ai-choice').inputValue(), '4');
+  assert.ok(await page.locator('#ew-ai-go').isEnabled());
   await page.locator('#ew-ai-situation').fill(situation);
+  await page.locator('#ew-ai-optional > summary').click();
   const prompt = await page.locator('#ew-ai-prompt').inputValue();
   assert.ok(prompt.includes(situation));
   const lensName = await page.locator('#ew-mode option:checked').innerText();
@@ -134,8 +145,17 @@ async function deepLinks(page, url) {
   }
 }
 
+async function capture(page, name) {
+  const directory = process.env.READER_ARTIFACT_DIR;
+  if (!directory) return;
+  await fs.mkdir(directory, {recursive:true});
+  await page.screenshot({path:path.join(directory, name + '-' + page.viewportSize().width + '.png')});
+}
+
 async function online(page) {
   await page.goto(workshop);
+  await page.locator('#ew-situations').waitFor();
+  await capture(page, 'essay-entry-first-visit');
   await enter(page, 'quick');
   await page.goBack();
   await page.locator('#ew-situations').waitFor();
@@ -162,6 +182,9 @@ async function online(page) {
   await page.locator('#review-lens').selectOption('secular');
   assert.equal(await localReview.innerText(), ordinaryReview);
   await deepLinks(page, workshop);
+  await page.goto(workshop + '#ot-temy-do-vyvoda');
+  await page.locator(targets.quick).waitFor();
+  await capture(page, 'essay-direct-writing-practice');
   assert.deepEqual(submissions, []);
 }
 
@@ -230,8 +253,19 @@ async function sharedReadingLens(page) {
   await page.locator('#ew-mode').selectOption('orthodox');
   assert.notEqual(await question.textContent(), literary);
   assert.equal(await page.locator('#wp-response').inputValue(), myParagraph);
-  await page.goto(examPage);
-  assert.equal(await picker.inputValue(), 'orthodox', 'Choice in the workshop is shared with lesson pages');
+  await page.goto(new URL('poisk-po-pamyati/#work-student', base).href);
+  assert.equal(await picker.inputValue(), 'orthodox', 'Choice in the workshop is shared with reading pages');
+  await page.locator('#work-student .memory-practice').click();
+  await page.locator('#reading-modes [data-mode="before"]').click();
+  await page.locator('#reading-content').waitFor();
+  await page.locator('#reading-note').fill(myObservation);
+  const excerpt = await page.locator('#reading-source-text').innerText();
+  const previous = await page.locator('#reading-lens-question').innerText();
+  await picker.selectOption('secular');
+  assert.notEqual(await page.locator('#reading-lens-question').innerText(), previous);
+  assert.equal(await page.locator('#reading-source-text').innerText(), excerpt);
+  assert.equal(await page.locator('#reading-note').inputValue(), myObservation);
+  assert.equal(await page.locator('#reading-modes [data-mode="before"]').getAttribute('aria-pressed'), 'true');
 }
 
 async function personal(browser, folder) {

@@ -55,6 +55,9 @@ def essay_workshop_body(personal=False):
         'ORIGIN': 'personal' if personal else e(assistant_origin(os.environ.get('ESSAY_ASSISTANT_ORIGIN', '')), quote=True),
         'REVISION': read('revision.js'),
         'MODELC': read('model-client.js'),
+        'ENTRY_ROUTER': read('entry_router/router.js').replace(
+            '__ENTRY_PARAMETERS__', read('entry_router/weights.json').strip()
+        ),
         'GIGA_NAVIGATOR': read('giga-navigator.js').replace(
             '/*__NAVIGATION_STEPS__*/ []', script_json(json.loads(read('personal-gigachat/navigation-steps.json')))),
         'REHEARSAL': read('rehearsal.js'),
@@ -109,7 +112,9 @@ def lessons_html(track):
     for i, lesson in enumerate(track['lessons']):
         steps = ''.join('<li>'+e(x)+'</li>' for x in lesson['steps'])
         reading = '<ul class="sources">'+links(lesson['reading'])+'</ul>' if lesson['reading'] else ''
-        parts.append(f'''<details class="exam-lesson" id="lesson-{i+1}"{' open' if i == 0 else ''}><summary><span class="exam-step">{i+1:02d}</span>{e(lesson['title'])}</summary><div class="exam-lesson-body"><p>{e(lesson['goal'])}</p><ol>{steps}</ol>{reading}<div class="prompt-box"><h3>Попробуйте сами</h3><p>{e(lesson['task'])}</p>{lens_questions(*EXAM_QUESTIONS[track['slug']][i])}<button type="button" class="button secondary" data-exam-open="{i}">Открыть задание в черновике</button></div><p><strong>Получилось, если:</strong> {e(lesson['ready'])}</p><details><summary>Подсказка после своей попытки</summary><p>{e(lesson['answer_note'])}</p></details></div></details>''')
+        note = (lens_questions(lesson['answer_note'], lesson['answer_note_orthodox'])
+                if 'answer_note_orthodox' in lesson else f"<p>{e(lesson['answer_note'])}</p>")
+        parts.append(f'''<details class="exam-lesson" id="lesson-{i+1}"{' open' if i == 0 else ''}><summary><span class="exam-step">{i+1:02d}</span>{e(lesson['title'])}</summary><div class="exam-lesson-body"><p>{e(lesson['goal'])}</p><ol>{steps}</ol>{reading}<div class="prompt-box"><h3>Попробуйте сами</h3><p>{e(lesson['task'])}</p>{lens_questions(*EXAM_QUESTIONS[track['slug']][i])}<button type="button" class="button secondary" data-exam-open="{i}">Открыть задание в черновике</button></div><p><strong>Получилось, если:</strong> {e(lesson['ready'])}</p><details><summary>Подсказка после своей попытки</summary>{note}</details></div></details>''')
     return ''.join(parts)+'</div></section>'
 
 
@@ -134,6 +139,8 @@ def route_body(route, track):
     reading = ''.join(f'<li><a href="/masterskaya/{s}/">{e(label)}</a></li>' for s, label in route['reading'])
     pitfalls = ''.join(f'<li>{e(x)}</li>' for x in track['pitfalls'])
     lens, repair = track['lens'], track['repair']
+    weak = (lens_questions(repair['weak'], repair['weak_orthodox'])
+            if 'weak_orthodox' in repair else f"<p>{e(repair['weak'])}</p>")
     prayer_note = '<p class="fine">Слова святителя относятся к молитве. С вниманием к тексту мы сопоставляем их по аналогии; это толкование мастерской.</p>' if route['quote'] == 'vnimanie' else ''
     workshop_link = (f'<p><a class="button" href="{ESSAY_WORKSHOP}">Открыть тренажёр итогового сочинения</a></p>'
                      if slug == 'itogovoe' else '')
@@ -142,7 +149,7 @@ def route_body(route, track):
 {route_box(slug)}
 {lessons_html(track)}
 <section id="lens"><div data-reading-lens-only="secular"><h2>Как обосновать своё прочтение</h2><p>{e(LITERARY_METHOD[slug])}</p></div><div data-reading-lens-only="orthodox" hidden><h2>Как здесь помогает православное прочтение</h2><p>{e(lens['use'])}</p>{quote_block(route['quote'])}{prayer_note}<p><strong>Комментарий мастерской.</strong> {e(lens['example'])}</p><p>{e(lens['avoid'])}</p><p><a href="{GUIDE}">Пять шагов от нравственного понятия к доказательству</a></p></div></section>
-<section id="repair"><h2>Один ответ до и после редактирования</h2><div class="exam-repair"><div><h3>Пока слабо</h3><p>{e(repair['weak'])}</p></div><div><h3>Точнее</h3><p>{e(repair['strong'])}</p></div></div><p>{e(repair['why'])}</p><h3>Что проверить особенно внимательно</h3><ul>{pitfalls}</ul></section>
+<section id="repair"><h2>Один ответ до и после редактирования</h2><div class="exam-repair"><div><h3>Пока слабо</h3>{weak}</div><div><h3>Точнее</h3><p>{e(repair['strong'])}</p></div></div><p>{e(repair['why'])}</p><h3>Что проверить особенно внимательно</h3><ul>{pitfalls}</ul></section>
 <section><h2>Книги, к которым можно вернуться</h2><ul>{reading}</ul><p><a href="/chtenie/{READING[slug]}/">Перечни и рекомендации для этой ветки</a>. В русском языке наш список книг — помощь в подготовке, а не обязательный перечень ФИПИ.</p></section>
 {exam_case(slug)}
 <section id="final-training"><h2>Итоговая тренировка</h2><h3>{e(track['final_practice']['title'])}</h3><p>{e(track['final_practice']['task'])}</p>{lens_questions(*EXAM_QUESTIONS[slug][6])}<button class="button secondary" type="button" data-exam-open="6">Перейти к итоговой работе</button><p>После проверки выберите одну содержательную ошибку и перепишите соответствующий абзац. В следующей попытке проверьте это место первым.</p></section>

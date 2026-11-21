@@ -196,12 +196,19 @@
       try { window.history.replaceState(window.history.state,'',location.href.split('#')[0]); } catch {}
     }
     if (page==='draftReader') state.route='draftReader';
-    if (page === 'start' && state.page !== 'start') state.previousPage = state.page;
+    if (page === 'start' && state.page !== 'start') {
+      state.previousPage = state.page;
+      state.resumeFinished = state.active === finishedEssayId;
+      if (state.resumeFinished && state.beforeFinishedEssay && allTopics().some(t=>t.id===state.beforeFinishedEssay.topic)) {
+        state.active = state.beforeFinishedEssay.topic;
+        state.route = state.beforeFinishedEssay.route;
+      }
+    }
     state.page = page;
     try {
       const current = window.history.state;
       if (current && Object.hasOwn(current,'essayNavigatorPage')) {
-        window.history.replaceState({...current, essayNavigatorPage:page}, '');
+        window.history.replaceState({...current, essayNavigatorPage:page, essayTopic:state.active, essayRoute:state.route}, '');
       }
     } catch { /* The explicit back control also works offline. */ }
     render(); save();
@@ -211,6 +218,8 @@
     const scrollTarget = page === 'writingPractice' ? root.querySelector('#ew-back-start') : title;
     (scrollTarget || currentScreen).scrollIntoView({block:'nearest'});
   }
+  const finishedEssayId = 'finished-essay';
+  const unnamedEssay = 'Моё готовое сочинение';
   const entrySituations = [
     ['empty', 'route-read', 'Пока ничего не выбрал', 'Прочитай короткий эпизод и запиши одну деталь.'],
     ['topic', 'entry-topic', 'Есть тема', 'Введи свой вопрос и попробуй ответить одной фразой.'],
@@ -231,8 +240,9 @@
   function rememberNavigation() {
     try {
       const current = window.history.state || {};
-      window.history.replaceState({...current, essayNavigatorPage:state.page}, '');
-      window.history.pushState({...current, essayNavigatorPage:state.page}, '');
+      const entry={...current, essayNavigatorPage:state.page, essayTopic:state.active, essayRoute:state.route};
+      window.history.replaceState(entry, '');
+      window.history.pushState(entry, '');
     } catch { /* Some browsers disable history updates for local files. */ }
   }
   function openSituation(id) {
@@ -256,6 +266,11 @@
         panel.querySelector('[data-dr-field="source"]')?.focus();
         break;
       case 'essay':
+        state.beforeFinishedEssay = {topic:state.active, route:state.route};
+        if (!state.custom.some(item=>item.id===finishedEssayId)) {
+          state.custom.push({id:finishedEssayId, title:unnamedEssay, ownEssayTopic:'', work:'own'});
+        }
+        state.active = finishedEssayId;
         state.route = 'edit';
         go('draft');
         sourceField('draft').focus();
@@ -267,7 +282,7 @@
   function start() {
     const previous = steps.find(([id]) => id !== 'start' && id === state.previousPage);
     const resumeAction=previous?.[0]==='library'?(state.shelfTopic===state.active?'topic-books':'library-all'):'page-'+previous?.[0];
-    const resume = previous ? '<div class="ew-resume">'+button(resumeAction, 'Вернуться к занятию «'+previous[1]+'»')+'</div>' : '';
+    const resume = previous ? '<div class="ew-resume">'+button(state.resumeFinished?'resume-finished':resumeAction, 'Вернуться к занятию «'+previous[1]+'»')+'</div>' : '';
     return '<section data-ew-entry id="ew-situations" aria-labelledby="ew-title">'+heading('С чего ты начинаешь?')+resume+
       '<div class="ew-entry-choices">'+entrySituations.map(entryCard).join('')+'</div>'+
       (window.EssayGigaNavigator?.panel(state.mode) || '')+
@@ -287,6 +302,13 @@
     const published='https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/proverka-sochineniya.html';
     const hosted=/^https?:$/.test(location.protocol) && /\/pomoshchnik\/(?:index\.html)?$/.test(location.pathname);
     const bundled=root.dataset.bundledReview && location.protocol==='file:' && /\/practice\.html$/i.test(location.pathname);
+    if (location.protocol==='file:' && !bundled) {
+      const online='<details><summary>Дополнительная проверка в интернете</summary><p><a href="'+published+'" target="_blank" rel="noopener noreferrer">Открыть расширенную онлайн-проверку</a></p>'+
+        (withDraft?actions(button('export-review-draft','Скачать черновик для переноса')):'')+'</details>';
+      // The editor already offers its local self-check; the family practice file
+      // also has a sibling checker, while a single downloaded HTML does not.
+      return online;
+    }
     const href=hosted?'proverka-sochineniya.html':bundled?'essay-check.html':published;
     if (!withDraft || !hosted) {
       return '<p><a href="'+h(href)+'">Проверить сочинение целиком</a></p>'+
@@ -741,7 +763,10 @@
     const readerQuestion='<details'+(question?' open':'')+'><summary>Мой вопрос к эпизоду</summary><div>'+field('readerQuestion','Что в этом эпизоде ты хочешь понять?',question,2)+'</div></details>';
     const previous=stage==='link'?'<div class="ew-text-card"><p><strong>Мой тезис</strong><br>'+h(n.thesis||'Тезис можно дописать на шаге выше.')+'</p><p><strong>Мой эпизод</strong><br>'+h(a.episode||'Можно вернуться к сцене после первой попытки.')+'</p>'+(question?'<p><strong>Мой вопрос к эпизоду</strong><br>'+h(question)+'</p>':'')+'</div>':'';
     const nav={thesis:button('page-episode','Выбрать эпизод',true),episode:button('page-link','Объяснить связь',true),link:state.route==='quick'?button('finish-argument','Собрать мои заметки',true):button('page-draft','Написать черновик',true),draft:button('page-review','Проверить работу',true)}[stage];
-    return heading(copy[0],copy[1],routes[state.route])+'<p class="ew-topic">'+h(topic().title)+'</p>'+
+    const topicDisplay=stage==='draft' && state.active===finishedEssayId
+      ? '<div class="ew-field"><label for="ew-finished-topic">Тема моего сочинения</label><input id="ew-finished-topic" maxlength="500" placeholder="Впиши свою формулировку" value="'+h(topic().ownEssayTopic)+'"></div>'
+      : '<p class="ew-topic">'+h(topic().title)+'</p>';
+    return heading(copy[0],copy[1],routes[state.route])+topicDisplay+
       (stage==='episode'?workPicker()+readerQuestion:'')+previous+
       (stage==='draft'?'<details><summary>Книга для подсказок · '+h(selectedTitle())+'</summary><div>'+workPicker()+'</div></details>'+outline()+readerQuestion:'')+
       EssayReadingLens.detail(stage)+field(stage,copy[2],copy[3],stage==='draft'?12:4)+
@@ -870,7 +895,7 @@
       '<label for="ew-drill">Что потренировать?</label><select id="ew-drill">'+options(catalog.drills,d.id)+'</select><p class="ew-topic">'+h(d.example)+'</p><p>'+h(d.task)+'</p>'+
       '<details><summary>Нужна подсказка</summary><div>'+h(d.hint)+'</div></details>'+
       EssayDrillContrast.render(d,state.drillChoices?.[d.id])+
-      EssayReadingLens.detail('precision')+field('exercise','Моя редакция',v)+answerControls('drill',v)+actions(button('page-start','К выбору маршрута'));
+      EssayReadingLens.detail({thesis:'thesis',observation:'motive',retelling:'retell',evidence:'link',repetition:'precision',conclusion:'ending'}[d.id]||'precision')+field('exercise','Моя редакция',v)+answerControls('drill',v)+actions(button('page-start','К выбору маршрута'));
   }
   function prepareRehearsal(set, title='') {
     state.route='full';state.practiceSet=set;
@@ -971,6 +996,12 @@
   }
   root.addEventListener('input',event=>{
     const el=event.target,key=el.dataset.field;
+    if (el.id==='ew-finished-topic' && state.active===finishedEssayId) {
+      const selected=topic();
+      selected.ownEssayTopic=el.value;
+      selected.title=el.value.trim() || unnamedEssay;
+      save();return;
+    }
     if (el.id==='ew-custom') {state.ownTopicText=el.value;save();return;}
     if(el.id==='ew-library-search'){libraryView.query=el.value;libraryView.limit=12;updateLibrary();return;}
     if(el.hasAttribute('data-shelf-source')){argument().source=el.value;save();return;}
@@ -1073,11 +1104,14 @@
     }
     const action=b.dataset.act;
     if (b.dataset.entrySituation) {openSituation(b.dataset.entrySituation);return;}
+    if (action==='resume-finished' && state.custom.some(t=>t.id===finishedEssayId)) {
+      rememberNavigation();state.active=finishedEssayId;state.route='edit';go(state.previousPage);return;
+    }
     if (action==='entry-navigator') {rememberNavigation();go('start');return;}
     if(action==='open-full-review'||action==='export-review-draft'){
       const n=note(), target='proverka-sochineniya.html';
       const selected=work();
-      const data={topic:topic().title,essay:n.draft,mode:state.mode};
+      const data={topic:state.active===finishedEssayId?(topic().ownEssayTopic||'').trim():topic().title,essay:n.draft,mode:state.mode};
       if(n.draftHeading && n.draftHeading===EssayCoach.firstDraftLine(n.draft)) data.draftHeading=n.draftHeading;
       if(selected)data.cardIds=[selected.card||selected.id];
       if(action==='export-review-draft'){
@@ -1229,7 +1263,12 @@
   }
   window.addEventListener('popstate',event=>{
     const page=event.state?.essayNavigatorPage;
-    if (steps.some(([id])=>id===page)) go(page,Boolean(state.readingFromLibrary));
+    if (!steps.some(([id])=>id===page)) return;
+    if (page !== 'start' && allTopics().some(t=>t.id===event.state.essayTopic)) {
+      state.active=event.state.essayTopic;
+      state.route=event.state.essayRoute || state.route;
+    }
+    go(page,Boolean(state.readingFromLibrary));
   });
   window.addEventListener('hashchange',openLinkedExercise);
   if (!openLinkedExercise()) {render();save();}

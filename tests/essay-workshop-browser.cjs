@@ -230,8 +230,12 @@ async function exercise(page) {
   await page.reload();
   assert.ok(await panel.locator('[data-check="logic"]').isChecked(), 'Review checklist survives reload');
   await fits();
+  assert.equal(await page.locator('#ew-mode').inputValue(), 'orthodox', 'Review keeps the chosen perspective');
+  const selectedLabel = await page.locator('#ew-mode option:checked').textContent();
+  const modeLine = 'Тип подсказки к тексту: ' + selectedLabel;
   const saved = await download('download', 'moe-sochinenie.txt');
-  for (const value of [topic, book, thesis, episode, link, revised, 'До правки\n'+original, privateQuestion, 'православный']) {
+  assert.ok(saved.split(/\r?\n/u).includes(modeLine), 'The exported essay names the selected perspective');
+  for (const value of [topic, book, thesis, episode, link, revised, 'До правки\n'+original, privateQuestion]) {
     assert.ok(saved.includes(value), 'Export is missing ' + value);
   }
   await panel.getByText('Продолжить с диалоговым ИИ-помощником', {exact:true}).click();
@@ -240,6 +244,7 @@ async function exercise(page) {
   assert.equal(await includeBefore.isChecked(), false, 'First version is opt-in');
   const currentOnly = await preview.inputValue();
   const packet = await download('download-prompt', 'zadanie-pomoshchniku.txt');
+  assert.ok(packet.split(/\r?\n/u).includes(modeLine), 'The optional AI packet names the same perspective');
   assert.equal(packet, currentOnly, 'The exported UTF-8 text matches the complete preview');
   for (const value of [topic, book, thesis, episode, link, revised]) assert.ok(packet.includes(value));
   assert.ok(!packet.includes('До правки\n'+original) && !packet.includes(privateQuestion));
@@ -338,6 +343,10 @@ async function exercise(page) {
   await start();
   await action('route-rehearsal');
   await panel.locator('#ew-r-time').selectOption('none');
+  const examMode = page.locator('#ew-mode');
+  assert.equal(await examMode.isVisible(),true);
+  await examMode.selectOption('secular');
+  assert.equal(await panel.locator('#ew-r-time').inputValue(),'none','Changing the lens keeps the rehearsal setup');
   await panel.locator('[data-r-form="start"] button').click();
   const choices = panel.getByRole('radio');
   assert.equal(await choices.count(), 6);
@@ -345,6 +354,10 @@ async function exercise(page) {
   const examTopic = await panel.locator('[data-r-title]').textContent();
   const examDraft = '\nГерой мог пройти мимо, но остановился и выслушал незнакомого человека.';
   await panel.locator('#ew-r-draft').fill(examDraft);
+  await examMode.selectOption('orthodox');
+  assert.equal(await panel.locator('#ew-r-draft').inputValue(),examDraft);
+  assert.equal(await panel.locator('[data-r-title]').textContent(),examTopic);
+  assert.equal(await panel.locator('[data-r-clock]').textContent(),'Без таймера');
   assert.equal(await panel.locator('[data-act="answer-check"], [data-answer-result], [data-drill-contrast]').count(), 0, 'Independent writing must stay free of coaching');
   await fits();
   await page.reload();

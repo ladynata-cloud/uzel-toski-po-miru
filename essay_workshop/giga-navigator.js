@@ -33,9 +33,14 @@
   function panel(mode) {
     mode = mode === 'orthodox' ? mode : 'secular';
     const options = steps.map((step,index) => '<option value="'+(index+1)+'">'+(index+1)+'. '+step.title+'</option>').join('');
-    return '<details id="ew-ai-entry" data-mode="'+mode+'"'+(keepOpen?' open':'')+'><summary>Помочь выбрать шаг с ГигаЧатом</summary>'+
+    return '<details id="ew-ai-entry" data-mode="'+mode+'"'+(keepOpen?' open':'')+'><summary>Не знаю, с чего начать</summary>'+
       '<div class="ew-field"><label for="ew-ai-situation">Что у тебя уже есть и где возникла трудность?</label>'+
       '<textarea id="ew-ai-situation" maxlength="600" rows="2" placeholder="Например, тему уже выбрал, но не могу начать абзац">'+text(situationDraft)+'</textarea></div>'+
+      '<button type="button" id="ew-ai-local">Подобрать шаг без интернета</button>'+
+      '<p id="ew-ai-status" class="ew-small" role="status"></p>'+
+      '<label for="ew-ai-choice">Следующий шаг</label><select id="ew-ai-choice"><option value="">Выбери шаг</option>'+options+'</select>'+
+      '<button id="ew-ai-go" type="button" disabled>Перейти к этому шагу</button>'+
+      '<details id="ew-ai-optional"><summary>Спросить в ГигаЧате</summary>'+
       '<p class="ew-small">Для ГигаЧата нужен интернет. В запросе будут твоё описание и выбранный ракурс. При желании поменяй ракурс в мастерской.</p>'+
       '<details><summary>Посмотреть задание для чата</summary><label for="ew-ai-prompt">Текст для копирования</label>'+
       '<textarea id="ew-ai-prompt" rows="6" readonly>'+text(assignment(situationDraft.trim(),mode))+'</textarea></details>'+
@@ -44,13 +49,18 @@
       '<p class="ew-small">Вставь задание в чат и вернись сюда с номером шага. До 18 лет пользуйся чатом с согласия и под контролем родителя. '+
       '<a href="https://developers.sber.ru/docs/ru/policies/gigachat/agreement" target="_blank" rel="noopener noreferrer">Условия ГигаЧата</a></p>'+
       (personal ? '<button id="ew-ai-ask" type="button">Спросить через мой личный ГигаЧат</button><p class="ew-small">Взрослый может отправить описание трудности и ракурс через свою локальную программу. Номер шага появится здесь.</p>' : '')+
-      '<label for="ew-ai-choice">Какой шаг предложил ГигаЧат?</label><select id="ew-ai-choice"><option value="">Выбери номер</option>'+options+'</select>'+
-      '<button id="ew-ai-go" type="button" disabled>Перейти к этому шагу</button><p id="ew-ai-status" class="ew-small" role="status"></p></details>';
+      '</details></details>';
   }
 
   function resetChoice(box) {
     box.querySelector('#ew-ai-choice').value = '';
     box.querySelector('#ew-ai-go').disabled = true;
+  }
+
+  function offer(box,number,message) {
+    box.querySelector('#ew-ai-choice').value = String(number);
+    box.querySelector('#ew-ai-go').disabled = false;
+    box.querySelector('#ew-ai-status').textContent = message+' '+number+' — «'+steps[number-1].title+'».';
   }
 
   root.addEventListener('toggle', event => {
@@ -95,9 +105,7 @@
         return;
       }
       if (data.version !== 1 || !Number.isInteger(data.step) || !steps[data.step-1]) throw Error('invalid step');
-      box.querySelector('#ew-ai-choice').value = String(data.step);
-      box.querySelector('#ew-ai-go').disabled = false;
-      status.textContent = 'ГигаЧат предложил шаг '+data.step+' — «'+steps[data.step-1].title+'».';
+      offer(box,data.step,'ГигаЧат предложил шаг');
     } catch {
       if (box.isConnected && request === current && status.textContent === 'ГигаЧат подбирает шаг…')
         status.textContent = 'Не удалось получить ответ. Можно выбрать шаг самостоятельно.';
@@ -118,11 +126,23 @@
       if (step) root.querySelector('[data-entry-situation="'+step.id+'"]')?.click();
       return;
     }
-    if (id !== 'ew-ai-copy' && id !== 'ew-ai-ask') return;
+    if (id !== 'ew-ai-copy' && id !== 'ew-ai-ask' && id !== 'ew-ai-local') return;
     const field = box.querySelector('#ew-ai-situation');
     if (!field.value.trim()) {
       status.textContent = 'Напиши в двух словах, где ты остановился.';
       field.focus();
+      return;
+    }
+    if (id === 'ew-ai-local') {
+      request?.abort();
+      const number = window.EssayLocalNavigator?.suggest(field.value.trim());
+      if (Number.isInteger(number) && steps[number-1]) {
+        offer(box,number,'Попробуй шаг');
+      } else {
+        resetChoice(box);
+        status.textContent = 'Что у тебя уже есть — тема, сцена из книги или написанный текст?';
+        field.focus();
+      }
       return;
     }
     if (id === 'ew-ai-ask' && personal) return ask(box,field.value.trim());
