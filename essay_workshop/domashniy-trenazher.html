@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Домашний тренажёр итогового сочинения. Выберите тему, вспомните поступок героя и напишите свой текст. Готовое сочинение можно проверить в бесплатном ГигаЧате.">
+<title>Итоговое сочинение · Домашний тренажёр «Узла тоски по миру»</title>
+<style>
+:root {
+  color-scheme: light;
+  --paper: #f8f5ec;
+  --card: #fffdf7;
+  --ink: #282d28;
+  --muted: #5b6259;
+  --green: #245342;
+  --green-dark: #173d31;
+  --rust: #91452d;
+  --line: #d7d5c6;
+  --wash: #edf1e8;
+  --serif: Georgia, "Times New Roman", serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font-size: 17px; line-height: 1.55; }
+button, input, textarea, select { font: inherit; }
+button, summary, label.choice, input[type="radio"], input[type="checkbox"] { cursor: pointer; }
+a { color: var(--green); text-underline-offset: .2em; }
+:focus-visible { outline: 3px solid #98582c; outline-offset: 3px; }
+[hidden] { display: none !important; }
+.masthead, .page, .foot { width: min(1040px, calc(100% - 64px)); margin-inline: auto; }
+.masthead { min-height: 76px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--line); }
+.brand { display: inline-flex; gap: 10px; align-items: center; text-decoration: none; color: var(--green-dark); font: bold 20px/1.2 var(--serif); }
+.brandmark { display: inline-grid; place-items: center; flex: none; width: 34px; height: 37px; border-radius: 4px 4px 12px 4px; color: var(--card); background: var(--green); font: 24px/1 var(--serif); }
+.product { color: var(--muted); font-size: 14px; }
+.save-state { margin-left: auto; color: var(--green); font-size: 14px; text-align: right; }
+.intro { display: flex; align-items: center; justify-content: space-between; gap: 32px; padding: 38px 0 29px; }
+.intro-copy { max-width: 760px; }
+.kicker, .step-meta { color: var(--rust); font-size: 13px; line-height: 1.4; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.kicker { margin: 0 0 8px; }
+h1, h2, h3, p { overflow-wrap: break-word; }
+h1, h2, h3 { font-family: var(--serif); color: var(--green-dark); font-weight: 500; }
+h1 { margin: 0; font-size: clamp(38px, 5vw, 62px); line-height: 1.03; letter-spacing: -.045em; }
+.intro-desc { max-width: 660px; margin: 12px 0 0; font-size: 18px; color: var(--muted); }
+.book-art { flex: 0 0 155px; text-align: center; color: var(--green); }
+.book-art svg { display: block; width: 100%; height: auto; max-height: 110px; }
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; align-items: start; }
+.workspace:has(.side-card:not([hidden])) { grid-template-columns: minmax(0, 2.3fr) minmax(225px, 1fr); }
+.work-card, .side-card { min-width: 0; border: 1px solid var(--line); border-radius: 13px; }
+.work-card { padding: clamp(23px, 3.2vw, 38px); background: var(--card); box-shadow: 0 3px 13px #37301c0a; }
+.side-card { padding: 24px; background: #efefe3; }
+.side-card h2, .side-card h3 { margin: 0 0 10px; font-size: 26px; }
+.side-card p { font-size: 15px; }
+.step-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; }
+.progress-track { height: 4px; overflow: hidden; margin: 0 0 22px; background: #e8e5d8; border-radius: 9px; }
+.progress-track > i { display: block; height: 100%; background: var(--green); border-radius: inherit; }
+.work-card h2 { margin: 0 0 10px; font-size: clamp(28px, 3.3vw, 40px); line-height: 1.15; letter-spacing: -.03em; }
+.lead { margin: 0 0 20px; color: var(--muted); font-size: 18px; }
+fieldset { padding: 0; margin: 18px 0; min-width: 0; border: 0; }
+legend, .field-label { display: block; padding: 0; margin: 0 0 8px; color: var(--ink); font-weight: 650; }
+.choice-list { display: grid; gap: 8px; }
+.choice { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--card); }
+.choice:hover { border-color: #7d8c7b; }
+.choice:has(input:checked) { background: var(--wash); border-color: var(--green); }
+.choice input, .checklist input { flex: none; width: 19px; height: 19px; margin: 4px 0 0; accent-color: var(--green); }
+.choice span { min-width: 0; }
+.choice strong, .choice small { display: block; }
+.choice strong { font-weight: 650; }
+.choice small { margin-top: 3px; color: var(--muted); font-size: 15px; }
+textarea, input[type="text"], select { display: block; width: 100%; max-width: 100%; padding: 12px 14px; border: 1px solid #889282; border-radius: 7px; background: #fffefb; color: var(--ink); font-size: 18px; line-height: 1.55; }
+textarea { min-height: 132px; resize: vertical; }
+textarea::placeholder, input::placeholder { color: #697166; opacity: 1; }
+.hint { margin: 15px 0; padding: 9px 13px; border-left: 3px solid #be7953; background: #f6f0e3; border-radius: 0 6px 6px 0; }
+.hint summary { color: #73402d; font-weight: 650; }
+.hint p { margin: 8px 0; }
+.context { margin: 15px 0; padding: 12px 15px; border-left: 3px solid #6d826d; background: var(--wash); }
+.context > :first-child { margin-top: 0; }
+.context > :last-child { margin-bottom: 0; }
+.actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 23px; }
+.primary, .secondary, .back { display: inline-flex; justify-content: center; align-items: center; min-height: 46px; padding: 9px 19px; border: 1px solid transparent; border-radius: 7px; font-weight: 650; text-align: center; text-decoration: none; }
+.primary { background: var(--green); color: #fff; }
+.primary:hover { background: var(--green-dark); }
+.secondary { background: var(--card); color: var(--green); border-color: #8d9b8b; }
+.secondary:hover, .back:hover { background: var(--wash); }
+.back { color: var(--green); background: transparent; }
+.text-action, .actions-link { padding: 4px 0; border: 0; background: transparent; color: var(--green); font-size: 15px; text-decoration: underline; text-underline-offset: .2em; }
+button:disabled { opacity: .6; cursor: default; }
+.wordcount, .feedback { font-size: 15px; color: var(--muted); }
+.feedback:not(:empty) { margin: 10px 0; color: var(--rust); }
+.draft-piece { padding: 11px 0; border-top: 1px solid #cfcebd; overflow-wrap: anywhere; }
+.draft-piece p { margin: 3px 0; white-space: pre-wrap; }
+.checklist { display: grid; gap: 8px; }
+.checklist label { display: flex; align-items: flex-start; gap: 10px; }
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 20px; margin-top: 35px; padding: 15px 0 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+.foot p { margin: 0; }
+@media (max-width: 760px) {
+  .masthead, .page, .foot { width: min(100% - 32px, 650px); }
+  .workspace:has(.side-card:not([hidden])) { grid-template-columns: minmax(0, 1fr); }
+  .product { display: none; }
+  .book-art { flex-basis: 104px; }
+  .intro { gap: 14px; padding: 25px 0 20px; }
+}
+@media (max-width: 540px) {
+  .masthead { min-height: 58px; gap: 10px; }
+  .brand { font-size: 17px; }
+  .brandmark { width: 27px; height: 29px; font-size: 20px; }
+  .save-state { max-width: 40%; font-size: 12px; }
+  .book-art { display: none; }
+  h1 { font-size: 37px; }
+  .intro-desc, .lead { font-size: 16px; }
+  .work-card, .side-card { padding: 19px 16px; }
+  .step-meta, .kicker { font-size: 12px; }
+  .progress-track { margin-bottom: 16px; }
+  .actions { gap: 6px; margin-top: 16px; }
+  .actions > :is(.primary, .secondary) { flex: 1 1 auto; }
+  .foot { margin-top: 23px; }
+}
+
+.mode-tabs { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 18px; }
+.mode-tabs button { padding:8px 14px; border:1px solid #a3aa9b; border-radius:20px; color:var(--green-dark); background:transparent; font-weight:600; font-size:15px; }
+.mode-tabs button[aria-pressed="true"] { background:var(--green); color:white; border-color:var(--green); }
+.mode-tabs button:hover { box-shadow:inset 0 0 0 1px var(--green); }
+.work-card h3 { font-size:25px; margin:20px 0 5px; }
+.work-card label { margin-top:12px; }
+#essay { min-height:245px; }
+#aiReview { margin-top:22px; border-top:1px solid var(--line); }
+.topic-picker { margin:0 0 16px; }
+.topic-picker > summary { color:var(--green); text-decoration:underline; text-underline-offset:3px; }
+.topic-picker select, .topic-picker label { margin-top:8px; }
+.notes { padding-left:20px; }
+.notes li + li { margin-top:8px; }
+details p, .wordcount { overflow-wrap:anywhere; }
+.small { font-size:15px; color:var(--muted); }
+.preserved { white-space:pre-wrap; }
+#side ol { padding-left:22px; }
+#side li { color:var(--muted); padding:5px 0 5px 4px; }
+#side li[aria-current="step"] { color:var(--green-dark); font-weight:bold; }
+#side ol li::marker { font-family:var(--serif); color:var(--rust); }
+.shelf { position:relative; width:150px; height:83px; margin:auto; transform:rotate(-5deg); }
+.shelf b { display:block; position:absolute; height:22px; border:2px solid var(--book); background:linear-gradient(90deg,var(--book) 0 10px,transparent 10px),repeating-linear-gradient(#f8f0db 0 3px,#cfc3a6 4px,#f8f0db 5px); border-radius:5px 1px 1px 5px; border-left-width:6px; box-shadow:0 2px 0 #dcd4be; }
+.shelf b:nth-child(1) { --book:#355748; width:139px; left:5px; bottom:10px; transform:rotate(4deg); }
+.shelf b:nth-child(2) { --book:#b45e42; width:126px; left:14px; bottom:32px; transform:rotate(-2deg); }
+.shelf b:nth-child(3) { --book:#7d8571; width:114px; left:9px; bottom:53px; transform:rotate(-3deg); }
+.shelf b:nth-child(3)::after { content:""; position:absolute; right:15px; top:0; width:11px; height:27px; background:#aa5639; clip-path:polygon(0 0,100% 0,100% 100%,50% 80%,0 100%); }
+@media(max-width:760px){ .shelf { transform:scale(.72); transform-origin:left center; } }
+@media(max-width:540px){ .mode-tabs{ gap:5px; } .mode-tabs button{ font-size:14px; padding:8px 11px; } }
+@media(max-width:380px){ .intro{padding:14px 0} .intro-desc{display:none} h1{font-size:30px} .kicker{margin-bottom:4px} }
+</style>
+</head>
+<body>
+<header class="masthead"><div class="brand"><span class="brandmark" aria-hidden="true">У</span>Узел тоски по миру</div><span class="save-state" id="save"></span></header>
+<main class="page">
+<div class="intro"><div class="intro-copy"><p class="kicker">Домашний тренажёр</p><h1>Итоговое сочинение</h1><p class="intro-desc">Начни с одной своей мысли или принеси готовое сочинение на проверку.</p></div><div class="book-art" aria-hidden="true"><div class="shelf"><b></b><b></b><b></b></div></div></div>
+<noscript><p>Для ввода текста открой этот файл в браузере с включённым JavaScript.</p></noscript>
+<nav class="mode-tabs" aria-label="Как начать занятие"><button id="modeGuide" type="button">Писать по шагам</button><button id="modePaste" type="button">Вставить готовое сочинение</button></nav>
+<div class="workspace"><section class="work-card" id="card" aria-labelledby="heading"></section><aside class="side-card" id="side"></aside></div>
+</main>
+<footer class="foot"><span>Литературный кружок «Узел тоски по миру»</span><a id="downloadApp" href="domashniy-trenazher.html" download="domashniy-trenazher.html" hidden>Скачать тренажёр для занятий без интернета</a><span>Писать и сохранять можно без интернета</span></footer>
+<script id="topics" type="application/json">[
+  {
+    "id": "kindness",
+    "title": "Как понять, что человек по-настоящему добр?",
+    "thoughtHint": "Вспомни, как кто-то помог тебе. По какому поступку ты понял, что человеку есть до тебя дело?",
+    "books": [
+      {
+        "id": "doctor",
+        "author": "А. И. Куприн",
+        "title": "Чудесный доктор",
+        "scene": "Мерцалов рассказывает незнакомцу в саду о больной дочери. Доктор идёт с ним домой, осматривает девочку и выписывает лекарство. Под рецептом семья находит деньги.",
+        "question": "Почему для семьи Мерцаловых так важно, что вместе с рецептом доктор оставил деньги?"
+      },
+      {
+        "id": "captive",
+        "author": "Л. Н. Толстой",
+        "title": "Кавказский пленник",
+        "scene": "Жилин сидит в глубокой яме. Ночью Дина приносит длинный шест и спускает его пленнику. Когда Жилин выбирается, он просит её унести шест, пока никто не заметил пропажи.",
+        "question": "Чем рисковала Дина, когда помогала Жилину выбраться из ямы?"
+      }
+    ]
+  },
+  {
+    "id": "conscience",
+    "title": "Почему бывает трудно поступить по совести?",
+    "thoughtHint": "Представь, что ты знаешь, как поступить, но боишься последствий. Что делает такой выбор трудным?",
+    "books": [
+      {
+        "id": "captains-daughter",
+        "author": "А. С. Пушкин",
+        "title": "Капитанская дочка",
+        "scene": "После захвата крепости Пугачёв предлагает Гринёву служить ему. Молодой офицер помнит свою присягу императрице и прямо говорит об этом Пугачёву.",
+        "question": "Почему сказать правду именно Пугачёву для Гринёва опасно?"
+      },
+      {
+        "id": "sentry",
+        "author": "Н. С. Лесков",
+        "title": "Человек на часах",
+        "scene": "Часовой Постников слышит крики тонущего в Неве. Уходить с поста запрещено. Постников всё же сбегает на лёд и вытаскивает человека.",
+        "question": "Что могло случиться, если бы Постников выполнил приказ и остался на месте?"
+      }
+    ]
+  },
+  {
+    "id": "family",
+    "title": "Почему заботу о близких опасно откладывать?",
+    "thoughtHint": "Какие слова или дела могут потерять смысл, если отложить их на потом?",
+    "books": [
+      {
+        "id": "telegram",
+        "author": "К. Г. Паустовский",
+        "title": "Телеграмма",
+        "scene": "Катерина Петровна просит дочь приехать. Настя занята выставкой художника в Ленинграде. Когда она наконец приезжает в деревню, мать уже похоронили.",
+        "question": "Что Настя ещё могла сделать, когда получила письмо матери?"
+      },
+      {
+        "id": "stationmaster",
+        "author": "А. С. Пушкин",
+        "title": "Станционный смотритель",
+        "scene": "В конце повести мальчик рассказывает о барыне, приехавшей с тремя детьми. Она спрашивает о старом смотрителе, узнаёт о его смерти и долго лежит на его могиле.",
+        "question": "По какой детали в рассказе мальчика видно, что встреча с отцом была важна для Дуни? Почему теперь эта встреча невозможна?"
+      }
+    ]
+  },
+  {
+    "id": "opinion",
+    "title": "Почему люди иногда принимают чужое мнение без проверки?",
+    "thoughtHint": "Вспомни слух, которому легко поверить. Что делает его убедительным для тех, кто ничего не видел сам?",
+    "books": [
+      {
+        "id": "woe",
+        "author": "А. С. Грибоедов",
+        "title": "Горе от ума",
+        "scene": "На балу у Фамусова расходится слух о сумасшествии Чацкого. Загорецкий добавляет свою подробность: будто дядя уже упёк Чацкого в больницу.",
+        "question": "Почему подробность, которую добавил Загорецкий, могла убедить других гостей?"
+      },
+      {
+        "id": "chameleon",
+        "author": "А. П. Чехов",
+        "title": "Хамелеон",
+        "scene": "Хрюкин показывает укушенный палец. Пока люди спорят, генеральская ли это собака, надзиратель Очумелов то требует избавиться от неё, то обвиняет самого Хрюкина.",
+        "question": "Почему для Очумелова слова о хозяине собаки оказываются важнее того, как произошёл укус?"
+      }
+    ]
+  },
+  {
+    "id": "change",
+    "title": "Может ли один случай изменить взгляд человека на жизнь?",
+    "thoughtHint": "Вспомни случай, после которого ты изменил своё мнение. Что тебе пришлось увидеть или узнать?",
+    "books": [
+      {
+        "id": "after-ball",
+        "author": "Л. Н. Толстой",
+        "title": "После бала",
+        "scene": "На балу Иван Васильевич любуется полковником, который танцует с дочерью. Утром он видит того же полковника во время жестокого наказания солдата.",
+        "question": "Почему утро после бала изменило отношение Ивана Васильевича к военной службе?"
+      },
+      {
+        "id": "war-peace",
+        "author": "Л. Н. Толстой",
+        "title": "Война и мир",
+        "scene": "Перед Аустерлицем князь Андрей мечтает отличиться. Раненый, он лежит на поле и смотрит в высокое небо. Рядом останавливается Наполеон, которым князь прежде восхищался.",
+        "question": "Почему встреча с Наполеоном теперь так мало значит для князя Андрея?"
+      }
+    ]
+  },
+  {
+    "id": "nature",
+    "title": "В каких поступках видна забота о природе?",
+    "thoughtHint": "Представь, что животному или растению нужна помощь. Как понять, что твоя помощь ему действительно подходит?",
+    "books": [
+      {
+        "id": "hares",
+        "author": "Н. А. Некрасов",
+        "title": "Дедушка Мазай и зайцы",
+        "scene": "Во время разлива Мазай собирает зайцев в лодку. Заметив ещё нескольких на плывущем бревне, он цепляет бревно багром и тянет за лодкой к берегу.",
+        "question": "Что показывает эпизод с бревном о том, как Мазай относится к попавшим в беду зайцам?"
+      },
+      {
+        "id": "flower",
+        "author": "А. П. Платонов",
+        "title": "Неизвестный цветок",
+        "scene": "Даша замечает на пустыре цветок, выросший между камнем и глиной. Она приводит ребят из лагеря. Несколько дней они удобряют землю на пустыре.",
+        "question": "Почему ребята решили изменить землю на пустыре? Кому это могло помочь?"
+      }
+    ]
+  }
+]
+</script>
+<script>
+function mountAiReview(root, getWork, onFeedback) {
+  const chatUrl = 'https://giga.chat/';
+  root.innerHTML = `
+    <h3>Проверка сочинения с ИИ</h3>
+    <p>Кнопка скопирует тему, всё сочинение и вопросы для проверки. В открывшемся чате вставь сообщение и нажми стрелку отправки. Ответ прочитаешь там же.</p>
+    <p class="wordcount">Личный чат бесплатный. Нужен интернет. Убери из работы свою фамилию и контакты. Если тебе нет 18, пользуйся чатом с согласия и под присмотром родителя или опекуна, который принял <a href="https://developers.sber.ru/docs/ru/policies/gigachat/agreement" target="_blank" rel="noopener noreferrer">условия ГигаЧата</a>.</p>
+    <button class="primary" type="button" data-ai-check>Проверить в ГигаЧате</button>
+    <p class="feedback" data-ai-status role="status" hidden></p>
+    <details class="hint" data-ai-transfer>
+      <summary>Как вставить текст? Что делать, если чат не открылся?</summary>
+      <p>В поле чата нажми Ctrl+V (на Mac — ⌘V). На телефоне удерживай пустое поле и выбери «Вставить». При входе ГигаЧат может попросить номер телефона.</p>
+      <label class="field-label">Сообщение для ГигаЧата
+        <textarea data-ai-prompt readonly rows="4"></textarea>
+      </label>
+      <p>Выдели сообщение целиком и выбери «Копировать». На компьютере можно нажать Ctrl+C (на Mac — ⌘C).</p>
+      <a href="https://giga.chat/" target="_blank" rel="noopener noreferrer">Открыть ГигаЧат в новой вкладке</a>
+    </details>
+    <details class="hint" data-ai-notes>
+      <summary>Сохранить ответ ГигаЧата рядом с работой</summary>
+      <label class="field-label">Скопируй ответ из чата и вставь сюда
+        <textarea data-ai-feedback rows="4" placeholder="Замечания к моему тексту"></textarea>
+      </label>
+      <p>Выбери один совет и поправь свой текст в редакторе выше.</p>
+    </details>`;
+
+  const control = root.querySelector('[data-ai-check]');
+  const status = root.querySelector('[data-ai-status]');
+  const transfer = root.querySelector('[data-ai-transfer]');
+  const message = root.querySelector('[data-ai-prompt]');
+  const notes = root.querySelector('[data-ai-notes]');
+  const feedback = root.querySelector('[data-ai-feedback]');
+  feedback.value = getWork().feedback || '';
+  notes.open = Boolean(feedback.value);
+  feedback.addEventListener('input', () => onFeedback(feedback.value));
+
+  function showStatus(text) {
+    status.textContent = text;
+    status.hidden = false;
+  }
+
+  function prepareMessage() {
+    const { topic, essay } = getWork();
+    if (!topic.trim() || !essay.trim()) {
+      message.value = '';
+      showStatus(!topic.trim() ? 'Впиши тему сочинения в поле выше.' : 'Сначала напиши или вставь сочинение в поле выше.');
+      return false;
+    }
+    message.value = [
+      'Помоги мне самостоятельно улучшить итоговое сочинение. Прочитай всё, включая последний абзац.',
+      'Коротко и доброжелательно разбери пять сторон работы: К1 — отвечаю ли я на вопрос темы; К2 — подтверждаю ли мысль примером из литературы и объясняю ли связь; К3 — понятны ли ход рассуждения, переходы и вывод; К4 — точны и ясны ли формулировки; К5 — есть ли конкретные грамматические, орфографические и пунктуационные ошибки.',
+      'Достаточно одного литературного произведения. Если текст короче 250 слов или ещё не закончен, рассматривай его как учебный черновик и подскажи, какую мысль можно развить. Для полного сочинения минимум 250 слов, рекомендовано от 350. Не выноси экзаменационный вердикт и не оценивай самостоятельность по стилю.',
+      'Назови одно удачное место и предложи одну или две самые важные правки. Для каждой укажи мою короткую дословную фразу и задай вопрос, который поможет мне самому её исправить. Если приводишь ошибку, привяжи её к точному месту моего текста. Если сомневаешься в детали книги или цитате, предложи сверить её с оригиналом. Не выдумывай цитаты, поступки и мотивы. Не пиши за меня готовые фразы или абзацы.',
+      '\nТема сочинения:\n' + topic,
+      '\nМой текст:\n' + essay
+    ].join('\n');
+    return true;
+  }
+
+  // Copy inside the click event first, including when opening this page as a file.
+  // While the source has focus it can copy without a browser clipboard permission prompt.
+  function copySelected() {
+    try {
+      message.focus({ preventScroll: true });
+      message.select();
+      return document.execCommand('copy');
+    } catch {
+      return false;
+    }
+  }
+
+  function openChat() {
+    let tab;
+    try {
+      tab = window.open('about:blank', '_blank');
+      if (!tab) return false;
+      tab.opener = null;
+      tab.location.replace(chatUrl);
+      return true;
+    } catch {
+      if (tab) tab.close();
+      return false;
+    }
+  }
+
+  transfer.addEventListener('toggle', () => {
+    if (transfer.open) prepareMessage();
+  });
+  message.addEventListener('focus', () => {
+    if (prepareMessage()) message.select();
+  });
+  message.addEventListener('click', () => message.select());
+
+  control.addEventListener('click', async () => {
+    if (!prepareMessage()) return;
+    control.disabled = true;
+    try {
+      transfer.open = true;
+      let copied = copySelected();
+      if (!copied && navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(message.value);
+          copied = true;
+        } catch {
+          // Selecting the read-only message below also works without clipboard access.
+        }
+      }
+      if (!copied) {
+        showStatus('Выделенное сообщение нужно скопировать вручную. Затем открой ГигаЧат по ссылке ниже.');
+        message.focus();
+        message.select();
+        return;
+      }
+      if (!openChat()) {
+        showStatus('Сообщение скопировано. Открой ГигаЧат по ссылке ниже, вставь сообщение и отправь.');
+        return;
+      }
+      transfer.open = false;
+      showStatus('Сообщение скопировано. Вставь его в поле ГигаЧата (Ctrl+V или команда «Вставить») и нажми стрелку отправки. Ответ появится в чате. Вернись сюда, чтобы внести правку.');
+    } finally {
+      control.disabled = false;
+    }
+  });
+}
+
+(() => {
+  'use strict';
+  const topics = JSON.parse(document.getElementById('topics').textContent);
+  const key = 'uzel.home-essay.v1';
+  const steps = ['Моя мысль', 'Поступок героя', 'Что доказывает пример', 'Моё сочинение'];
+  const $ = id => document.getElementById(id);
+  const escape = value => String(value ?? '').replace(/[&<>"']/g, char =>
+    ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'})[char]);
+  function readState() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(key));
+      if (saved && Array.isArray(saved.drafts) && saved.paste && typeof saved.paste === 'object') return saved;
+    } catch (_) { /* Local writing also works without browser storage. */ }
+    return {mode:'guide', topicId:topics[0].id, drafts:[], paste:{topic:'', essay:'', feedback:''}};
+  }
+  const state = readState();
+  if (location.hash === '#proverka') state.mode = 'paste';
+  const onlinePage = ['https:', 'http:'].includes(location.protocol);
+  $('downloadApp').hidden = !onlinePage;
+  let blocked = false;
+  function save() {
+    try { localStorage.setItem(key, JSON.stringify(state)); blocked = false; }
+    catch (_) { blocked = true; }
+    $('save').textContent = blocked ? 'Для сохранения скачай текст' : 'Сохранено в этом браузере';
+  }
+  const currentTopic = () => topics.find(topic => topic.id === state.topicId) || topics[0];
+  function draft() {
+    const t = currentTopic();
+    let d = state.drafts.find(item => item.id === t.id);
+    if (!d) {
+      d = {id:t.id, thought:'', bookId:t.books[0].id, customBook:'', step:1, entries:{}};
+      state.drafts.push(d);
+    }
+    return d;
+  }
+  function bookNotes() {
+    const d = draft();
+    return d.entries[d.bookId] ??= {episode:'', linkText:'', edited:null, basedOn:'', feedback:''};
+  }
+  const selectedBook = () => currentTopic().books.find(book => book.id === draft().bookId);
+  function assembled() {
+    const entry = bookNotes();
+    return [draft().thought.trim(), [entry.episode.trim(),entry.linkText.trim()].filter(Boolean).join(' ')].filter(Boolean).join('\n\n');
+  }
+  const finalText = () => state.mode === 'paste' ? state.paste.essay : (bookNotes().edited ?? assembled());
+  const finalTopic = () => state.mode === 'paste' ? state.paste.topic : currentTopic().title;
+  function wordCount(value) {
+    const joined = value.replace(/(?:[А-ЯЁA-Z]\.\s*){1,3}(?=[А-ЯЁA-Z][а-яёa-z])/gu,'');
+    return (joined.match(/\p{L}+(?:[-‐‑’']\p{L}+)*/gu) || []).length;
+  }
+  const field = (id,label,value,placeholder='') =>
+    '<label class="field-label" for="'+id+'">'+escape(label)+'</label><textarea id="'+id+'" placeholder="'+escape(placeholder)+'">'+escape(value)+'</textarea>';
+  const hint = (title,body) => '<details class="hint"><summary>'+escape(title)+'</summary><p>'+escape(body)+'</p></details>';
+  function setField(id, callback) {
+    $(id).addEventListener('input', event => { callback(event.target.value); save(); });
+  }
+  function focusHeading() {
+    const heading = $('heading');
+    heading.focus({preventScroll:true});
+    if (heading.getBoundingClientRect().top < 0) $('card').scrollIntoView({block:'start'});
+  }
+  function showStep(number) {
+    draft().step = number;
+    save();
+    render();
+    focusHeading();
+  }
+  function requireText(id,message) {
+    if ($(id).value.trim()) return true;
+    $('notice').textContent = message;
+    $(id).focus();
+    return false;
+  }
+  function nav(number,label) {
+    return '<div class="actions"><button type="button" class="primary" id="next">'+label+' →</button>'+
+      (number>1 ? '<button type="button" class="back" id="prev">Назад</button>' : '')+
+      '</div><p class="feedback" id="notice" role="status"></p>';
+  }
+  function bindNav(number, validate) {
+    $('next').onclick = () => { if (validate()) showStep(number+1); };
+    if ($('prev')) $('prev').onclick = () => showStep(number-1);
+  }
+  function stepHeader(n,title) {
+    return '<p class="step-meta"><span>Шаг '+n+' из 4</span><span>'+steps[n-1]+'</span></p>'+
+      '<div class="progress-track" aria-hidden="true"><i style="width:'+(25*n)+'%"></i></div>'+
+      '<h2 id="heading" tabindex="-1">'+escape(title)+'</h2>';
+  }
+  function showThought() {
+    const t = currentTopic(), d = draft();
+    $('card').innerHTML = stepHeader(1,t.title)+
+      '<details class="topic-picker"><summary>Выбрать другую тему</summary><label class="field-label" for="theme">Учебные темы</label><select id="theme">'+
+      topics.map(x=>'<option value="'+escape(x.id)+'" '+(x.id===t.id?'selected':'')+'>'+escape(x.title)+'</option>').join('')+
+      '</select></details>'+
+      field('thought','Что ты думаешь? Ответь одним-двумя предложениями.',d.thought,'Я думаю, что…')+
+      hint('Трудно начать?',t.thoughtHint)+nav(1,'Выбрать книгу');
+    $('theme').onchange = event => { state.topicId=event.target.value; draft().step=1; save(); render(); focusHeading(); };
+    setField('thought',value=> { d.thought=value; });
+    bindNav(1,()=>requireText('thought','Для начала хватит одной твоей мысли. Запиши её в поле выше.'));
+  }
+  function showBook() {
+    const t = currentTopic(), d = draft(), ent = bookNotes(), book = selectedBook();
+    const options = [...t.books.map(b=>({id:b.id, title:'«'+b.title+'»', author:b.author})),{id:'own',title:'Возьму другую книгу',author:''}];
+    $('card').innerHTML = stepHeader(2,'Что именно сделал герой?')+
+      '<fieldset><legend>Выбери книгу, которую помнишь</legend><div class="choice-list">'+options.map(b=>
+      '<label class="choice"><input type="radio" name="book" value="'+escape(b.id)+'" '+(b.id===d.bookId?'checked':'')+'><span><strong>'+escape(b.title)+'</strong>'+(b.author?'<small>'+escape(b.author)+'</small>':'')+'</span></label>').join('')+'</div></fieldset>'+
+      (book?hint('Напомнить эпизод',book.scene):'<label class="field-label" for="ownBook">Автор и название книги</label><input id="ownBook" type="text" value="'+escape(d.customBook)+'">')+
+      field('episode','Назови книгу и опиши один поступок героя своими словами.',ent.episode,'Кто что сделал? В какой ситуации?')+nav(2,'Объяснить поступок');
+    for (const radio of document.querySelectorAll('input[name="book"]')) radio.onchange = () => {
+      d.bookId = radio.value; save(); render();
+      const selected = document.querySelector('input[name="book"]:checked');
+      selected.focus({preventScroll:true});
+    };
+    if ($('ownBook')) setField('ownBook',value=> { d.customBook=value; });
+    setField('episode',value=> { ent.episode=value; });
+    bindNav(2,()=> (!$('ownBook') || requireText('ownBook','Укажи автора и название своей книги.')) &&
+      requireText('episode','Вспомни один поступок и запиши его своими словами.'));
+  }
+  function showLink() {
+    const t = currentTopic(), d = draft(), ent = bookNotes(), book = selectedBook();
+    $('card').innerHTML = stepHeader(3,'Как этот поступок помогает ответить на вопрос темы?')+
+      '<div class="context"><p><strong>'+escape(t.title)+'</strong></p><p class="preserved">'+escape(d.thought)+'</p></div>'+
+      '<details class="topic-picker"><summary>Прочитать свой пример</summary><p class="preserved">'+escape(ent.episode)+'</p></details>'+
+      field('linkText','Объясни связь своими словами.',ent.linkText,'Этот поступок показывает, что…')+
+      hint('О чём подумать?',book ? book.question : 'Что герой мог сделать иначе? Почему выбранный им поступок важен для твоей мысли?')+nav(3,'Собрать сочинение');
+    setField('linkText',value=> { ent.linkText=value; });
+    bindNav(3,()=>requireText('linkText','Объясни хотя бы одним предложением, что показывает твой пример.'));
+  }
+  function downloadText() {
+    const body = finalText().trim();
+    if (!body) { $('editorStatus').textContent='Сначала напиши или вставь текст сочинения.'; $('essay').focus(); return; }
+    const blob = new Blob(['\uFEFF'+[finalTopic().trim(),body].filter(Boolean).join('\r\n\r\n')],{type:'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download='Моё-сочинение.txt';
+    document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),3000);
+  }
+  function showEditor(paste) {
+    const d = paste ? state.paste : bookNotes();
+    const preserved = !paste && d.edited !== null && d.basedOn !== assembled();
+    $('card').innerHTML = (paste ? '<h2 id="heading" tabindex="-1">Проверить своё сочинение</h2><p class="lead">Вставь тему, а под ней — свой текст целиком.</p>'+
+      '<label class="field-label" for="customTopic">Тема сочинения</label><input type="text" id="customTopic" placeholder="Как звучит вопрос темы?" value="'+escape(d.topic)+'">' :
+      stepHeader(4,'Прочитай сочинение целиком')+'<p class="lead">Твои ответы уже собраны. Перечитай их и добавь вывод, к которому тебя привёл пример.</p>'+
+      '<p class="context"><strong>'+escape(currentTopic().title)+'</strong></p>')+
+      field('essay','Текст сочинения',finalText(),'Вставь сюда своё сочинение…')+
+      '<div class="editor-tools"><span class="wordcount" id="count"></span> · <button id="download" type="button" class="text-action">Скачать текст</button></div>'+
+      '<p class="feedback" role="status" id="editorStatus"></p>'+
+      (preserved ? '<details class="hint"><summary>Посмотреть обновлённые записи с первых шагов</summary><p>Здесь твои новые записи. Можно перенести нужные фразы в свою редакцию выше.</p><p class="preserved">'+escape(assembled())+'</p></details>' : '')+
+      '<div id="aiReview"></div>'+
+      (paste ? '' : '<div class="actions"><button type="button" class="back" id="prev">← К предыдущему шагу</button></div>');
+    function count() { $('count').textContent = 'Слов в тексте: примерно '+wordCount(finalText()); }
+    count();
+    if (paste) setField('customTopic',value=>{ d.topic=value; });
+    setField('essay',value=> {
+      if (paste) d.essay=value;
+      else { d.edited=value; d.basedOn=assembled(); }
+      count();
+    });
+    $('download').onclick=downloadText;
+    if ($('prev')) $('prev').onclick=()=>showStep(3);
+    mountAiReview($('aiReview'),()=>({topic:finalTopic(),essay:finalText(),feedback:d.feedback}),value=> { d.feedback=value; save(); });
+  }
+  function showSide(paste,n) {
+    if (paste || n===4) {
+      $('side').innerHTML='<h2>Перед проверкой</h2><ul class="notes"><li>Я ответил на вопрос темы.</li><li>Я назвал произведение и привёл пример из него.</li><li>Я объяснил, что доказывает этот пример.</li></ul>'+
+        '<details class="hint"><summary>Сколько нужно слов?</summary><p>На экзамене минимум — 250 слов. ФИПИ рекомендует от 350. Здесь можно потренироваться и на одном абзаце.</p><a href="https://doc.fipi.ru/itogovoe-sochinenie/2026/04_Kriterii_it_soch.pdf" target="_blank" rel="noopener noreferrer">Критерии ФИПИ</a></details>';
+    } else {
+      $('side').innerHTML='<h2>План занятия</h2><ol>'+steps.map((s,i)=>'<li'+(i+1===n?' aria-current="step"':'')+'>'+s+'</li>').join('')+'</ol>'+
+        '<div class="draft-piece"><p>В конце можно скачать сочинение или попросить ГигаЧат проверить его целиком.</p></div>';
+    }
+  }
+  function render() {
+    const paste = state.mode === 'paste';
+    $('modeGuide').setAttribute('aria-pressed', String(!paste)); $('modePaste').setAttribute('aria-pressed', String(paste));
+    const n = draft().step;
+    if (paste || n===4) showEditor(paste);
+    else if (n===2) showBook();
+    else if (n===3) showLink();
+    else showThought();
+    showSide(paste,n);
+  }
+  for (const [id,mode] of [['modeGuide','guide'],['modePaste','paste']]) $(id).onclick=()=>{
+    if (state.mode===mode) return;
+    state.mode=mode;
+    if (mode === 'guide' && location.hash === '#proverka') {
+      try { history.replaceState(null, '', location.href.split('#')[0]); } catch (_) { location.hash = ''; }
+    }
+    save(); render(); focusHeading();
+  };
+  window.addEventListener('hashchange', () => {
+    if (location.hash === '#proverka' && state.mode !== 'paste') {
+      state.mode = 'paste'; save(); render(); focusHeading();
+    }
+  });
+  render();
+  if (state.paste.essay || state.drafts.some(d => d.thought)) save();
+})();
+
+</script>
+</body></html>

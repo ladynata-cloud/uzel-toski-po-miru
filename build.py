@@ -355,6 +355,7 @@ publish_textbooks(page)
 school_paths = publish_school(page, LESSONS, ART_LIBRARY)
 exam_paths = publish_exams(page)
 essay_output = OUT / ESSAY_WORKSHOP.strip('/')
+(essay_output / 'domashniy-trenazher.html').write_bytes((ROOT / 'essay_workshop/domashniy-trenazher.html').read_bytes())
 (essay_output / 'pamyatka-2026-27.pdf').write_bytes((ROOT / 'essay_workshop/pamyatka-2026-27.pdf').read_bytes())
 build_personal_package(essay_output / 'trenazher-gigachat.zip', essay_workshop_body(personal=True))
 family_workshop = standalone_workshop(essay_workshop_body(personal=True).replace(
