@@ -146,6 +146,8 @@ async function onlineRevision(page) {
     }
   });
   await page.goto(url);
+  await nav('topic');
+  await button('library-use-doctor').click();
   await nav('draft');
   await field('draft').fill(draft);
   await selectSecond();
