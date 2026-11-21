@@ -235,6 +235,9 @@
   const mode = document.getElementById('memory-mode');
   const actions = document.getElementById('memory-actions');
   const send = document.getElementById('memory-send');
+  const example = document.getElementById('memory-example');
+  const exampleQuery = document.getElementById('memory-example-query');
+  const practiceLink = document.getElementById('memory-practice-link');
   const consent = document.getElementById('memory-server-consent');
   const serverOrigin = form.dataset.assistantOrigin || '';
   const rows = Array.from(list.children);
@@ -275,6 +278,8 @@
 
   function show(visible) {
     const selected = new Set(visible);
+    if (example) example.hidden = work !== null;
+    if (practiceLink) practiceLink.hidden = work !== null || visible.some(i => rows[i].querySelector('.memory-practice'));
     rows.forEach((row, i) => { row.hidden = !selected.has(i); });
     for (const i of visible) list.appendChild(rows[i]);
   }
@@ -374,7 +379,7 @@
     }
   }
 
-  async function submit(query) {
+  async function submit(query, {localOnly = false} = {}) {
     const q = query.trim();
     if (!q) return;
     if (work !== null && asksForSafeMode(q)) {
@@ -404,8 +409,14 @@
     message('Вы', q);
     const local = message('Читательский помощник', result.text, result.links);
     field.value = '';
-    field.focus();
-    if (!serverOrigin || !consent.checked) {serverInSync = false; return;}
+    if (localOnly && candidates.length) {
+      const title = rows[candidates[0]].querySelector('h2');
+      title.tabIndex = -1;
+      title.focus();
+    } else if (!localOnly) {
+      field.focus();
+    }
+    if (localOnly || !serverOrigin || !consent.checked) {serverInSync = false; return;}
     const client = await serverClient();
     if (token !== revision || !consent.checked) return;
     if (!client?.ask || !serverInSync) {serverInSync = false; return;}
@@ -431,6 +442,10 @@
     }
   }
 
+  exampleQuery?.addEventListener('click', () => {
+    firstMode();
+    submit(exampleQuery.textContent, {localOnly: true});
+  });
   form.addEventListener('submit', event => {event.preventDefault(); submit(field.value);});
   form.addEventListener('reset', event => {event.preventDefault(); firstMode(); field.focus();});
   field.addEventListener('input', () => {

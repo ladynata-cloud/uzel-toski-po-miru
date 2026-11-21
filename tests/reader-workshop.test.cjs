@@ -61,6 +61,21 @@ test('before-reading packets contain only the opening phrase; after means the se
   assert.doesNotMatch(packet('work-vorona-i-lisitsa', 'during').source.text, /каркнула|сыр выпал/iu);
 });
 
+test('Student discussion has its own questions and restores existing discussion bookmarks', () => {
+  const during = packet('work-student', 'during');
+  const after = packet('work-student', 'after');
+  assert.notEqual(after.task.goal, during.task.goal);
+  for (const id of ['notice', 'evidence', 'alternative']) {
+    const saved = {version: 1, branchId: id, step: 2, note: 'Моя мысль'};
+    const storage = memoryStorage();
+    const key = api.progressKey(after.work_id, after.mode);
+    storage.setItem(key, JSON.stringify(saved));
+    const restored = api.readProgress(storage, key, after).state;
+    assert.deepEqual(restored, saved);
+    assert.notEqual(api.currentStep(after, restored).text, api.currentStep(during, saved).text);
+  }
+});
+
 test('packet validation rejects a different work, a different mode and unsafe sources', () => {
   const p = packet('work-student', 'before');
   assert.equal(api.validatePacket(p, 'work-shinel', 'before'), false);
@@ -186,12 +201,16 @@ class Element {
   removeAttribute(name) {delete this.attributes[name];}
   querySelectorAll() {return this.children;}
   focus() {this.focused = true;}
+  scrollIntoView() {this.scrolledIntoView = true;}
 }
 
 function uiHarness(storage, fetcher) {
   const elements = new Map();
   const element = id => {if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id);};
-  const modes = ['before', 'during', 'after'].map(mode => {const b = new Element(); b.dataset.mode = mode; return b;});
+  const labels = ['Начать с одной фразы', 'Читаю начало', 'Начало прочитано. Обсудить'];
+  const modes = ['before', 'during', 'after'].map((mode, i) => {
+    const b = new Element(); b.dataset.mode = mode; b.textContent = labels[i]; return b;
+  });
   element('reading-modes').children = modes;
   const calls = [];
   let aiCalls = 0;
@@ -222,9 +241,13 @@ test('the UI opens no fragment or saved note until a mode is selected and render
   assert.equal(ui.calls.length, 1);
   assert.match(ui.calls[0].url, /^https:\/\/reader\.example\/prefix\/assistant\/v1\/workshop\/work-shinel\/before\.json$/);
   assert.equal(ui.element('reading-source-text').textContent, packet('work-shinel','before').source.text);
+  assert.equal(ui.element('reading-fragment-title').focused, true);
+  assert.equal(ui.element('reading-fragment-title').scrolledIntoView, true);
+  assert.match(ui.element('reading-note-mode').textContent, /Начать с одной фразы/);
   assert.equal(ui.element('reading-note').value, '');
   await ui.modes[2].fire('click');
   assert.equal(ui.element('reading-note').value, note);
+  assert.match(ui.element('reading-note-mode').textContent, /Начало прочитано. Обсудить/);
   assert.equal(ui.element('reading-prompt').textContent, after.task.branches[0].steps[2]);
   const beforeCalls = ui.calls.length;
   ui.element('reading-note').value = '<script>alert(1)</script>';
