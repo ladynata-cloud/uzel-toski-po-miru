@@ -33,9 +33,16 @@ async function check() {
     assert.ok((await result.locator('blockquote').first().innerText()).startsWith('Слушать слово'));
     const packet={topic:theme,essay:headed};
     assert.deepEqual(JSON.parse(await page.locator('#preview').textContent()), packet);
+    await page.locator('#online > summary').click();
+    assert.equal(await page.locator('#manual-text').textContent(), '');
+    await page.locator('#consent').check();
+    assert.equal(await page.locator('#manual-actions').isVisible(), false);
+    await page.locator('#consent-privacy').check();
     assert.ok((await page.locator('#manual-text').textContent()).endsWith(JSON.stringify(packet,null,2)));
     await page.reload();
     assert.ok(await mark.isChecked());
+    assert.equal(await page.locator('#consent').isChecked(), false);
+    assert.equal(await page.locator('#consent-privacy').isChecked(), false);
     assert.equal(await page.locator('#essay').inputValue(),headed);
     await page.locator('#draft-transfer > summary').click();
     const saving=page.waitForEvent('download');

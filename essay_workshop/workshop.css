@@ -66,3 +66,10 @@
 .ew-topic-book p{margin:.42rem 0}
 .ew-topic-book .ew-actions{margin:.6rem 0 0;align-items:center}
 .ew-topic-book .ew-actions a{padding:.25rem 0}
+
+.ew-topic-interests{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;margin:.8rem 0 1.2rem}
+.ew-topic-interests button{min-height:46px}.ew-topic-interests button[aria-pressed="true"]{background:var(--pale);border:2px solid var(--deep);font-weight:700}
+.ew #ta-route-options h3{margin:1.2rem 0 .7rem}.ew .ew-route-topic{margin:.75rem 0;padding:1rem;border:1px solid var(--rule);border-radius:5px;background:#fff}
+.ew .ew-route-topic h4{font:600 1.18rem/1.35 Georgia,serif;margin:.3rem 0}
+.ew .ew-route-topic button,.ew #ta-catalog .ew-library-filters{margin-top:.8rem}
+@media(max-width:480px){.ew-topic-interests{grid-template-columns:1fr}}

@@ -189,11 +189,12 @@
     const resumeAction=previous?.[0]==='library'?(state.shelfTopic===state.active?'topic-books':'library-all'):'page-'+previous?.[0];
     const resume = previous ? '<div class="ew-resume">'+button(resumeAction, 'Вернуться к занятию «'+previous[1]+'»')+'</div>' : '';
     return '<div data-ew-entry>'+heading('С чего хочешь начать?')+resume+
+      '<div class="ew-actions">'+button('page-themeAtlas','Помоги выбрать тему сочинения',true)+'</div>'+
       '<div class="ew-entry-choices">'+
       routeButton('read','Смутно помню книгу','Вспомни один эпизод и сохрани деталь для своего аргумента.')+
       routeButton('draftReader','У меня есть черновик','Вставь свой абзац, найди в нём мысль и попробуй одну правку.')+
       routeButton('full','Хочу написать сочинение целиком','Выбери тему, собери план и открой лист для текста.')+'</div>'+
-      '<div class="ew-entry-return"><a href="#knizhnaya-polka" data-act="library-all">Пока нет темы — посмотреть все книги</a><a href="#temy-sochineniya" data-act="page-themeAtlas">Выбрать тему сочинения</a></div>'+
+      '<div class="ew-entry-return"><a href="#knizhnaya-polka" data-act="library-all">Посмотреть все книги</a></div>'+
       '<p class="ew-small ew-entry-store">Записи сохраняются в этом браузере, если он разрешает сохранение. Копию сочинения можно скачать в разделе «Самопроверка».</p>'+
       '<h3 class="ew-entry-heading">Продолжить подготовку</h3><div class="ew-entry-tools">'+
       button('page-shelf','Открыть мою полку сцен')+button('route-quick','Подобрать аргумент к теме')+button('route-thesisLab','Уточнить свой тезис')+

@@ -82,6 +82,29 @@ async function topicAtlas(page) {
   const catalog = JSON.parse(await page.locator('#ew-catalog').textContent());
   const source = page.locator('#ta-source');
   const cards = page.locator('#ta-list [data-ta-card]');
+  const fullCatalog = page.locator('#ta-catalog');
+  assert.equal(await fullCatalog.evaluate(node=>node.open), false);
+  const route = page.locator('.ew-topic-route');
+  const interests = route.locator('[data-ta-interest]');
+  assert.equal(await interests.count(), 4);
+  for(const interest of await interests.all()){
+    await interest.click();
+    const picks = route.locator('[data-ta-pick]');
+    assert.equal(await picks.count(), 2);
+    assert.equal(await route.locator('.ew-route-topic p strong').count(), 2);
+  }
+  const pick = route.locator('[data-ta-pick]').first();
+  const selected = await route.locator('.ew-route-topic h4').first().innerText();
+  await pick.click();
+  assert.equal(await page.locator('.ew-topic').innerText(), selected);
+  const field=page.locator('[data-field="thesis"]');
+  await field.fill('О своём выборе можно судить по поступку.');
+  await page.locator('#ew-steps [data-act="page-themeAtlas"]').click();
+  assert.equal(await route.locator('[data-ta-interest="culture"]').getAttribute('aria-pressed'),'true');
+  await pick.click();
+  assert.equal(await field.inputValue(),'О своём выборе можно судить по поступку.');
+  await page.locator('#ew-steps [data-act="page-themeAtlas"]').click();
+  await fullCatalog.locator('summary').first().click();
   assert.equal(await source.inputValue(), '@public');
   const publicTopic = catalog.publicTopics.topics[0];
   const publicSource = catalog.publicTopics.sources.find(s => s.id === publicTopic.source);
@@ -118,6 +141,7 @@ async function topicToArgument(page) {
     const suggestions = record.bookRoutes.map(k => catalog.bookRoutes[k]);
     assert.ok(suggestions.length >= 1 && suggestions.length <= 3);
     const cards = panel.locator('[data-topic-work]');
+    await cards.first().waitFor();
     assert.deepEqual(await cards.evaluateAll(nodes => nodes.map(n => n.dataset.topicWork)),
       suggestions.map(r => r.work));
     for (const {work, why, scene, url} of suggestions) {
@@ -130,6 +154,8 @@ async function topicToArgument(page) {
     assert.equal(await panel.locator('[data-library-work]').count(), 0);
     return suggestions.map(r => r.work);
   }
+  const fullCatalog = panel.locator('#ta-catalog');
+  if (!await fullCatalog.evaluate(node=>node.open)) await fullCatalog.locator('summary').first().click();
   const link = panel.locator('[data-ta-card="p:' + primary.id + '"] a[data-ta-act="books"]').first();
   assert.equal(await link.getAttribute('href'), '#tema-' + primary.id);
   await link.click();
@@ -286,11 +312,16 @@ async function family(page, browser, release) {
   for (const c of material.cards) assert.deepEqual(Object.keys(c).sort(), ['fact','id','title','url']);
   await page.locator('#online > summary').click();
   await page.locator('#gigakey').fill(key);
+  assert.equal(await page.locator('#manual-actions').isVisible(), false);
+  assert.equal(await page.locator('#manual-text').textContent(), '');
+  await page.locator('#consent').check();
+  assert.equal(await page.locator('#send').isEnabled(), false);
+  assert.equal(await page.locator('#manual-actions').isVisible(), false);
+  await page.locator('#consent-privacy').check();
   const manual = await page.locator('#manual-text').textContent();
   assert.ok(manual.endsWith(JSON.stringify(material, null, 2)));
   assert.ok(!manual.includes(key));
   const transferred = await collectTransfer(page);
-  await page.locator('#consent').check();
   await page.locator('#send').click();
   await page.locator('#review-panel').waitFor({state:'visible'});
   assert.deepEqual(requests, [{key,topic,essay,cardIds:selected}]);
@@ -341,6 +372,7 @@ async function family(page, browser, release) {
     const pageHtml = await fs.readFile(path.join(dist, 'proverka-sochineniya.html'), 'utf8');
     const release = JSON.parse(pageHtml.match(/const reviewBundle\s*=\s*(\{[^\n]*\});/)[1]);
     await family(page,browser,release);
+    await require('./home-essay-lens.cjs')(browser, base);
     console.log('Topic selections, mobile navigation, shelf filters, per-book notes and family transfer passed.');
   } finally {await browser.close();}
 })().catch(error => { console.error(error); process.exitCode=1; });
