@@ -284,9 +284,10 @@
     const resumeAction=previous?.[0]==='library'?(state.shelfTopic===state.active?'topic-books':'library-all'):'page-'+previous?.[0];
     const resume = previous ? '<div class="ew-resume">'+button(state.resumeFinished?'resume-finished':resumeAction, 'Вернуться к занятию «'+previous[1]+'»')+'</div>' : '';
     return '<section data-ew-entry id="ew-situations" aria-labelledby="ew-title">'+heading('С чего ты начинаешь?')+resume+
+      '<div class="ew-actions">'+button('page-themeAtlas','Помоги выбрать тему сочинения',true)+'</div>'+
       '<div class="ew-entry-choices">'+entrySituations.map(entryCard).join('')+'</div>'+
       (window.EssayGigaNavigator?.panel(state.mode) || '')+
-      '<div class="ew-entry-return"><a href="#knizhnaya-polka" data-act="library-all">Все книги</a><a href="#temy-sochineniya" data-act="page-themeAtlas">Библиотека тем</a></div>'+
+      '<div class="ew-entry-return"><a href="#knizhnaya-polka" data-act="library-all">Все книги</a></div>'+
       '<h3 class="ew-entry-heading">Другие занятия</h3><div class="ew-entry-tools">'+
       button('page-shelf','Моя полка сцен')+button('route-quick','Подобрать аргумент к теме')+button('route-full','Написать сочинение по шагам')+
       button('route-thesisLab','Уточнить свой тезис')+button('route-drills','Потренировать отдельную правку')+button('route-edit','Открыть редактор моей работы')+'</div></section>'+

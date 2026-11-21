@@ -65,3 +65,10 @@
 .ew>.ew-mode{display:flex;align-items:baseline;flex-wrap:wrap;gap:.4rem 1rem;margin:0 0 1.2rem;padding:0;border:0}
 .ew>.ew-mode label,.ew>.ew-mode p{margin:0}.ew>.ew-mode select{width:auto;max-width:100%}
 @media print{.ew>.ew-mode,.ew-reading-question{display:none}}
+
+.ew-topic-interests{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;margin:.8rem 0 1.2rem}
+.ew-topic-interests button{min-height:46px}.ew-topic-interests button[aria-pressed="true"]{background:var(--pale);border:2px solid var(--deep);font-weight:700}
+.ew #ta-route-options h3{margin:1.2rem 0 .7rem}.ew .ew-route-topic{margin:.75rem 0;padding:1rem;border:1px solid var(--rule);border-radius:5px;background:#fff}
+.ew .ew-route-topic h4{font:600 1.18rem/1.35 Georgia,serif;margin:.3rem 0}
+.ew .ew-route-topic button,.ew #ta-catalog .ew-library-filters{margin-top:.8rem}
+@media(max-width:480px){.ew-topic-interests{grid-template-columns:1fr}}

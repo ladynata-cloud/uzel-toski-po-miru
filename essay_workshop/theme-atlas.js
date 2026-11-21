@@ -3,7 +3,13 @@ const EssayThemeAtlas = (() => {
   'use strict';
   const pageSize=18;
   const publicGroup='@public', authorGroup='@workshop';
-  const view={query:'',section:'',subsection:'',source:publicGroup,limit:pageSize,own:''};
+  const view={query:'',section:'',subsection:'',source:publicGroup,limit:pageSize,own:'',catalogOpen:false};
+  const interests=[
+    {id:'choices',label:'Доброта и трудный выбор',topics:['p:pub-fipi-sample-2026-2','w:honesty']},
+    {id:'family',label:'Семья и близкие',topics:['w:scene-magi','p:pub-fipi-sample-2026-3']},
+    {id:'history',label:'Родина и память',topics:['w:scene-borodino','p:pub-fipi-sample-2023-3']},
+    {id:'culture',label:'Природа и искусство',topics:['w:scene-grey-neck','w:music']}
+  ];
   const kinds={sample:'Официальный образец комплекта',history_examples:'Опубликованный пример исторической темы',
     literature_examples:'Пример литературной темы',past:'Тема прошедшего сочинения',training:'Методический материал',secondary_index:'Архив 4ЕГЭ · вторичный источник'};
   const clean=value=>String(value??'').toLocaleLowerCase('ru').replace(/ё/gu,'е').trim();
@@ -22,17 +28,21 @@ const EssayThemeAtlas = (() => {
     const info='<details><summary>Откуда взяты темы</summary><p>В опубликованных подборках '+pub.topics.length+' позиций. Некоторые вопросы встречаются в нескольких источниках. Отдельно можно выбрать учебные темы «Узла»: '+catalog.topics.length+'.</p>'+
       (pub.scope?'<p>'+escape(pub.scope)+'</p>':'')+'<p>'+references.map(([url,title])=>'<a target="_blank" rel="noopener noreferrer" href="'+escape(url)+'">'+escape(title)+'</a>').join(' · ')+'</p></details>';
     return '<section id="ew-theme-atlas"><h2 id="ew-title" tabindex="-1">Библиотека тем итогового сочинения</h2>'+
-      '<p class="ew-sub">Можно взять опубликованную тему, потренироваться на вопросе мастерской или записать свой. Состав предстоящего экзаменационного комплекта заранее неизвестен.</p>'+
-      EssayThemePlanner.render()+info+
+      '<p class="ew-sub">Сначала выбери, о чём хочешь писать. Появятся два вопроса и книги к каждому. Выбери вопрос, чтобы записать свою мысль.</p>'+
+      '<section class="ew-topic-route" aria-labelledby="ta-interests"><h3 id="ta-interests">1. О чём тебе хочется написать?</h3>'+
+      '<div class="ew-topic-interests">'+interests.map(group=>'<button type="button" data-ta-interest="'+group.id+'" aria-controls="ta-route-options" aria-pressed="false">'+escape(group.label)+'</button>').join('')+'</div>'+
+      '<div id="ta-route-options" hidden></div></section>'+
       '<details id="ta-own"><summary>Мой вопрос · ввести свою тему</summary><form data-ta-own-form><label for="ta-own-title">Формулировка моей темы</label>'+
       '<input id="ta-own-title" data-ta-field="own" required maxlength="500" value="'+escape(view.own)+'"><div class="ew-actions"><button type="submit" data-ta-act="own">Писать на свою тему</button></div></form></details>'+
+      '<details id="ta-catalog"'+(view.catalogOpen?' open':'')+'><summary>Открыть полный каталог тем и поиск</summary>'+
+      '<p class="ew-small">Здесь можно искать по словам темы, названию книги или коду. Состав будущего экзаменационного комплекта заранее неизвестен.</p>'+
       '<div class="ew-library-filters"><div><label for="ta-search">Найти тему</label><input type="search" id="ta-search" value="'+escape(view.query)+'" placeholder="Слова темы, код, автор или книга" autocomplete="off"></div>'+
       '<div><label for="ta-source">Источник тем</label><select id="ta-source">'+options(sources,view.source)+'</select></div>'+
       '<div><label for="ta-section">Раздел банка</label><select id="ta-section">'+options(sectionChoices,view.section)+'</select></div>'+
       '<div><label for="ta-subsection">Подраздел</label><select id="ta-subsection"></select></div></div>'+
       '<p id="ta-count" class="ew-small ew-library-status" role="status"></p><div id="ta-list"></div>'+
       '<div class="ew-actions"><button type="button" data-ta-act="more" hidden>Показать ещё темы</button><button type="button" data-ta-act="subsection-workshop" hidden>Показать учебные темы этого подраздела</button></div>'+
-      '<div id="ta-editorial-examples"></div></section>';
+      '<div id="ta-editorial-examples"></div>'+info+'</details>'+EssayThemePlanner.render()+'</section>';
   }
   function mount(panel,catalog,sectionNames,select,plannerContext){
     const host=panel.querySelector('#ew-theme-atlas'),pub=catalog.publicTopics||{sources:[],sections:[],topics:[]};
@@ -51,6 +61,43 @@ const EssayThemeAtlas = (() => {
       const titles=routes.map(route=>works.get(route.work)?.title||'');
       r.search=clean([r.title,r.code||'',r.section,r.date||'',r.region||'',r.zone||'',source?.year||'',source?.title||'',...titles].join(' '));
     }
+    function showInterest(group,moveFocus=false){
+      const box=host.querySelector('#ta-route-options');
+      for(const button of host.querySelectorAll('[data-ta-interest]')){
+        button.setAttribute('aria-pressed',String(button.dataset.taInterest===group?.id));
+      }
+      box.hidden=!group;
+      if(!group)return;
+      const cards=group.topics.map(key=>{
+        const row=byKey.get(key);
+        if(!row)return '';
+        const titles=(row.bookRoutes||[]).map(id=>works.get(catalog.bookRoutes[id]?.work)?.title).filter(Boolean).slice(0,2);
+        const source=sources.get(row.source);
+        return '<article class="ew-route-topic"><p class="ew-small">'+escape(source?sourceLabel(source):'Учебная тема мастерской')+'</p>'+
+          '<h4>'+escape(row.title)+'</h4>'+
+          (titles.length?'<p><strong>Книги к теме</strong></p><ul>'+titles.map(title=>'<li>'+escape(title)+'</li>').join('')+'</ul>':'')+
+          '<button type="button" class="ew-primary" data-ta-pick="'+escape(key)+'" aria-label="'+escape('Написать свой ответ на тему «'+row.title+'»')+'">Написать свой ответ</button></article>';
+      }).join('');
+      box.innerHTML='<h3 id="ta-pick-heading" tabindex="-1">2. На какой вопрос ты хочешь ответить?</h3>'+cards;
+      if(moveFocus)box.querySelector('h3').focus();
+    }
+    const fullCatalog=host.querySelector('#ta-catalog');
+    fullCatalog.addEventListener('toggle',()=>{view.catalogOpen=fullCatalog.open;});
+    const routeRecord=plannerContext.record;
+    showInterest(interests.find(group=>group.id===routeRecord.routeInterest));
+    host.querySelector('.ew-topic-route').addEventListener('click',event=>{
+      const button=event.target.closest('button');
+      if(!button)return;
+      const group=interests.find(item=>item.id===button.dataset.taInterest);
+      if(group){
+        routeRecord.routeInterest=group.id;
+        plannerContext.save();
+        showInterest(group,true);
+      }else if(button.dataset.taPick){
+        const row=byKey.get(button.dataset.taPick);
+        if(row)select(row,'write');
+      }
+    });
     function subsectionOptions(){
       const choices=pub.sections.filter(s=>String(s.id).includes('.')&&(!view.section||String(s.id).startsWith(view.section+'.')));
       if(!choices.some(s=>String(s.id)===view.subsection))view.subsection='';

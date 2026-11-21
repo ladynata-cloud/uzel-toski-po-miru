@@ -17,6 +17,7 @@ pre{max-height:24rem;overflow-y:auto}
 #topic-books{margin:1.1rem 0}#topic-book-list .shelf-result{padding:.55rem 0}#topic-book-list .shelf-result p{margin:.3rem 0}
 #topic-picker select{max-width:100%;font:inherit;color:var(--ink);background:white;border:1px solid #91a298;border-radius:6px;padding:.4rem .6rem;margin-bottom:.6rem}
 .topic-match{border-top:1px solid var(--line);padding:.55rem 0}.topic-match button{display:block;width:100%;text-align:left}.topic-match .small{display:block;margin-top:.25rem}
+.share-consent{margin:.9rem 0;padding:.25rem .8rem;border:1px solid var(--line);border-radius:6px}.share-consent legend{padding:0 .3rem;font-weight:650}
 </style>
 </head>
 <body>
@@ -80,7 +81,11 @@ pre{max-height:24rem;overflow-y:auto}
 <h3>Текст для передачи</h3>
 <div class="share-preview"><p id="preview-topic" aria-label="Тема для передачи"></p><p id="preview-essay" class="share-body" tabindex="0" aria-label="Черновик для передачи"></p></div>
 <div id="preview-cards" aria-label="Карточки для передачи"></div>
-<details><summary>Точный формат запроса</summary><p class="small">Помощник получит эту запись вместе со встроенной инструкцией о проверке.</p><pre id="preview" tabindex="0" aria-label="Точные данные для передачи"></pre></details>
+<fieldset class="share-consent"><legend>Перед проверкой поставь две галочки</legend>
+<label class="check"><input id="consent" type="checkbox" autocomplete="off"><span>Я согласен (согласна) передать тему, текст сочинения, выбранные карточки книг и ракурс разбора в ГигаЧат для проверки.</span></label>
+<label class="check"><input id="consent-privacy" type="checkbox" autocomplete="off"><span>Я проверил(а) текст. В нём нет моих или чужих личных данных: фамилий учеников, контактов, адресов или номера школы.</span></label></fieldset>
+<p class="small">Если тебе нет 18 лет, пройди проверку вместе с родителем или опекуном, который согласен и принял <a href="https://developers.sber.ru/docs/ru/policies/gigachat/agreement" target="_blank" rel="noopener noreferrer">условия ГигаЧата</a>.</p>
+<details id="exact-packet" hidden><summary>Точный формат запроса</summary><p class="small">Помощник получит эту запись вместе со встроенной инструкцией о проверке.</p><pre id="preview" tabindex="0" aria-label="Точные данные для передачи"></pre></details>
 <p id="size-warning" class="status warn" role="status"></p>
 <details id="kak-poluchit-klyuch" class="segment"><summary>Как получить ключ GigaChat</summary>
 <p>Ключ для домашнего подключения получает взрослый владелец или администратор проекта в GigaChat API.</p>
@@ -98,7 +103,6 @@ pre{max-height:24rem;overflow-y:auto}
 <p class="small">Если тебе ещё нет 18 лет, взрослый владелец проекта сам просматривает и отправляет работу. Для личного API владельцем может быть полностью дееспособный резидент РФ от 18 лет. Запрос учитывается по условиям проекта.</p>
 <form id="review-form" autocomplete="off">
 <label for="gigakey">Ключ авторизации GigaChat</label><input id="gigakey" type="password" maxlength="4096" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Ключ авторизации проекта">
-<label class="check"><input id="consent" type="checkbox"><span>Я просмотрел тему, черновик и выбор карточек и хочу отправить эту версию в GigaChat.</span></label>
 <button id="send" type="submit" class="primary" disabled>Отправить на разбор</button>
 </form></div>
 <div id="setup" class="segment">
@@ -114,9 +118,10 @@ pre{max-height:24rem;overflow-y:auto}
 <div class="segment">
 <h3>Продолжить в чате GigaChat</h3>
 <p>Можно скопировать задание вместе с темой и черновиком, затем самостоятельно вставить его в официальный чат. Ссылка открывает GigaChat без передачи текста.</p>
+<div id="manual-actions" hidden>
 <details id="manual"><summary>Посмотреть задание для чата</summary><pre id="manual-text" tabindex="0"></pre></details>
-<div class="buttons"><button id="copy-prompt" type="button">Скопировать задание для чата</button><a href="https://giga.chat/" target="_blank" rel="noopener noreferrer">Открыть GigaChat ↗</a></div>
-<p class="small">Если тебе меньше 18 лет, пользуйся чатом с согласия и под контролем родителя. <a href="https://developers.sber.ru/docs/ru/policies/gigachat/agreement" target="_blank" rel="noopener noreferrer">Условия сервиса</a></p>
+<div class="buttons"><button id="copy-prompt" type="button" disabled>Скопировать задание для чата</button><a href="https://giga.chat/" target="_blank" rel="noopener noreferrer">Открыть GigaChat ↗</a></div>
+</div>
 <p class="status" id="copy-status" role="status"></p>
 </div></details>
 <p class="status" id="online-status" role="status" aria-live="polite"></p>
@@ -137,7 +142,14 @@ pre{max-height:24rem;overflow-y:auto}
 const launcher = '__LOCAL_LAUNCHER_B64__';
 const guideAnimation='data:image/gif;base64,__KEY_GUIDE_GIF__';
 const byId = id => document.getElementById(id);
-const topic = byId('topic'), essay = byId('essay'), keyField = byId('gigakey'), consent = byId('consent');
+const topic = byId('topic'), essay = byId('essay'), keyField = byId('gigakey');
+const sharingChecks = [byId('consent'), byId('consent-privacy')];
+const hasConsent = () => sharingChecks.every(box => box.checked);
+let consentVersion = 0;
+function clearConsent() {
+  for (const box of sharingChecks) box.checked = false;
+  consentVersion++;
+}
 const lens = byId('review-lens');
 const lensKey = 'uzel-reading-lens-v1';
 const questions = {
@@ -417,15 +429,24 @@ function refresh() {
   byId('preview-essay').textContent=snapshot.essay||'Здесь появится твой черновик.';
   syncCardPreview(material.cards||[]);
   byId('preview').textContent=JSON.stringify(material,null,2);
-  byId('manual-text').textContent=manualPrompt();
+  const mayShare = hasConsent();
+  byId('exact-packet').hidden = !mayShare;
+  byId('manual-actions').hidden = !mayShare;
+  byId('copy-prompt').disabled = !mayShare;
+  byId('manual-text').textContent = mayShare ? manualPrompt() : '';
+  if (!mayShare) {
+    byId('manual').open = false;
+    byId('exact-packet').open = false;
+    byId('copy-status').textContent = '';
+  }
   byId('size-warning').textContent=snapshot.essay.length>20000?'В черновике больше 20 000 знаков. Можно сохранить полный текст в TXT и выбрать для API более короткую версию.':'';
-  byId('send').disabled=pending||!available||!consent.checked||!keyField.value.trim()||!snapshot.topic.trim()||!snapshot.essay.trim()||snapshot.essay.length>20000;
+  byId('send').disabled=pending||!available||!mayShare||!keyField.value.trim()||!snapshot.topic.trim()||!snapshot.essay.trim()||snapshot.essay.length>20000;
   byId('stale').hidden=!reviewed||exact(reviewed,snapshot);
 }
 function onWriting() {
   renderTopicBooks();
   closeTopicPrompt();byId('topic-picked').textContent='';
-  consent.checked=false;
+  clearConsent();
   if(markedHeading!==firstLine(essay.value))markedHeading='';
   if(localSnapshot&&!sameLocalDraft(localDraft(),localSnapshot)){
     localSnapshot=null;
@@ -466,7 +487,8 @@ byId('exclude-heading').addEventListener('change',event=>{
   onWriting();
 });
 keyField.addEventListener('input',refresh);
-consent.addEventListener('change',refresh);
+clearConsent();
+for (const box of sharingChecks) box.addEventListener('change', () => { consentVersion++; refresh(); });
 const thisFile=new URL(location.href);
 thisFile.hash='';thisFile.search='';
 if(['https:','http:','file:'].includes(thisFile.protocol))byId('standalone-download').href=thisFile.href;
@@ -598,13 +620,17 @@ byId('launcher-download').addEventListener('click',()=>{
   }catch{byId('launcher-status').textContent='В этой копии программа недоступна. Скачай семейный комплект по ссылке выше.';}
 });
 byId('copy-prompt').addEventListener('click',async()=>{
+  if (!hasConsent()) return;
+  const started = consentVersion;
   if(!essay.value.trim()||!topic.value.trim()){byId('copy-status').textContent='Укажи тему и добавь текст, который хочешь передать.';(!topic.value.trim()?topic:essay).focus();return;}
   const text=manualPrompt();
   try {
     if(!navigator.clipboard?.writeText)throw new Error();
     await navigator.clipboard.writeText(text);
+    if (consentVersion !== started || !hasConsent()) return;
     byId('copy-status').textContent='Задание скопировано. Вставь его в выбранный чат.';
   }catch{
+    if (consentVersion !== started || !hasConsent()) return;
     byId('manual').open=true; const block=byId('manual-text');
     const range=document.createRange();range.selectNodeContents(block);const sel=getSelection();
     sel.removeAllRanges();sel.addRange(range);
@@ -648,11 +674,11 @@ const errorText={
 };
 byId('review-form').addEventListener('submit',async event=>{
   event.preventDefault();
-  if(pending||!available||!consent.checked||!keyField.value.trim()||!topic.value.trim()||!essay.value.trim())return;
+  if(pending||!available||!hasConsent()||!keyField.value.trim()||!topic.value.trim()||!essay.value.trim())return;
   const current=data();
   if(current.essay.length>20000){byId('online-status').textContent=errorText.too_large;return;}
   const packet=JSON.stringify({key:keyField.value.trim(),...current});
-  keyField.value='';consent.checked=false;pending=true;refresh();
+  keyField.value='';clearConsent();pending=true;refresh();
   const status=byId('online-status');status.textContent='Идёт разбор. Можно продолжать писать.';
   try {
     const res=await fetch('/api/review',{method:'POST',headers:{'Content-Type':'application/json'},body:packet,cache:'no-store',credentials:'omit',redirect:'error',referrerPolicy:'no-referrer'});

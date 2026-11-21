@@ -86,6 +86,10 @@ textarea::placeholder, input::placeholder { color: #697166; opacity: 1; }
 .back { color: var(--green); background: transparent; }
 .text-action, .actions-link { padding: 4px 0; border: 0; background: transparent; color: var(--green); font-size: 15px; text-decoration: underline; text-underline-offset: .2em; }
 button:disabled { opacity: .6; cursor: default; }
+.consent-box { margin:16px 0; padding:12px 15px; background:var(--wash); border:1px solid var(--line); border-radius:7px; }
+.consent-box legend { padding:0 5px; }
+.consent-box label { display:flex; align-items:flex-start; gap:10px; margin:7px 0; cursor:pointer; }
+.consent-box input { width:20px; height:20px; margin:3px 0 0; flex:none; accent-color:var(--green); }
 .wordcount, .feedback { font-size: 15px; color: var(--muted); }
 .feedback:not(:empty) { margin: 10px 0; color: var(--rust); }
 .draft-piece { padding: 11px 0; border-top: 1px solid #cfcebd; overflow-wrap: anywhere; }
@@ -132,7 +136,13 @@ button:disabled { opacity: .6; cursor: default; }
 #aiReview { margin-top:22px; border-top:1px solid var(--line); }
 .topic-picker { margin:0 0 16px; }
 .topic-picker > summary { color:var(--green); text-decoration:underline; text-underline-offset:3px; }
-.topic-picker select, .topic-picker label { margin-top:8px; }
+.topic-choices { display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 18px; }
+.work-card .topic-choice { display:inline-flex; gap:5px; align-items:center; margin:0; min-height:42px; padding:5px 10px; border:1px solid var(--line); border-radius:7px; background:var(--card); color:var(--green-dark); font-weight:600; line-height:1.2; cursor:pointer; }
+.topic-choice input { width:16px; height:16px; margin:0; accent-color:var(--green); }
+.topic-choice:has(input:checked) { background:var(--wash); border-color:var(--green); }
+.topic-choice:focus-within { outline:2px solid var(--rust); outline-offset:2px; }
+.work-card #homeTopicQuestion { margin:0 0 12px; font-size:clamp(22px,3vw,30px); line-height:1.2; }
+@media (max-width:540px) { .work-card .topic-choice { font-size:15px; } }
 .notes { padding-left:20px; }
 .notes li + li { margin-top:8px; }
 details p, .wordcount { overflow-wrap:anywhere; }
@@ -161,23 +171,52 @@ details p, .wordcount { overflow-wrap:anywhere; }
 <div class="home-controls"><label class="lens-picker" for="homeReadingLens">Ракурс чтения <select id="homeReadingLens"><option value="secular">Общелитературный</option><option value="orthodox">Православный</option></select></label>
 <nav class="mode-tabs" aria-label="Как начать занятие"><button id="modeGuide" type="button">Писать по шагам</button><button id="modePaste" type="button">Вставить готовое сочинение</button></nav></div>
 <details class="hint" id="homeGuide">
-  <summary>Помочь выбрать шаг с ГигаЧатом</summary>
-  <label class="field-label" for="homeSituation">Что у тебя уже есть и где возникла трудность?</label>
-  <textarea id="homeSituation" rows="2" maxlength="600" placeholder="Книгу помню, но пока получается только пересказ"></textarea>
-  <label class="field-label" for="homeNavMessage">Задание для чата</label>
-  <textarea id="homeNavMessage" readonly rows="5"></textarea>
-  <div class="actions"><button class="secondary" type="button" id="copyHomeNav">Скопировать задание</button><a href="https://giga.chat/" target="_blank" rel="noopener noreferrer">Открыть ГигаЧат</a></div>
-  <p id="homeNavStatus" role="status"></p>
-  <label class="field-label" for="homeDestination">Какой шаг открыть?</label>
+  <summary>Как выбрать следующий шаг?</summary>
+  <label class="field-label" for="homeDestination">Выбери, с чего хочешь начать</label>
   <select id="homeDestination"></select>
   <button class="secondary" type="button" id="openHomeDestination">Перейти к шагу</button>
+  <h3>Спросить у ГигаЧата</h3>
+  <p>Если трудно выбрать шаг, опиши, где возникла трудность. Чат получит это описание, выбранный ракурс и список шагов. Сочинение остаётся в редакторе.</p>
+  <label class="field-label" for="homeSituation">Что у тебя уже есть и где возникла трудность?</label>
+  <textarea id="homeSituation" rows="2" maxlength="600" placeholder="Книгу помню, но пока получается только пересказ"></textarea>
+  <fieldset class="consent-box">
+    <legend>Перед обращением в чат поставь две галочки</legend>
+    <label><input type="checkbox" autocomplete="off" id="homeNavConsent"><span>Я согласен (согласна) передать ГигаЧату моё описание трудности и выбранный ракурс.</span></label>
+    <label><input type="checkbox" autocomplete="off" id="homeNavPrivacy"><span>Я проверил(а) описание и убрал(а) личные сведения, если они были.</span></label>
+  </fieldset>
+  <p class="wordcount">Если тебе нет 18 лет, обратись к чату вместе с родителем или опекуном, который принял <a href="https://developers.sber.ru/docs/ru/policies/gigachat/agreement" target="_blank" rel="noopener noreferrer">условия ГигаЧата</a>.</p>
+  <div id="homeNavTransfer" hidden>
+  <label class="field-label" for="homeNavMessage">Задание для чата</label>
+  <textarea id="homeNavMessage" readonly rows="5"></textarea>
+  <div class="actions"><button class="secondary" type="button" id="copyHomeNav" disabled>Скопировать задание</button><a id="homeNavChat" target="_blank" rel="noopener noreferrer">Открыть ГигаЧат</a></div>
+  <p id="homeNavStatus" role="status"></p>
+  </div>
 </details>
 <div class="workspace"><section class="work-card" id="card" aria-labelledby="heading"></section><aside class="side-card" id="side"></aside></div>
+<details class="hint" id="gigachat-api-guide">
+  <summary>Как получить ключ ГигаЧата и проверить сочинение через API</summary>
+  <p>Для обычной проверки в бесплатном чате ключ не нужен. Если вы хотите получить ответ прямо в домашнем редакторе, понадобится личный ключ взрослого, компьютер и интернет.</p>
+  <h4>1. Получите ключ</h4>
+  <ol>
+    <li>Войдите в <a href="https://developers.sber.ru/studio/workspaces/my-space/get/gigachat-api" target="_blank" rel="noopener noreferrer">личный кабинет Сбера</a> через Сбер ID. Нажмите «Создать проект». В разделе «AI-модели» выберите «GigaChat API».</li>
+    <li>Назовите проект, например «Домашнее сочинение», прочитайте соглашение и подтвердите создание проекта. Если проект уже есть, откройте его.</li>
+    <li>В меню проекта откройте «Настройки API» и нажмите «Получить ключ». Скопируйте строку <strong lang="en">Authorization Key</strong> и сохраните в своём менеджере паролей. Эту строку показывают один раз. <a href="https://developers.sber.ru/docs/ru/gigachat/quickstart/ind-using-api" target="_blank" rel="noopener noreferrer">Посмотреть, как выглядит окно с ключом</a>.</li>
+  </ol>
+  <h4>2. Проверьте весь текст дома</h4>
+  <ol>
+    <li><a href="https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/proverka-gigachat.zip">Скачайте комплект для проверки целого сочинения (ZIP)</a> и распакуйте его. Для запуска установите <a href="https://www.python.org/downloads/" target="_blank" rel="noopener noreferrer">Python</a> версии 3.9 или новее.</li>
+    <li>В Windows дважды нажмите <code>start-windows.cmd</code>. В macOS или Linux откройте терминал в распакованной папке и выполните <code>python3 full_review_server.py --html essay-check.html --open</code>. Откроется страница на вашем компьютере.</li>
+    <li>Вставьте тему и сочинение. Раскройте «Получить разбор от GigaChat» и прочитайте текст для передачи. Вставьте ключ <strong>только в поле «Ключ авторизации GigaChat»</strong> на локальной странице, отметьте согласие и нажмите «Отправить на разбор». Ответ появится в редакторе.</li>
+  </ol>
+  <p class="wordcount">Взрослый владелец аккаунта сам отправляет работу. Личный API доступен полностью дееспособным резидентам РФ от 18 лет. У бесплатного режима есть лимит. <a href="https://developers.sber.ru/docs/ru/gigachat/tariffs/individual-tariffs" target="_blank" rel="noopener noreferrer">Тарифы</a> · <a href="https://developers.sber.ru/docs/ru/policies/gigachat-agreement/individuals" target="_blank" rel="noopener noreferrer">Условия личного API</a>.</p>
+  <p class="wordcount">При ошибке сертификата откройте <a href="https://developers.sber.ru/docs/ru/gigachat/certificates" target="_blank" rel="noopener noreferrer">инструкцию Сбера</a>. <a href="https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/gigachat-key-guide.gif" target="_blank" rel="noopener noreferrer">Посмотреть шаги в картинках</a>. В скачанном комплекте та же памятка открывается без интернета.</p>
+</details>
 </main>
 <footer class="foot"><span>Литературный кружок «Узел тоски по миру»</span><a id="downloadApp" href="domashniy-trenazher.html" download="domashniy-trenazher.html" hidden>Скачать тренажёр для занятий без интернета</a><span>Писать и сохранять можно без интернета</span></footer>
 <script id="topics" type="application/json">[
   {
     "id": "kindness",
+    "label": "Доброта",
     "title": "Как понять, что человек по-настоящему добр?",
     "thoughtHint": "Вспомни, как кто-то помог тебе. По какому поступку ты понял, что человеку есть до тебя дело?",
     "books": [
@@ -202,6 +241,7 @@ details p, .wordcount { overflow-wrap:anywhere; }
   },
   {
     "id": "conscience",
+    "label": "Совесть",
     "title": "Почему бывает трудно поступить по совести?",
     "thoughtHint": "Представь, что ты знаешь, как поступить, но боишься последствий. Что делает такой выбор трудным?",
     "books": [
@@ -226,6 +266,7 @@ details p, .wordcount { overflow-wrap:anywhere; }
   },
   {
     "id": "family",
+    "label": "Семья",
     "title": "Почему заботу о близких опасно откладывать?",
     "thoughtHint": "Какие слова или дела могут потерять смысл, если отложить их на потом?",
     "books": [
@@ -250,6 +291,7 @@ details p, .wordcount { overflow-wrap:anywhere; }
   },
   {
     "id": "opinion",
+    "label": "Чужое мнение",
     "title": "Почему люди иногда принимают чужое мнение без проверки?",
     "thoughtHint": "Вспомни слух, которому легко поверить. Что делает его убедительным для тех, кто ничего не видел сам?",
     "books": [
@@ -274,6 +316,7 @@ details p, .wordcount { overflow-wrap:anywhere; }
   },
   {
     "id": "change",
+    "label": "Перемены",
     "title": "Может ли один случай изменить взгляд человека на жизнь?",
     "thoughtHint": "Вспомни случай, после которого ты изменил своё мнение. Что тебе пришлось увидеть или узнать?",
     "books": [
@@ -298,6 +341,7 @@ details p, .wordcount { overflow-wrap:anywhere; }
   },
   {
     "id": "nature",
+    "label": "Природа",
     "title": "В каких поступках видна забота о природе?",
     "thoughtHint": "Представь, что животному или растению нужна помощь. Как понять, что твоя помощь ему действительно подходит?",
     "books": [
@@ -328,10 +372,15 @@ function mountAiReview(root, getWork, onFeedback) {
   root.innerHTML = `
     <h3>Проверка сочинения с ИИ</h3>
     <p>Кнопка скопирует тему, всё сочинение и вопросы для проверки. В открывшемся чате вставь сообщение и нажми стрелку отправки. Ответ прочитаешь там же.</p>
-    <p class="wordcount">Личный чат бесплатный. Нужен интернет. Убери из работы свою фамилию и контакты. Если тебе нет 18, пользуйся чатом с согласия и под присмотром родителя или опекуна, который принял <a href="https://developers.sber.ru/docs/ru/policies/gigachat/agreement" target="_blank" rel="noopener noreferrer">условия ГигаЧата</a>.</p>
-    <button class="primary" type="button" data-ai-check>Проверить в ГигаЧате</button>
+    <p class="wordcount">Личный чат бесплатный. Нужен интернет. Если ученику нет 18 лет, согласие подтверждает родитель или опекун. Он участвует в проверке и принимает <a href="https://developers.sber.ru/docs/ru/policies/gigachat/agreement" target="_blank" rel="noopener noreferrer">условия ГигаЧата</a>.</p>
+    <fieldset class="consent-box">
+    <legend>Перед проверкой поставь две галочки</legend>
+    <label><input type="checkbox" autocomplete="off" data-consent-send><span>Я разрешаю передать в ГигаЧат тему и весь текст этого сочинения для проверки.</span></label>
+    <label><input type="checkbox" autocomplete="off" data-consent-privacy><span>Я проверил(а), что в тексте нет личных сведений об учениках: фамилий, адресов, телефонов или номера школы.</span></label>
+  </fieldset>
+    <button class="primary" type="button" data-ai-check disabled>Проверить в ГигаЧате</button>
     <p class="feedback" data-ai-status role="status" hidden></p>
-    <details class="hint" data-ai-transfer>
+    <details class="hint" data-ai-transfer hidden>
       <summary>Как вставить текст? Что делать, если чат не открылся?</summary>
       <p>В поле чата нажми Ctrl+V (на Mac — ⌘V). На телефоне удерживай пустое поле и выбери «Вставить». При входе ГигаЧат может попросить номер телефона.</p>
       <label class="field-label">Сообщение для ГигаЧата
@@ -358,12 +407,37 @@ function mountAiReview(root, getWork, onFeedback) {
   notes.open = Boolean(feedback.value);
   feedback.addEventListener('input', () => onFeedback(feedback.value));
 
+  const boxes = [...root.querySelectorAll('.consent-box input')];
+  const hasConsent = () => boxes.every(box => box.checked);
+  let busy = false;
+  let revision = 0;
+  function syncConsent() {
+    revision++;
+    const allowed = hasConsent();
+    control.disabled = busy || !allowed;
+    transfer.hidden = !allowed;
+    if (!allowed) {
+      transfer.open = false;
+      message.value = '';
+      status.hidden = true;
+      status.textContent = '';
+    }
+  }
+  function resetConsent() {
+    boxes.forEach(box => { box.checked = false; });
+    syncConsent();
+  }
+  for (const box of boxes) box.addEventListener('change', syncConsent);
+  root.addEventListener('work-changed', resetConsent);
+  resetConsent();
+
   function showStatus(text) {
     status.textContent = text;
     status.hidden = false;
   }
 
   function prepareMessage() {
+    if (!hasConsent()) return false;
     const { topic, essay, lens } = getWork();
     if (!topic.trim() || !essay.trim()) {
       message.value = '';
@@ -421,6 +495,8 @@ function mountAiReview(root, getWork, onFeedback) {
 
   control.addEventListener('click', async () => {
     if (!prepareMessage()) return;
+    const started = revision;
+    busy = true;
     control.disabled = true;
     try {
       transfer.open = true;
@@ -433,6 +509,7 @@ function mountAiReview(root, getWork, onFeedback) {
           // Selecting the read-only message below also works without clipboard access.
         }
       }
+      if (started !== revision || !root.isConnected || !hasConsent()) return;
       if (!copied) {
         showStatus('Выделенное сообщение нужно скопировать вручную. Затем открой ГигаЧат по ссылке ниже.');
         message.focus();
@@ -446,7 +523,8 @@ function mountAiReview(root, getWork, onFeedback) {
       transfer.open = false;
       showStatus('Сообщение скопировано. Вставь его в поле ГигаЧата (Ctrl+V или команда «Вставить») и нажми стрелку отправки. Ответ появится в чате. Вернись сюда, чтобы внести правку.');
     } finally {
-      control.disabled = false;
+      busy = false;
+      control.disabled = !hasConsent();
     }
   });
 }
@@ -474,6 +552,15 @@ function mountAiReview(root, getWork, onFeedback) {
     return {mode:'guide', topicId:topics[0].id, drafts:[], paste:{topic:'', essay:'', feedback:''}};
   }
   const state = readState();
+  function openKeyGuide() {
+    if (location.hash === '#gigachat-api-guide') {
+      const guide = $('gigachat-api-guide');
+      guide.open = true;
+      requestAnimationFrame(() => guide.scrollIntoView({block:'start'}));
+    }
+  }
+  window.addEventListener('hashchange', openKeyGuide);
+  openKeyGuide();
   const lensKey = 'uzel-reading-lens-v1';
   let lens = 'secular';
   try { if (localStorage.getItem(lensKey) === 'orthodox') lens = 'orthodox'; } catch (_) {}
@@ -543,6 +630,7 @@ function mountAiReview(root, getWork, onFeedback) {
   }
   function applyLens(mode) {
     if (mode !== 'secular' && mode !== 'orthodox') return;
+    if (mode !== lens) resetGuideConsent();
     lens = mode;
     refreshLens();
   }
@@ -555,7 +643,29 @@ function mountAiReview(root, getWork, onFeedback) {
   window.addEventListener('storage', event => {
     if (event.key === lensKey || event.key === null) applyLens(event.newValue === 'orthodox' ? 'orthodox' : 'secular');
   });
+  const guideConsent = $('homeNavConsent');
+  const guidePrivacy = $('homeNavPrivacy');
+  let guideRevision = 0;
+  function guideCanShare() {
+    return guideConsent.checked && guidePrivacy.checked;
+  }
+  function resetGuideConsent() {
+    guideConsent.checked = false;
+    guidePrivacy.checked = false;
+    updateGuideMessage();
+  }
   function updateGuideMessage() {
+    guideRevision++;
+    const allowed = guideCanShare();
+    $('copyHomeNav').disabled = !allowed;
+    $('homeNavTransfer').hidden = !allowed;
+    $('homeNavStatus').textContent = '';
+    if (!allowed) {
+      $('homeNavChat').removeAttribute('href');
+      $('homeNavMessage').value = '';
+      return;
+    }
+    $('homeNavChat').href = 'https://giga.chat/';
     const situation = $('homeSituation').value.trim();
     const selectedLens = lens === 'orthodox' ? 'православный' : 'общелитературный';
     $('homeNavMessage').value = [
@@ -565,12 +675,15 @@ function mountAiReview(root, getWork, onFeedback) {
       ...guideSteps.map((title,i) => (i+1)+'. '+title),
       'Назови номер и объясни выбор одной короткой фразой. Тезис и абзац я напишу сам.'
     ].join('\n');
-    $('homeNavStatus').textContent = '';
   }
+  guideConsent.addEventListener('change', updateGuideMessage);
+  guidePrivacy.addEventListener('change', updateGuideMessage);
+  resetGuideConsent();
+  window.addEventListener('pageshow', event => { if (event.persisted) resetGuideConsent(); });
   $('homeSituation').value = typeof state.situation === 'string' ? state.situation : '';
   $('homeSituation').addEventListener('input', event => {
     state.situation = event.target.value;
-    updateGuideMessage();
+    resetGuideConsent();
     save();
   });
   $('homeDestination').innerHTML = guideSteps.map((title,i) => '<option value="'+(i+1)+'">'+(i+1)+'. '+title+'</option>').join('');
@@ -585,6 +698,8 @@ function mountAiReview(root, getWork, onFeedback) {
     }
   });
   $('copyHomeNav').addEventListener('click', async () => {
+    if (!guideCanShare()) return;
+    const started = guideRevision;
     const message = $('homeNavMessage');
     message.focus();
     message.select();
@@ -593,6 +708,7 @@ function mountAiReview(root, getWork, onFeedback) {
     if (!copied && navigator.clipboard?.writeText) {
       try { await navigator.clipboard.writeText(message.value); copied = true; } catch (_) {}
     }
+    if (started !== guideRevision || !guideCanShare()) return;
     $('homeNavStatus').textContent = copied
       ? 'Задание скопировано. Вставь его в чат. Вернись сюда и выбери номер шага из ответа.'
       : 'Задание выделено. Скопируй его вручную и вставь в чат. Вернувшись, выбери номер шага.';
@@ -640,13 +756,21 @@ function mountAiReview(root, getWork, onFeedback) {
   }
   function showThought() {
     const t = currentTopic(), d = draft();
-    $('card').innerHTML = stepHeader(1,t.title)+
-      '<details class="topic-picker"><summary>Выбрать другую тему</summary><label class="field-label" for="theme">Учебные темы</label><select id="theme">'+
-      topics.map(x=>'<option value="'+escape(x.id)+'" '+(x.id===t.id?'selected':'')+'>'+escape(x.title)+'</option>').join('')+
-      '</select></details>'+
-      field('thought','Что ты думаешь? Ответь одним-двумя предложениями.',d.thought,'Я думаю, что…')+
+    $('card').innerHTML = stepHeader(1,'О чём хочешь написать?')+
+      '<fieldset id="homeTopicChoices" class="topic-choices" aria-labelledby="heading">'+
+      topics.map(topic => '<label class="topic-choice"><input type="radio" name="homeTopic" value="'+escape(topic.id)+'" '+
+        (topic.id===t.id ? 'checked' : '')+'><span>'+escape(topic.label || topic.title)+'</span></label>').join('')+
+      '</fieldset><h3 id="homeTopicQuestion">'+escape(t.title)+'</h3>'+
+      field('thought','Ответь на вопрос своими словами в одном-двух предложениях.',d.thought,'Я думаю, что…')+
       readingHint('Трудно начать?')+nav(1,'Выбрать книгу');
-    $('theme').onchange = event => { clearRoute(); state.topicId=event.target.value; draft().step=1; save(); render(); focusHeading(); };
+    $('homeTopicChoices').onchange = event => {
+      clearRoute();
+      state.topicId = event.target.value;
+      draft().step = 1;
+      save();
+      render();
+      document.querySelector('#homeTopicChoices input:checked').focus({preventScroll:true});
+    };
     setField('thought',value=> { d.thought=value; });
     bindNav(1,()=>requireText('thought','Для начала хватит одной твоей мысли. Запиши её в поле выше.'));
   }
@@ -701,6 +825,9 @@ function mountAiReview(root, getWork, onFeedback) {
       (paste ? '' : '<div class="actions"><button type="button" class="back" id="prev">← К предыдущему шагу</button></div>');
     function count() { $('count').textContent = 'Слов в тексте: примерно '+wordCount(finalText()); }
     count();
+    for (const input of [$('essay'), $('customTopic')].filter(Boolean)) {
+      input.addEventListener('input', () => $('aiReview').dispatchEvent(new Event('work-changed')));
+    }
     if (paste) setField('customTopic',value=>{ d.topic=value; });
     setField('essay',value=> {
       if (paste) d.essay=value;
@@ -751,6 +878,9 @@ function mountAiReview(root, getWork, onFeedback) {
     if (readRoute()) { save(); render(); focusHeading(); }
   });
   readRoute();
+  window.addEventListener('pageshow', event => {
+    if (event.persisted) $('aiReview')?.dispatchEvent(new Event('work-changed'));
+  });
   render();
   if (state.paste.essay || state.drafts.some(d => d.thought)) save();
 })();
