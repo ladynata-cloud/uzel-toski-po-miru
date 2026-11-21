@@ -221,10 +221,10 @@
   const finishedEssayId = 'finished-essay';
   const unnamedEssay = 'Моё готовое сочинение';
   const entrySituations = [
-    ['empty', 'route-read', 'Пока ничего не выбрал', 'Прочитай короткий эпизод и запиши одну деталь.'],
+    ['empty', 'route-read', 'Начать с короткого отрывка', 'Подойдёт, если текста пока нет или трудно вспомнить книгу. Прочитай и запиши одну свою мысль.'],
     ['topic', 'entry-topic', 'Есть тема', 'Введи свой вопрос и попробуй ответить одной фразой.'],
     ['scene', 'entry-scene', 'Помню книгу или эпизод', 'Найди знакомую книгу по названию или автору.'],
-    ['paragraph', 'route-draftReader', 'Есть абзац', 'Вставь его и отметь, где поступок, а где твоя мысль.'],
+    ['paragraph', 'route-draftReader', 'Поработать с моим текстом', 'Вставь абзац или черновик и выбери одну правку.'],
     ['essay', 'entry-essay', 'Сочинение готово', 'Вставь свой текст и открой самопроверку.'],
     ['rehearsal', 'route-rehearsal', 'Хочу репетицию целиком', 'Открой комплект тем и напиши работу самостоятельно.'],
     ['quick', 'page-writingPractice', 'Начать с одной фразы', 'Выбери короткое упражнение на пять минут.']
@@ -283,9 +283,12 @@
     const previous = steps.find(([id]) => id !== 'start' && id === state.previousPage);
     const resumeAction=previous?.[0]==='library'?(state.shelfTopic===state.active?'topic-books':'library-all'):'page-'+previous?.[0];
     const resume = previous ? '<div class="ew-resume">'+button(state.resumeFinished?'resume-finished':resumeAction, 'Вернуться к занятию «'+previous[1]+'»')+'</div>' : '';
+    const primary = entrySituations.filter(([id]) => id === 'empty' || id === 'paragraph');
+    const other = entrySituations.filter(([id]) => id !== 'empty' && id !== 'paragraph');
     return '<section data-ew-entry id="ew-situations" aria-labelledby="ew-title">'+heading('С чего ты начинаешь?')+resume+
-      '<div class="ew-actions">'+button('page-themeAtlas','Помоги выбрать тему сочинения',true)+'</div>'+
-      '<div class="ew-entry-choices">'+entrySituations.map(entryCard).join('')+'</div>'+
+      '<div class="ew-entry-choices ew-entry-primary" data-entry-primary>'+primary.map(entryCard).join('')+'</div>'+
+      '<div class="ew-actions">'+button('page-themeAtlas','Помоги выбрать тему сочинения')+'</div>'+
+      '<details data-entry-more><summary>Другие способы начать</summary><div class="ew-entry-choices">'+other.map(entryCard).join('')+'</div></details>'+
       (window.EssayGigaNavigator?.panel(state.mode) || '')+
       '<div class="ew-entry-return"><a href="#knizhnaya-polka" data-act="library-all">Все книги</a></div>'+
       '<h3 class="ew-entry-heading">Другие занятия</h3><div class="ew-entry-tools">'+
@@ -533,8 +536,11 @@
     if(stale) result='<p class="ew-small" data-answer-stale>Запись изменилась. Можно проверить её ещё раз и сравнить формулировки.</p>';
     else if(checked && text.trim()) {
       const reply=inspectAnswer(stage,text), change=record.change;
-      result='<div class="ew-answer-card">'+(reply.excerpt?'<p class="ew-note" data-answer-excerpt>«'+h(reply.excerpt)+'»</p>':'')+
-        '<p data-answer-observation>'+h(reply.observation)+'</p><p data-answer-next><strong>Попробуй сейчас.</strong> '+h(reply.next)+'</p></div>';
+      const selfCheck=stage==='link' && reply.kind==='reader-check';
+      result='<div class="ew-answer-card">'+(selfCheck?'<h3 data-answer-self-check>Вопрос для самопроверки</h3>':'')+
+        (reply.excerpt?'<p class="ew-note" data-answer-excerpt>«'+h(reply.excerpt)+'»</p>':'')+
+        '<p data-answer-observation>'+h(reply.observation)+'</p><p data-answer-next>'+(selfCheck?'':'<strong>Попробуй сейчас.</strong> ')+h(reply.next)+'</p>'+
+        (selfCheck?'<p class="ew-small" data-answer-choice-note>Выбери подходящий вопрос ниже или продолжай с текущим текстом.</p>':'')+'</div>';
       if (stage==='link') {
         const paths=EssayDraftReader.helpChoices.map(choice=>'<details data-link-help="'+h(choice.id)+'"><summary>'+
           h(choice.label)+'</summary><p>'+h(choice.hint)+'</p></details>');

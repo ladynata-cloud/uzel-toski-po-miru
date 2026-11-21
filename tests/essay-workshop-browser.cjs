@@ -41,6 +41,7 @@ async function exercise(page) {
   }
 
   await fits();
+  await panel.locator('[data-entry-more] > summary').click();
   await page.getByRole('link',{name:'Начать с одной фразы'}).click();
   const skill = page.locator('#wp-skill'), exercise = page.locator('#wp-exercise');
   const writing = page.locator('#wp-response'), hint = page.locator('#wp-self-check');
@@ -86,6 +87,7 @@ async function exercise(page) {
   await field('reading').fill(observation);
   await action('answer-check');
   await assertFeedback();
+  assert.equal(await feedback.locator('[data-answer-self-check]').count(), 0, 'The link-stage label does not replace reading feedback');
   await reading.selectOption({index:1});
   assert.equal(await field('reading').inputValue(), '');
   assert.ok(!(await feedback.innerText()).includes(observation), 'Another reading must not show this answer');
@@ -209,6 +211,7 @@ async function exercise(page) {
   await field('draft').fill(original);
   await action('answer-check');
   await assertFeedback();
+  assert.equal(await feedback.locator('[data-answer-self-check]').count(), 0, 'The link-stage label does not replace full-draft feedback');
   await fits();
   assert.match(await panel.locator('#ew-count').textContent(), /\b3 сл\./u, 'Draft word count follows live input');
   await action('page-review');
@@ -341,6 +344,7 @@ async function exercise(page) {
   const previousDraft = await source.inputValue();
   const rehearsal = name => panel.locator('[data-rehearsal="'+name+'"]').click();
   await start();
+  await panel.locator('[data-entry-more] > summary').click();
   await action('route-rehearsal');
   await panel.locator('#ew-r-time').selectOption('none');
   const examMode = page.locator('#ew-mode');
@@ -445,6 +449,7 @@ async function exercise(page) {
 
   await start();
   assert.equal(await panel.locator('#ew-situations [data-entry-situation]').count(), 7);
+  await panel.locator('[data-entry-more] > summary').click();
   await page.locator('#ew-situations [data-entry-situation="quick"]').click();
   await page.locator('#ot-temy-do-vyvoda').waitFor({state:'visible'});
   await page.locator('#ew-back-start').click();
