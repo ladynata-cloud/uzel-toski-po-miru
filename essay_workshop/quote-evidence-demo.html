@@ -1,0 +1,121 @@
+<section id="kak-proveryaetsya-podskazka" class="quote-evidence-demo" data-quote-evidence-demo aria-labelledby="quote-demo-title">
+  <h2 id="quote-demo-title">Как проверяется подсказка</h2>
+  <p>Помощник должен показать, к каким словам относится его замечание. Программа ищет эти слова в отправленном тексте. Посмотрим, что такая проверка умеет и где её недостаточно.</p>
+  <p class="quote-demo-caption">Авторский учебный пример. Абзац и три реплики подготовлены для демонстрации. Это не работа ученика и не ответы действующего сервиса.</p>
+  <div class="quote-demo-choices" role="group" aria-label="Пример замечания">
+    <button type="button" data-quote-demo-case="exact" aria-pressed="true" disabled>1. Точная цитата</button>
+    <button type="button" data-quote-demo-case="missing" aria-pressed="false" disabled>2. Чужие слова</button>
+    <button type="button" data-quote-demo-case="interpretation" aria-pressed="false" disabled>3. Спорный вывод</button>
+  </div>
+  <div class="quote-demo-pair">
+    <div class="quote-demo-card">
+      <h3>Отправленный абзац</h3>
+      <p class="quote-demo-source" data-quote-demo-source><span data-quote-demo-sentence="first">В финале «Ревизора» городничий замирает после известия о приезде настоящего ревизора.</span> <span data-quote-demo-sentence="second">Значит, теперь он до конца жизни будет служить честно.</span></p>
+    </div>
+    <div class="quote-demo-card">
+      <h3>Цитата в предложенной реплике</h3>
+      <blockquote data-quote-demo-quote>Значит, теперь он до конца жизни будет служить честно.</blockquote>
+    </div>
+  </div>
+  <div class="quote-demo-result" data-quote-demo-result>
+    <p class="quote-demo-status" data-quote-demo-status role="status" aria-live="polite" aria-atomic="true">Эти слова есть в отправленном тексте.</p>
+    <div data-quote-demo-feedback>
+      <p data-quote-demo-comment>В выводе появился прогноз о дальнейшей жизни героя.</p>
+      <p><strong>Вопрос для правки:</strong> <span data-quote-demo-question>Какой вывод о городничем подтверждается самой немой сценой?</span></p>
+    </div>
+    <p data-quote-demo-removed hidden>Замечание к отсутствующей цитате снято вместе с предложенной правкой. Можно выбрать фразу из своей работы, которую хочется обсудить.</p>
+  </div>
+  <aside class="quote-demo-editorial" data-quote-demo-editorial hidden aria-labelledby="quote-demo-editorial-title">
+    <h3 id="quote-demo-editorial-title">Пояснение мастерской к этому примеру</h3>
+    <p>Программа проверила только совпадение слов. Вывод о раскаянии мы намеренно сделали спорным: само замирание героя не устанавливает, что он осознал свою вину или изменит дальнейшую жизнь. Чтобы обосновать трактовку, нужно вернуться к пьесе. Это пояснение подготовлено автором примера; программа не оценивала смысл замечания.</p>
+  </aside>
+  <noscript><p class="quote-demo-caption">Сейчас показан первый пример. Для переключения между тремя репликами нужен JavaScript.</p></noscript>
+  <p class="quote-demo-limit">Совпадение цитаты помогает не приписать ученику чужие слова. Точность литературного факта и обоснованность вывода всё равно нужно сверять с произведением.</p>
+  <p><a href="/k-sochineniyu/itogovoe/pomoshchnik/">Вернуться к своему сочинению</a></p>
+</section>
+<style>
+.quote-evidence-demo{margin-block:2rem;padding:clamp(16px,3vw,26px);border:1px solid #c4cfc1;border-radius:12px;background:#fffefa;overflow-wrap:anywhere}
+.quote-evidence-demo h2{margin-top:0}.quote-evidence-demo .quote-demo-caption{font-size:.92em;color:#4c635b}
+.quote-evidence-demo .quote-demo-choices{display:flex;flex-wrap:wrap;gap:.55rem;margin:1.25rem 0}
+.quote-evidence-demo button{min-height:44px;max-width:100%;padding:.62rem .8rem;border:1px solid #9bad9e;border-radius:7px;background:#fffefa;color:#205b4c;font-family:inherit;font-size:.95rem;font-weight:600;line-height:1.35;white-space:normal;cursor:pointer}
+.quote-evidence-demo button[aria-pressed="true"]{border-width:2px;padding:calc(.62rem - 1px) calc(.8rem - 1px);background:#e9f1e9;text-decoration:underline;text-underline-offset:.2em}
+.quote-evidence-demo button:disabled{cursor:default}.quote-evidence-demo button:hover:enabled{background:#e9f1e9}
+.quote-evidence-demo button:focus-visible,.quote-evidence-demo a:focus-visible{outline:3px solid #aa692f;outline-offset:3px}
+.quote-evidence-demo .quote-demo-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem}
+.quote-evidence-demo .quote-demo-card{min-width:0;padding:1rem;border:1px solid #d4dbce;border-radius:8px;background:#f7f5ee}
+.quote-evidence-demo .quote-demo-card h3,.quote-evidence-demo .quote-demo-editorial h3{margin:0 0 .7rem;font-size:1rem;line-height:1.4}
+.quote-evidence-demo .quote-demo-card p,.quote-evidence-demo .quote-demo-card blockquote{margin:0;white-space:pre-wrap}
+.quote-evidence-demo .quote-demo-card blockquote{padding:.1rem 0 .1rem .7rem;border-left:3px solid #91a298;font-style:normal}
+.quote-evidence-demo mark{color:#243832;background:#f4deb0;border-bottom:2px solid #946c29;padding:0 .05em}
+.quote-evidence-demo .quote-demo-result{margin-top:1rem;padding:1rem;border:1px solid #b7cbbd;border-radius:8px;background:#edf3eb}
+.quote-evidence-demo .quote-demo-result[data-match="missing"]{border-color:#caa892;background:#fbf0e9}
+.quote-evidence-demo .quote-demo-status{margin:0;font-weight:700}
+.quote-evidence-demo [data-quote-demo-feedback] p,.quote-evidence-demo [data-quote-demo-removed]{margin:.7rem 0 0}
+.quote-evidence-demo .quote-demo-editorial{margin-top:1rem;padding:1rem;border-left:3px solid #aa692f;background:#fbf6e9}
+.quote-evidence-demo .quote-demo-editorial p{margin:0}.quote-evidence-demo .quote-demo-limit{margin-top:1.1rem}
+.quote-evidence-demo [hidden]{display:none!important}
+@media(max-width:600px){.quote-evidence-demo .quote-demo-pair{grid-template-columns:minmax(0,1fr)}.quote-evidence-demo .quote-demo-choices button{width:100%;text-align:left}}
+</style>
+<script>
+(() => {
+  'use strict';
+  const root = document.querySelector('[data-quote-evidence-demo]');
+  if (!root || root.dataset.quoteDemoReady || typeof globalThis.EssayQuoteEvidence?.findAll !== 'function') return;
+  const sourceNode = root.querySelector('[data-quote-demo-source]');
+  const source = sourceNode.textContent;
+  const first = sourceNode.querySelector('[data-quote-demo-sentence="first"]').textContent;
+  const second = sourceNode.querySelector('[data-quote-demo-sentence="second"]').textContent;
+  const cases = {
+    exact: {
+      quote: second,
+      comment: 'В выводе появился прогноз о дальнейшей жизни героя.',
+      question: 'Какой вывод о городничем подтверждается самой немой сценой?'
+    },
+    missing: {
+      quote: 'Городничий вернул украденные деньги.'
+    },
+    interpretation: {
+      quote: first,
+      comment: 'Такое потрясение доказывает, что городничий окончательно раскаялся.',
+      question: 'Как ты объяснишь, что герой уже стал честным человеком?'
+    }
+  };
+  const buttons = [...root.querySelectorAll('[data-quote-demo-case]')];
+  function show(id) {
+    if (!Object.hasOwn(cases, id)) return;
+    const example = cases[id];
+    const matches = globalThis.EssayQuoteEvidence.findAll(source, example.quote);
+    const found = matches.length > 0;
+    sourceNode.replaceChildren();
+    let cursor = 0;
+    for (const start of matches) {
+      if (start < cursor) continue;
+      sourceNode.append(document.createTextNode(source.slice(cursor, start)));
+      const mark = document.createElement('mark');
+      mark.textContent = source.slice(start, start + example.quote.length);
+      sourceNode.append(mark);
+      cursor = start + example.quote.length;
+    }
+    sourceNode.append(document.createTextNode(source.slice(cursor)));
+    root.querySelector('[data-quote-demo-quote]').textContent = example.quote;
+    root.querySelector('[data-quote-demo-status]').textContent = found
+      ? 'Эти слова есть в отправленном тексте.'
+      : 'Таких слов в отправленном тексте нет. Замечание снято.';
+    root.querySelector('[data-quote-demo-result]').dataset.match = found ? 'found' : 'missing';
+    root.querySelector('[data-quote-demo-feedback]').hidden = !found;
+    root.querySelector('[data-quote-demo-comment]').textContent = found ? example.comment : '';
+    root.querySelector('[data-quote-demo-question]').textContent = found ? example.question : '';
+    root.querySelector('[data-quote-demo-removed]').hidden = found;
+    root.querySelector('[data-quote-demo-editorial]').hidden = id !== 'interpretation';
+    for (const button of buttons) {
+      button.setAttribute('aria-pressed', String(button.dataset.quoteDemoCase === id));
+    }
+  }
+  for (const button of buttons) {
+    button.disabled = false;
+    button.addEventListener('click', () => show(button.dataset.quoteDemoCase));
+  }
+  show('exact');
+  root.dataset.quoteDemoReady = 'true';
+})();
+</script>
