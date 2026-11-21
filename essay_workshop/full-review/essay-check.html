@@ -14,6 +14,7 @@ pre{max-height:24rem;overflow-y:auto}
 .share-preview{margin:.4rem 0;padding:.7rem .85rem;border-left:3px solid #9db7a6;background:#f2f5ee}.share-preview p{white-space:pre-wrap;overflow-wrap:anywhere}.share-preview p+p{margin-top:.5rem}.share-body{max-height:20rem;overflow:auto}
 .guide-image{display:block;width:min(100%,768px);height:auto;margin:.6rem 0;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
 .shelf-result{border-top:1px solid var(--line);padding:.4rem 0}.shelf-result .check{margin:.32rem 0}.shelf-result details{margin:0 0 .35rem 1.75rem}.shelf-result summary{font-size:.9rem}.shelf-result p{margin:.25rem 0}.shelf-results{margin-top:.6rem;max-height:27rem;overflow-y:auto}.shelf-picked{margin:.3rem 0;color:var(--muted);font-size:.93rem}.preview-card{margin:.6rem 0;padding:.55rem .75rem;border-left:3px solid var(--line)}.preview-card p{margin:.25rem 0}
+#topic-books{margin:1.1rem 0}#topic-book-list .shelf-result{padding:.55rem 0}#topic-book-list .shelf-result p{margin:.3rem 0}
 #topic-picker select{max-width:100%;font:inherit;color:var(--ink);background:white;border:1px solid #91a298;border-radius:6px;padding:.4rem .6rem;margin-bottom:.6rem}
 .topic-match{border-top:1px solid var(--line);padding:.55rem 0}.topic-match button{display:block;width:100%;text-align:left}.topic-match .small{display:block;margin-top:.25rem}
 </style>
@@ -38,6 +39,20 @@ pre{max-height:24rem;overflow-y:auto}
 <div class="buttons"><button id="topic-replace" type="button">Заменить тему</button><button id="topic-keep" type="button">Оставить мою тему</button></div></div>
 </details>
 <p class="status" id="topic-picked" role="status"></p>
+<section id="topic-books" aria-labelledby="topic-books-title">
+<h3 id="topic-books-title">Книги к моей теме</h3>
+<p id="topic-books-note" class="small"></p>
+<p class="small"><a href="#essay">Сразу к моему черновику</a></p>
+<div id="topic-book-list" aria-label="Подборка к выбранной теме"></div>
+<p id="shelf-picked" class="shelf-picked" role="status"></p>
+<button type="button" id="shelf-clear" hidden>Продолжить без карточек</button>
+<details id="book-shelf"><summary>Выбрать другую книгу на полной полке</summary>
+<label for="book-search">Найти автора, название или деталь эпизода</label>
+<input id="book-search" type="search" placeholder="Например, Куприн или блюдце">
+<div class="shelf-results" id="book-list" aria-label="Все произведения полки"></div>
+<button type="button" id="shelf-return">Вернуться к моей теме</button>
+</details></section>
+
 <div class="field"><label for="essay">Мой черновик</label><p class="small" id="essay-help">Тему укажи в поле выше. Если при вставке сохранился отдельный заголовок, его можно исключить из подсчёта. Слова темы в составе вступления учитываются.</p>
 <textarea class="write" id="essay" rows="10" aria-describedby="essay-help" placeholder="Напиши или вставь сюда свой текст"></textarea></div>
 <div id="heading-options" hidden>
@@ -45,14 +60,6 @@ pre{max-height:24rem;overflow-y:auto}
 <label class="check"><input id="exclude-heading" type="checkbox" aria-describedby="heading-scope"><span>Первая строка — отдельный заголовок. Пропустить её при подсчёте слов и самостоятельном разборе.</span></label>
 <p class="small" id="heading-scope">В сохранённой работе и в запросе к GigaChat остаётся весь введённый текст.</p></div>
 <div class="meta"><span id="count">Слов в тексте, примерно: 0</span><span id="saved" role="status"></span></div>
-<details id="book-shelf"><summary>Полка произведений</summary>
-<p>Здесь можно вспомнить эпизод и выбрать до двух карточек для разбора. Если пишешь о своей книге, назови её в черновике и оставь выбор пустым.</p>
-<label for="book-search">Найти автора, название или деталь эпизода</label>
-<input id="book-search" type="search" placeholder="Например, Куприн или блюдце">
-<p id="shelf-picked" class="shelf-picked" role="status"></p>
-<button type="button" id="shelf-clear" hidden>Продолжить без карточек</button>
-<div class="shelf-results" id="book-list" aria-label="Произведения"></div>
-</details>
 <div class="buttons"><button id="local-check" type="button" class="primary">Проверить самостоятельно</button><button id="download" type="button">Скачать работу в TXT</button></div>
 <p class="small">Эти действия доступны без интернета.</p>
 <div id="import-conflict" class="insight" hidden>
@@ -134,13 +141,20 @@ const titles = {K1:'Соответствие теме',K2:'Аргументац�
 const reviewBundle=/*__REVIEW_BUNDLE__*/;
 const topicMenu=/*__TOPIC_MENU__*/;
 const bookById=new Map(reviewBundle.cards.map(card=>[card.id,card]));
+for(const [key,scene] of Object.entries(reviewBundle.sceneCards||{})){
+  bookById.set(key,{...bookById.get(scene.id),...scene});
+}
 const methodVersion=reviewBundle.method.version;
 let chosen=[];
 let available = false, pending = false, reviewed = null, localSnapshot = null, savedReview = null;
 let awaitingImport = null;
 let markedHeading = '';
 function normalChoice(value){
-  return Array.isArray(value)?[...new Set(value.filter(id=>bookById.has(id)))].slice(0,2):[];
+  const unique=new Map();
+  for(const id of Array.isArray(value)?value:[]){
+    if(bookById.has(id))unique.set(bookById.get(id).id,id);
+  }
+  return [...unique.values()].slice(0,2);
 }
 function selectionNotice(item){
   return Array.isArray(item.cardIds)&&item.cardIds.some(id=>!bookById.has(id))?' Часть выбранных ранее карточек отсутствует в этой версии полки.':'';
@@ -190,7 +204,7 @@ function sourceLink(url){
   try{
     const target=new URL(url);
     if(target.protocol==='https:'||target.protocol==='http:'){
-      const link=el('a','Сверить с текстом произведения ↗');
+      const link=el('a','Открыть источник эпизода');
       link.href=target.href;link.target='_blank';link.rel='noopener noreferrer';return link;
     }
   }catch{}
@@ -200,8 +214,10 @@ function cardNotes(box,card){
   box.append(el('p','Редакторский пересказ'),el('p',card.fact),sourceLink(card.url));
 }
 function matchText(value){return value.toLocaleLowerCase('ru').replace(/ё/gu,'е');}
+function titleKey(value){return matchText(value).normalize('NFC').trim().replace(/\s+/gu,' ');}
+const topicIndexByTitle=new Map(topicMenu.topics.map(([title],index)=>[titleKey(title),index]));
 const topicBatchSize=12;
-let topicMatches=[], topicShown=0, pendingTopic=null;
+let topicMatches=[], topicShown=0, pendingTopic=null, pickedTopicIndex=null;
 function closeTopicPrompt(){
   pendingTopic=null;
   byId('topic-confirm').hidden=true;
@@ -238,10 +254,12 @@ function searchTopics(){
   });
   topicShown=0;byId('topic-results').replaceChildren();renderTopicBatch();
 }
-function applyTopic(title){
+function applyTopic(index){
+  const [title]=topicMenu.topics[index];
   const changed=topic.value!==title;
+  pickedTopicIndex=index;
   closeTopicPrompt();
-  if(changed){topic.value=title;onWriting();}
+  if(changed){topic.value=title;onWriting();}else renderTopicBooks();
   byId('topic-picker').open=false;topic.focus();
   byId('topic-picked').textContent=changed?'Тема перенесена в поле выше.':'Эта тема уже стоит в редакторе.';
 }
@@ -255,41 +273,88 @@ byId('topic-more').addEventListener('click',()=>renderTopicBatch(true));
 byId('topic-results').addEventListener('click',event=>{
   const target=event.target.closest('button[data-topic-index]');
   if(!target)return;
-  const [title]=topicMenu.topics[Number(target.dataset.topicIndex)];
-  if(!topic.value.trim()||topic.value===title){applyTopic(title);return;}
-  pendingTopic={title,previous:topic.value};
+  const index=Number(target.dataset.topicIndex), [title]=topicMenu.topics[index];
+  if(!topic.value.trim()||topic.value===title){applyTopic(index);return;}
+  pendingTopic={index,previous:topic.value};
   byId('topic-old').textContent=topic.value;byId('topic-new').textContent=title;
   byId('topic-confirm').hidden=false;byId('topic-keep').focus();
 });
 byId('topic-replace').addEventListener('click',()=>{
-  if(pendingTopic&&topic.value===pendingTopic.previous)applyTopic(pendingTopic.title);
+  if(pendingTopic&&topic.value===pendingTopic.previous)applyTopic(pendingTopic.index);
   else closeTopicPrompt();
 });
 byId('topic-keep').addEventListener('click',()=>{
   closeTopicPrompt();byId('topic-picker').open=false;topic.focus();
   byId('topic-picked').textContent='Твоя тема сохранена.';
 });
+let lastBookTopic=null;
+function bookChoice(card, choice, recommended=false){
+  const label=el('label',undefined,'check'), check=el('input');
+  check.type='checkbox';
+  if(recommended)check.dataset.topicBook=choice;
+  else check.dataset.cardId=choice;
+  label.append(check,el('strong',card.title));
+  return label;
+}
+function renderTopicBooks(){
+  const key=titleKey(topic.value);
+  if(pickedTopicIndex!==null && titleKey(topicMenu.topics[pickedTopicIndex][0])!==key)pickedTopicIndex=null;
+  const index=pickedTopicIndex??topicIndexByTitle.get(key);
+  const identity=index??key;
+  if(lastBookTopic===identity)return;
+  lastBookTopic=identity;
+  const fullShelf=byId('book-shelf');
+  fullShelf.open=false;
+  byId('book-search').value='';
+  byId('book-list').replaceChildren();
+  const note=byId('topic-books-note'), list=byId('topic-book-list');
+  list.replaceChildren();
+  if(index===undefined){
+    note.textContent=key?'Для этой формулировки пока нет готовой подборки. Напиши о своей книге в черновике или найди её на полной полке.':'Выбери тему выше, чтобы увидеть подходящие эпизоды. Свою книгу можно сразу назвать в черновике.';
+    return;
+  }
+  note.textContent='Выбери эпизод, который помогает ответить на вопрос темы. При желании отметь до двух карточек для разбора или напиши о своей книге.';
+  for(const routeKey of topicMenu.routesByTopic[index]){
+    const route=topicMenu.bookRoutes[routeKey], choice=route.card||route.work, card=bookById.get(choice);
+    const article=el('article',undefined,'shelf-result');
+    article.append(bookChoice(card,choice,true),el('p',card.fact),el('p',route.why),sourceLink(card.url));
+    list.append(article);
+  }
+  updateSelection();
+}
 function renderShelf(){
-  const words=matchText(byId('book-search').value).trim().split(/\s+/u).filter(Boolean);
   const list=byId('book-list');list.replaceChildren();
+  if(!byId('book-shelf').open)return;
+  const words=matchText(byId('book-search').value).trim().split(/\s+/u).filter(Boolean);
   for(const card of reviewBundle.cards){
     const labelText=matchText(card.title+' '+card.fact);
     if(!words.every(word=>labelText.includes(word)))continue;
     const article=el('article',undefined,'shelf-result');
-    const label=el('label',undefined,'check'), check=el('input');check.type='checkbox';check.dataset.cardId=card.id;
-    label.append(check,el('span',card.title));
     const details=el('details');details.append(el('summary','Эпизод и источник'));
-    cardNotes(details,card);article.append(label,details);list.append(article);
+    cardNotes(details,card);article.append(bookChoice(card,card.id),details);list.append(article);
   }
   if(!list.childElementCount)list.append(el('p','По этому запросу ничего не найдено. Сократи запрос или укажи свою книгу в черновике.','small'));
   updateSelection();
 }
 function updateSelection(){
-  byId('shelf-picked').textContent=chosen.length?'Для разбора выбрано '+chosen.length+' из 2: '+chosen.map(id=>bookById.get(id).title).join(' · ')+'.':'Пока без карточек. Можно работать с любым своим произведением.';
+  const picked=byId('shelf-picked');
+  picked.replaceChildren();
+  if(chosen.length){
+    picked.append('Для разбора выбрано '+chosen.length+' из 2. ');
+    for(const id of chosen){
+      const title=bookById.get(id).title, remove=el('button','Убрать «'+title+'»');
+      remove.type='button';remove.dataset.removeBook=id;picked.append(remove);
+    }
+  }
   byId('shelf-clear').hidden=!chosen.length;
-  for(const input of byId('book-list').querySelectorAll('[data-card-id]')){
-    input.checked=chosen.includes(input.dataset.cardId);
-    input.disabled=!input.checked&&chosen.length>=2;
+  for(const input of byId('topic-books').querySelectorAll('input[type=checkbox]')){
+    const id=input.dataset.cardId||input.dataset.topicBook;
+    const sameBook=chosen.some(key=>bookById.get(key).id===bookById.get(id).id);
+    input.checked=chosen.includes(id);
+    input.disabled=!sameBook&&chosen.length>=2;
+    const label=input.parentElement;
+    label.querySelector('.scene-change')?.remove();
+    if(!input.checked&&sameBook)label.append(el('span',' · заменить выбранный эпизод этой книги','scene-change'));
   }
 }
 function syncCardPreview(cards){
@@ -301,15 +366,25 @@ function syncCardPreview(cards){
     item.append(el('strong',card.title));cardNotes(item,card);box.append(item);
   });
 }
+byId('book-shelf').addEventListener('toggle',renderShelf);
+byId('shelf-return').addEventListener('click',()=>{
+  byId('book-shelf').open=false;byId('book-shelf').querySelector('summary').focus();
+});
 byId('book-search').addEventListener('input',renderShelf);
-byId('book-list').addEventListener('change',event=>{
-  const input=event.target,id=input.dataset.cardId;
+byId('topic-books').addEventListener('change',event=>{
+  const input=event.target,id=input.dataset.cardId||input.dataset.topicBook;
   if(!bookById.has(id))return;
   chosen=input.checked?normalChoice([...chosen,id]):chosen.filter(x=>x!==id);
   updateSelection();onWriting();
 });
+byId('shelf-picked').addEventListener('click',event=>{
+  const id=event.target.closest('[data-remove-book]')?.dataset.removeBook;
+  if(!id)return;
+  chosen=chosen.filter(book=>book!==id);updateSelection();onWriting();
+  (byId('shelf-picked').querySelector('button')||byId('book-shelf').querySelector('summary')).focus();
+});
 byId('shelf-clear').addEventListener('click',()=>{
-  chosen=[];updateSelection();onWriting();byId('book-search').focus();
+  chosen=[];updateSelection();onWriting();byId('book-shelf').querySelector('summary').focus();
 });
 byId('method-version').textContent=methodVersion;
 byId('method-text').textContent=reviewBundle.manualPrompt;
@@ -335,6 +410,7 @@ function refresh() {
   byId('stale').hidden=!reviewed||exact(reviewed,snapshot);
 }
 function onWriting() {
+  renderTopicBooks();
   closeTopicPrompt();byId('topic-picked').textContent='';
   consent.checked=false;
   if(markedHeading!==firstLine(essay.value))markedHeading='';
@@ -354,7 +430,7 @@ try {
     byId('saved').textContent='Восстановлена сохранённая работа.'+selectionNotice(saved);
   }
 } catch {byId('saved').textContent='Если браузер не сохранит работу, скачай TXT.';}
-renderShelf();
+renderTopicBooks();updateSelection();
 topic.addEventListener('input',onWriting);
 essay.addEventListener('input',onWriting);
 byId('exclude-heading').addEventListener('change',event=>{

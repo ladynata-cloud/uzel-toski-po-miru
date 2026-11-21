@@ -54,6 +54,25 @@ class FullEssayReviewTests(unittest.TestCase):
         self.assertEqual(rows[0], response["criteria"][0])
         self.assertNotEqual(result["review"]["priority"], response["priority"])
 
+    def test_distinct_scene_stays_selected_when_topic_is_replaced(self):
+        scene_id, = (key for key, scene in server.RESOURCES["sceneCards"].items()
+                     if scene["id"] == "classic-inspector" and scene["url"].endswith("0085-01.htm"))
+        self.data["cardIds"] = [scene_id]
+        reply = {"choices": [{"finish_reason": "stop", "message": {
+            "role": "assistant", "content": json.dumps(review(), ensure_ascii=False)}}]}
+        post = Mock(side_effect=[{"access_token": "test"}, reply])
+        server.request_review(self.data, post)
+        body = json.loads(post.call_args_list[-1].args[2])
+        material = json.loads(body["messages"][1]["content"])
+        self.assertEqual(material["topic"], self.data["topic"])
+        self.assertEqual(material["cards"], [server.CARD_BY_ID[scene_id]])
+        self.assertNotEqual(material["cards"][0]["fact"], server.CARD_BY_ID["classic-inspector"]["fact"])
+        self.assertTrue(material["cards"][0]["url"].endswith("0085-01.htm"))
+        for invalid in ([scene_id, "classic-inspector"], [scene_id + "-unknown"]):
+            with self.subTest(invalid=invalid), self.assertRaises(server.Problem) as error:
+                server.check_input({**self.data, "cardIds": invalid})
+            self.assertEqual(error.exception.code, "invalid_cards")
+
     def test_all_five_distinct_criteria_required(self):
         for ids in (IDS[:-1], IDS + ("K6",), IDS[:-1] + ("K1",), IDS[:-1] + ("K6",)):
             with self.subTest(ids=ids), self.assertRaises(server.Problem) as error:

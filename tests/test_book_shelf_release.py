@@ -51,7 +51,7 @@ class BookShelfReleaseTests(unittest.TestCase):
         self.assertIsNotNone(match)
         browser_bundle, _ = json.JSONDecoder().raw_decode(self.page[match.end():])
         self.assertEqual(browser_bundle["method"], self.method)
-        for key in ("materialsId", "systemPrompt", "cards"):
+        for key in ("materialsId", "systemPrompt", "cards", "sceneCards"):
             self.assertEqual(browser_bundle[key], self.server.RESOURCES[key])
         api_output, chat_output = (self.method["formats"][k] for k in ("api", "chat"))
         api, chat = browser_bundle["systemPrompt"], browser_bundle["manualPrompt"]
@@ -70,12 +70,78 @@ class BookShelfReleaseTests(unittest.TestCase):
         sources = {s["id"]: s["url"] for s in public["sources"]}
         expected_topics = [(t["title"], sources[t["source"]]) for t in public["topics"]]
         expected_topics.extend((t["title"], "") for t in self.catalog["topics"])
+        lessons = json.loads((ROOT / "essay_workshop/theme_practice/lessons.json").read_text(encoding="utf-8"))
+        planner = [task for lesson in lessons for task in lesson["tasks"]]
+        expected_topics.extend((task["title"], "") for task in planner)
         self.assertEqual([(title, menu["sources"][i]["url"]) for title, i in menu["topics"]], expected_topics)
+        self.assertEqual(len(menu["routesByTopic"]), len(expected_topics))
+        # A title may occur under several sources. Keep each row and its own ordered book choices.
+        catalog_topics = public["topics"] + self.catalog["topics"]
+        for row, item in enumerate(catalog_topics):
+            self.assertEqual(menu["routesByTopic"][row], item["bookRoutes"])
+            for key in item["bookRoutes"]:
+                route = self.catalog["bookRoutes"][key]
+                linked = menu["bookRoutes"][key]
+                self.assertEqual((linked["work"], linked["why"]), (route["work"], route["why"]))
+                self.assertEqual(linked.get("card"), route.get("card"))
+                self.assertTrue(route["why"].strip())
+                base = self.server.CARD_BY_ID[route["work"]]
+                selected = self.server.CARD_BY_ID[linked.get("card", linked["work"])]
+                self.assertEqual(selected["title"], route.get("title", base["title"]))
+                self.assertEqual(selected["fact"], route.get("scene", base["fact"]))
+                self.assertEqual(selected["url"], route.get("url", base["url"]))
+        for row, task in enumerate(planner, start=len(catalog_topics)):
+            routes = [menu["bookRoutes"][key] for key in menu["routesByTopic"][row]]
+            self.assertEqual([(r["work"], r["why"]) for r in routes],
+                             [(s["work"], s["why"]) for s in task["bookSuggestions"]])
+            for route, suggestion in zip(routes, task["bookSuggestions"]):
+                selection = self.server.CARD_BY_ID[route.get("card", route["work"])]
+                base = self.server.CARD_BY_ID[route["work"]]
+                self.assertEqual(selection["id"], suggestion["work"])
+                self.assertEqual(selection["title"], suggestion.get("title", base["title"]))
+                self.assertEqual(selection["url"], suggestion.get("url", base["url"]))
+                self.assertEqual(selection["fact"], suggestion.get("scene", base["fact"]))
         with ZipFile(ASSETS / "trenazher-gigachat.zip") as download:
             downloaded_catalog = json.loads(download.read("catalog.json"))
-            for group in ("works", "topics", "readings", "publicTopics"):
+            for group in ("works", "topics", "readings", "publicTopics", "bookRoutes"):
                 self.assertEqual(downloaded_catalog[group], self.catalog[group])
             self.assertEqual(read_catalog(download.read("index.html").decode()), self.catalog)
+
+    def test_shortlists_follow_the_actual_prompt_including_its_restrictions(self):
+        catalog = self.catalog
+        public = catalog["publicTopics"]
+        works = {w["id"]: w for w in catalog["works"]}
+        by_id = {t["id"]: t for t in public["topics"]}
+
+        def recommendations(topic):
+            return [catalog["bookRoutes"][key] for key in topic["bookRoutes"]]
+
+        for topic in [*public["topics"], *catalog["topics"]]:
+            with self.subTest(topic=topic["id"]):
+                choices = recommendations(topic)
+                books = [r["work"] for r in choices]
+                self.assertIn(len(choices), (1, 2, 3))
+                self.assertEqual(len(set(books)), len(books))
+                for choice in choices:
+                    book = works[choice["work"]]
+                    self.assertTrue(choice["why"].strip())
+                    self.assertTrue((choice.get("scene") or book["fact"]).strip())
+                    self.assertEqual(urlsplit(choice.get("url") or book["url"]).scheme, "https")
+                title = topic["title"].lower()
+                if "лермонтов" in title and ("(по одному" in title or title.startswith("произведение м.")):
+                    self.assertTrue(all("Лермонтов" in works[k]["title"] for k in books))
+
+        original = by_id["pub-archive-2025-02-05-e40468797e7b-12"]
+        restricted = by_id["pub-archive-2015-05-06-a1819476a5f0-9"]
+        self.assertIn(original["title"], restricted["title"])
+        self.assertNotEqual(original["bookRoutes"], restricted["bookRoutes"])
+        self.assertEqual(public["stats"]["positions"], len(public["topics"]))
+        for first, second_code in [(11, "241"), (32, "441"), (53, "641")]:
+            first_id = f"pub-archive-2026-04-08-264015a9d01d-{first}"
+            second = by_id[f"{first_id}-code{second_code}"]
+            self.assertEqual(second["code"], second_code)
+            self.assertNotEqual(by_id[first_id]["bookRoutes"], second["bookRoutes"])
+            self.assertNotIn(second["title"], by_id[first_id]["title"])
 
     def test_every_work_has_a_distinct_exercise_and_valid_source(self):
         books = {w["id"]: w for w in self.catalog["works"]}

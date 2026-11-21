@@ -1,20 +1,30 @@
 """Build the full-draft checker for Pages, a single HTML file and the family ZIP."""
 from base64 import b64encode
 from hashlib import sha256
+from itertools import chain
 import json
 from pathlib import Path
 from urllib.parse import urlsplit
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 from .catalogue import load_catalog
+from .topic_books import scene_selection
 
 HERE = Path(__file__).parent
 SOURCE = HERE / 'full-review'
 
 
-def review_bundle(catalog=None):
+def planner_tasks():
+    lessons = json.loads((HERE / 'theme_practice/lessons.json').read_text(encoding='utf-8'))
+    return [(f'planner/{lesson["id"]}/{index}', task) for lesson in lessons
+            for index, task in enumerate(lesson['tasks'])]
+
+
+def review_bundle(catalog=None, planner=None):
     if catalog is None:
         catalog = load_catalog()
+    if planner is None:
+        planner = planner_tasks()
     method = json.loads((SOURCE / 'method.json').read_text(encoding='utf-8'))
     if not isinstance(method['version'], str) or not method['version'].strip():
         raise ValueError('Missing essay review method version')
@@ -38,14 +48,23 @@ def review_bundle(catalog=None):
             raise ValueError('Missing source address for ' + card['id'])
         seen.add(card['id'])
         cards.append(card)
+    scene_cards = {}
+    works = {card['id']: card for card in cards}
+    for route in chain(catalog['bookRoutes'].values(), *(task['bookSuggestions'] for _, task in planner)):
+        key, scene = scene_selection(route, works)
+        if scene:
+            scene_cards[key] = scene
     bundle = {'method': method, 'systemPrompt': prompt + '\n\n' + method['formats']['api'],
-              'manualPrompt': prompt + '\n\n' + method['formats']['chat'], 'cards': cards}
+              'manualPrompt': prompt + '\n\n' + method['formats']['chat'], 'cards': cards,
+              'sceneCards': scene_cards}
     canonical = json.dumps(bundle, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode('utf-8')
     bundle['materialsId'] = sha256(canonical).hexdigest()[:20]
     return bundle
 
 
-def topic_menu(catalog):
+def topic_menu(catalog, planner=None):
+    if planner is None:
+        planner = planner_tasks()
     public = catalog.get('publicTopics') or {}
     sources, positions = [], {}
     for src in public.get('sources', []):
@@ -57,11 +76,34 @@ def topic_menu(catalog):
             raise ValueError('Missing topic source address for ' + src['id'])
         positions[src['id']] = len(sources)
         sources.append({'title': label, 'url': src['url']})
-    topics = [[item['title'], positions[item['source']]] for item in public.get('topics', [])]
+    works = {w['id']: w for w in catalog['works']}
+    def compact_route(route):
+        key, scene = scene_selection(route, works)
+        return {'work': route['work'], 'why': route['why'], **({'card': key} if scene else {})}
+
+    routes = {key: compact_route(route) for key, route in catalog['bookRoutes'].items()}
+    topics, routes_by_topic = [], []
+
+    def append_topic(title, source, keys):
+        topics.append([title, source])
+        routes_by_topic.append(keys)
+
+    for item in public.get('topics', []):
+        append_topic(item['title'], positions[item['source']], item['bookRoutes'])
     author_source = len(sources)
     sources.append({'title': 'Авторская тренировочная тема «Узла тоски по миру»', 'url': ''})
-    topics.extend([item['title'], author_source] for item in catalog['topics'])
-    return {'sources': sources, 'authorSource': author_source, 'topics': topics}
+    for item in catalog['topics']:
+        append_topic(item['title'], author_source, item['bookRoutes'])
+    for prefix, task in planner:
+        keys = []
+        for suggestion in task['bookSuggestions']:
+            work = suggestion['work']
+            key = f'{prefix}/{work}'
+            routes[key] = compact_route(suggestion)
+            keys.append(key)
+        append_topic(task['title'], author_source, keys)
+    return {'sources': sources, 'authorSource': author_source, 'topics': topics,
+            'bookRoutes': routes, 'routesByTopic': routes_by_topic}
 
 
 def inline_json(value):
@@ -78,10 +120,11 @@ def replace_marker(text, marker, value):
 
 def build_review_package(destination, practice_page=None):
     catalog = load_catalog()
-    bundle = review_bundle(catalog)
+    planner = planner_tasks()
+    bundle = review_bundle(catalog, planner)
     source = (SOURCE / 'full_review_server.py').read_text(encoding='utf-8')
     launcher_data = {'method': {'version': bundle['method']['version']}, 'materialsId': bundle['materialsId'],
-                     'systemPrompt': bundle['systemPrompt'], 'cards': bundle['cards']}
+                     'systemPrompt': bundle['systemPrompt'], 'cards': bundle['cards'], 'sceneCards': bundle['sceneCards']}
     standalone = replace_marker(source, 'None  # __INCLUDE_REVIEW_BUNDLE__', repr(launcher_data))
     server = standalone.encode('utf-8')
     guide = (SOURCE / 'gigachat-key-guide.gif').read_bytes()
@@ -90,7 +133,7 @@ def build_review_package(destination, practice_page=None):
         '__LOCAL_LAUNCHER_B64__': b64encode(server).decode('ascii'),
         '/*__COACH_WORD_COUNTER__*/': (HERE / 'coach.js').read_text(encoding='utf-8'),
         '/*__REVIEW_BUNDLE__*/': inline_json(bundle),
-        '/*__TOPIC_MENU__*/': inline_json(topic_menu(catalog)),
+        '/*__TOPIC_MENU__*/': inline_json(topic_menu(catalog, planner)),
         '__KEY_GUIDE_POSTER__': b64encode((SOURCE / 'gigachat-key-poster.png').read_bytes()).decode('ascii'),
         '__KEY_GUIDE_GIF__': b64encode(guide).decode('ascii'),
     }

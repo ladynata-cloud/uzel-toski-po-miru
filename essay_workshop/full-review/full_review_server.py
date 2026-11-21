@@ -43,6 +43,8 @@ def get_resources():
 RESOURCES = get_resources()
 SYSTEM_PROMPT = RESOURCES["systemPrompt"]
 CARD_BY_ID = {card["id"]: card for card in RESOURCES["cards"]}
+for scene_id, scene in RESOURCES.get("sceneCards", {}).items():
+    CARD_BY_ID[scene_id] = {**CARD_BY_ID[scene["id"]], **scene}
 METHOD_VERSION = RESOURCES["method"]["version"]
 MATERIALS_ID = RESOURCES["materialsId"]
 STATUS = {"service": "uzel-essay-full-review", "version": 1,
@@ -138,7 +140,7 @@ def check_input(data):
     card_ids = data.get("cardIds", [])
     if (not isinstance(card_ids, list) or len(card_ids) > MAX_CARDS
             or any(not isinstance(cid, str) or cid not in CARD_BY_ID for cid in card_ids)
-            or len(set(card_ids)) != len(card_ids)):
+            or len({CARD_BY_ID[cid]["id"] for cid in card_ids}) != len(card_ids)):
         raise Problem(400, "invalid_cards")
     return key
 

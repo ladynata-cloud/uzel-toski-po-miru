@@ -52,6 +52,7 @@ const EssayShelf = (() => {
       c.observation===observation && (!quote || !c.quote || c.quote===quote));
     const card=previous || {id:id(),createdAt:Date.now(),bookId,title,source,observation};
     if(quote)card.quote=quote;
+    if(value.reviewCard)card.reviewCard=value.reviewCard;
     inMemory.set(card.id,card);
     const saved=persist(card.id,card);
     return {card,message:saved?(previous?'Эта сцена уже есть на полке.':'Сцена сохранена на полке.'):
