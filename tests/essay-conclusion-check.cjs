@@ -93,6 +93,66 @@ async function checkComparison(page, url, {extended = false} = {}) {
       return copy.textContent.replace(/\s+/g, ' ').trim();
     });
     const expectedCopy = await neutralCopy();
+    if (extended) {
+      const trace = async phase => {
+        const state = await c.source.evaluate(el => ({
+          focus:document.activeElement?.id || document.activeElement?.dataset.act || '',
+          start:el.selectionStart, end:el.selectionEnd,
+          status:document.querySelector('#ew-evidence-status')?.textContent || '',
+        }));
+        console.log('Essay conclusion keyboard probe', JSON.stringify({phase, ...state}));
+        return state;
+      };
+      const extend = async phase => {
+        for (let i = 0; i < position.length; i++) await page.keyboard.press('Shift+ArrowRight');
+        const selected = await trace(phase);
+        await page.keyboard.press('Tab');
+        await trace(phase + ':tab-to-mark');
+        const markFocused = await c.button('evidence-mark').evaluate(el => el === document.activeElement);
+        if (selected.start === positionStart && selected.end === positionStart + position.length && markFocused) {
+          await page.keyboard.press('Enter');
+          console.log('Essay conclusion keyboard probe', JSON.stringify({
+            phase:phase + ':marked', matches:(await c.quote('conclusion').textContent()) === '«' + position + '»',
+            status:await c.panel.locator('#ew-evidence-status').textContent(),
+          }));
+          await c.mark('conclusion', conclusionStart, conclusionStart + conclusion.length);
+        } else {
+          await page.keyboard.press('Shift+Tab');
+        }
+        return selected;
+      };
+      const fromHome = async phase => {
+        await page.keyboard.press('ControlOrMeta+Home');
+        await trace(phase + ':home');
+        await page.keyboard.press('ArrowRight');
+        await trace(phase + ':right');
+        return extend(phase + ':extended');
+      };
+      await c.role.focus();
+      await page.keyboard.press('End');
+      await page.keyboard.press('Tab');
+      await trace('tab:focused');
+      const first = await fromHome('tab');
+      if (first.start !== positionStart || first.end !== positionStart + position.length) {
+        await page.keyboard.press('ControlOrMeta+A');
+        await trace('all:selected');
+        await page.keyboard.press('ArrowLeft');
+        await trace('all:left');
+        await page.keyboard.press('ArrowRight');
+        await trace('all:right');
+        await extend('all:extended');
+      }
+      await c.button('evidence-reselect-conclusion').focus();
+      await page.keyboard.press('Enter');
+      await trace('reselect:focused');
+      await fromHome('reselect');
+      assert.equal(await c.source.inputValue(), draft, 'The keyboard probe must preserve the draft');
+      await c.role.focus();
+      await page.keyboard.press('End');
+      await page.keyboard.press('Tab');
+      await page.keyboard.press('ControlOrMeta+A');
+      await trace('restored:all');
+    }
     // Verify native select-all and preserve the range while tabbing to the mark button.
     // This covers keyboard marking, not arbitrary substring selection with arrow keys.
     await c.role.focus();
