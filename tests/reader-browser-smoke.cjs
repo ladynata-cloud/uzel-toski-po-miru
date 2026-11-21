@@ -254,6 +254,18 @@ async function run() {
           const expectedPath = new URL('assistant/v1/workshop/' + work + '/' + mode + '.json', base.href.endsWith('/') ? base : base.href+'/').pathname;
           check(loaded.length === 1 && loaded[0] === expectedPath, 'Only the explicitly selected mode packet is fetched', loaded);
           await traverseSteps(page, p, keyboard);
+          const picker = page.locator('[data-reading-lens-picker]');
+          const stepBeforeLens = await page.locator('#reading-prompt').innerText();
+          await page.locator('#reading-note').fill('Я нашёл опору в показанной фразе.');
+          await picker.selectOption('orthodox');
+          check((await page.locator('#reading-lens-question').innerText()) === p.lenses.orthodox.question,
+            'Orthodox reading asks the question for this book and stage');
+          check((await page.locator('#reading-prompt').innerText()) === stepBeforeLens &&
+            (await page.locator('#reading-note').inputValue()) === 'Я нашёл опору в показанной фразе.',
+            'Changing perspective keeps the selected step and note');
+          await picker.selectOption('secular');
+          check((await page.locator('#reading-lens-question').innerText()) === p.lenses.secular.question,
+            'Returning to literary reading restores the question for the same excerpt');
           await assertFits(page, width);
           await screenshot(page, width + '-' + work + '-' + mode);
           if (width === 390) await persistence(page, work, mode, p);

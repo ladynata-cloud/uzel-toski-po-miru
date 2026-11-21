@@ -31,7 +31,7 @@ async function check() {
     assert.match(await result.innerText(), /249 сл\./u);
     assert.ok(!(await result.innerText()).includes('Первое предложение повторяет тему'));
     assert.ok((await result.locator('blockquote').first().innerText()).startsWith('Слушать слово'));
-    const packet={topic:theme,essay:headed};
+    const packet={topic:theme,essay:headed,mode:'secular'};
     assert.deepEqual(JSON.parse(await page.locator('#preview').textContent()), packet);
     await page.locator('#online > summary').click();
     assert.equal(await page.locator('#manual-text').textContent(), '');

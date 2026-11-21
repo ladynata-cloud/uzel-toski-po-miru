@@ -90,7 +90,7 @@ const EssayThemePlanner = (() => {
         head = '<div class="ew-field"><label for="tp-own">Автор и название моей книги</label><input id="tp-own" data-tp-field="own" value="' +
           esc(n.own) + '"></div>';
       }
-      holder.innerHTML = '<h4 tabindex="-1" data-tp-current-book>' + (book ? 'Моя книга · ' + esc(match?.title || book.title) : 'Моя книга') + '</h4>' + head + field('thesis','Как я отвечу на выбранный вопрос?',sheet.thesis) +
+      holder.innerHTML = '<h4 tabindex="-1" data-tp-current-book>' + (book ? 'Моя книга · ' + esc(match?.title || book.title) : 'Моя книга') + '</h4>' + head + EssayReadingLens.detail('episode') + field('thesis','Как я отвечу на выбранный вопрос?',sheet.thesis) +
         field('episode','Какой поступок, жест или деталь я возьму из текста?',n.episode) +
         field('link','Как этот эпизод поможет обосновать мой ответ?',n.link) +
         '<div class="ew-actions"><button type="button" class="ew-primary" data-tp-draft>Открыть черновик с моим планом</button><button type="button" data-tp-download>Скачать мои заметки</button></div>' +

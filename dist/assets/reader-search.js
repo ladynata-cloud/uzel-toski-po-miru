@@ -233,6 +233,21 @@
   const status = document.getElementById('memory-status');
   const log = document.getElementById('memory-log');
   const mode = document.getElementById('memory-mode');
+  const lensTask = document.getElementById('memory-lens-task');
+  let lens = 'secular';
+  try { if (window.localStorage?.getItem('uzel-reading-lens-v1') === 'orthodox') lens = 'orthodox'; } catch {}
+  function showLensTask() { lensTask.textContent = record?.lens_questions?.[lens] || ''; }
+  window.addEventListener?.('uzel-reading-lens', event => {
+    if (!['secular', 'orthodox'].includes(event.detail?.mode)) return;
+    const next = event.detail.mode;
+    if (lens !== next && work !== null && record) {
+      cancelResponse();
+      serverState = null;
+      serverInSync = true;
+    }
+    lens = next;
+    showLensTask();
+  });
   const actions = document.getElementById('memory-actions');
   const send = document.getElementById('memory-send');
   const consent = document.getElementById('memory-server-consent');
@@ -313,12 +328,14 @@
     form.hidden = false;
     work = null;
     record = null;
+    showLensTask();
     paragraph = -1;
     serverState = null;
     serverInSync = !keep.length;
     candidates = keep;
     log.replaceChildren();
     actions.hidden = true;
+    document.getElementById('memory-first-lens').hidden = false;
     mode.textContent = 'Поиск без спойлеров';
     label.textContent = 'Что вам запомнилось?';
     send.textContent = 'Найти';
@@ -338,12 +355,14 @@
     const card = cards[i];
     work = i;
     record = null;
+    showLensTask();
     paragraph = -1;
     serverState = null;
     serverInSync = true;
     log.replaceChildren();
     field.value = '';
     actions.hidden = true;
+    document.getElementById('memory-first-lens').hidden = true;
     mode.textContent = 'После чтения · «' + card.title + '»';
     label.textContent = 'Что обсудим в этом произведении?';
     field.placeholder = 'Например, о чём говорит эта деталь?';
@@ -362,6 +381,7 @@
       }
       if (token !== revision) return;
       record = packets.get(card.id);
+      showLensTask();
       field.disabled = send.disabled = false;
       actions.hidden = false;
       status.textContent = '';
@@ -414,7 +434,10 @@
     const context = selected === null ? {surface: 'reader', mode: 'before_reading'} :
       {surface: 'reader', mode: 'after_reading', workId: cards[selected].id};
     try {
-      const reply = await client.ask({site: 'uzel', message: q, context, state: serverState || undefined}, {signal: controller.signal});
+      const requestText = selected === null ? q : q + '\nРакурс чтения: ' +
+        (lens === 'orthodox' ? 'православный. Если предлагаешь толкование, отличай его от слов автора.' :
+          'общелитературный. Опирайся на текст и художественные детали.');
+      const reply = await client.ask({site: 'uzel', message: requestText, context, state: serverState || undefined}, {signal: controller.signal});
       if (token !== revision) return;
       if (!reply || reply.site !== 'uzel' || reply.version !== 1 || !reply.reply) {
         serverInSync = false;

@@ -23,7 +23,7 @@ def build_personal_package(destination, body):
         'catalog.json': json.dumps(load_catalog(), ensure_ascii=False, separators=(',', ':')).encode('utf-8'),
         'system.ru.md': (HERE / 'assistant/system.ru.md').read_bytes(),
     }
-    for name in ('server.py', 'README.txt', 'start-windows.cmd'):
+    for name in ('server.py', 'navigation-steps.json', 'README.txt', 'start-windows.cmd'):
         assets[name] = (HERE / 'personal-gigachat' / name).read_bytes()
     with ZipFile(destination, 'w') as package:
         for name, data in assets.items():

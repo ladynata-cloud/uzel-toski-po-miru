@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from html import escape as e
 from collections import Counter
+from reading_lens import lens_picker, lens_questions, tradition_question
 from textbook_reading_data import SOURCES, entries
 from extra_reading_essays import ESSAYS
 from catalogue_reading_essays import CATALOGUE_ESSAYS as PREVIOUS_CATALOGUE_ESSAYS
@@ -186,6 +187,7 @@ def essay_body(x):
     origin_in_navigation = on_caucasus_route and origin_path == CAUCASUS_ROOT
     body = caucasus_nav(x['slug']) if on_caucasus_route else ''
     body += f'<p><strong>Читаем:</strong> {e(x["author"])}. <a href="{e(x["source"], quote=True)}">{e(x["source_label"])}</a>.</p><p class="context-note"><strong>Объём разбора:</strong> {e(scope)}</p>'
+    body += lens_picker()
     origin_note = f'<p><a href="{e(origin_path, quote=True)}">{e(origin_label)}</a>.</p>'
     if not origin_in_navigation:
         body += origin_note
@@ -198,17 +200,18 @@ def essay_body(x):
         body += f'<p>{e(paragraph)}</p>'
     body += textual_basis(x.get('textual_basis', []))
     body += film_companions(x['slug'])
-    body += '<h2>Встреча с православной мыслью</h2>'
+    body += '<section data-reading-lens-only="orthodox" hidden><h2>Встреча с православной мыслью</h2>'
     if x.get('quote_comments'):
         for comment in x['quote_comments']:
             body += quote_block(comment['id']) + '<p><strong>Комментарий мастерской.</strong> ' + e(comment['comment'].removeprefix('Комментарий мастерской. ')) + '</p>'
     else:
         body += quote_block(x['quote']) + '<p>' + e(x['reflection']) + '</p>'
-    body += '<h2>Иллюстрация к тексту</h2>' + figure(art)
+    body += '</section><h2>Иллюстрация к тексту</h2>' + figure(art)
     body += f'<h2>Музыкальное сопровождение</h2><p><a href="/muzyka/#{x["music"]}">{e(music["composer"])}. {e(music["title"])}</a></p><p>{e(x["music_note"])}</p><p>По ссылке указаны исполнители и источник записи. Музыка включается только по вашему выбору.</p>'
     if x.get('questions'):
         body += '<h2>Вопросы для разговора</h2><ol>' + ''.join('<li>' + e(q) + '</li>' for q in x['questions']) + '</ol>'
     body += '<h2>Собственный ответ</h2><p class="reading-prompt">' + e(x['task']) + '</p><p>Подтвердите свой ответ двумя деталями из текста. Можно ответить устно; младшему читателю поможет взрослый.</p>'
+    body += lens_questions('Какая из двух найденных деталей важнее для вашего ответа и почему?', tradition_question(x['quote']))
     if x.get('note'):
         body += f'<aside class="context-note"><h2>Исторический текст и современные знания</h2><p>{e(x["note"])}</p><p><a href="{x["note_url"]}">Проверить справку ВОЗ</a></p></aside>'
     sources = x.get('sources', [(x['source'], x['source_label'])])

@@ -9,6 +9,7 @@ from articles import load_articles
 from catalogue_continued import DATA
 from extra_reading import CATALOGUE_ESSAYS, CATALOGUE_READINGS, ESSAYS, ROOT, essay_path
 from site_config import SITE_URL
+from reader_lens_tasks import AFTER_READING
 
 
 # These textbook essays cover additional works outside the linked catalogue position.
@@ -192,4 +193,9 @@ def after_reading_records(cards, lessons):
             by_url[url] = record
         else:
             raise ValueError(f'No published reading material for reader card {key}: {url}')
+        if record.get('reading_task') and record.get('source_status') != 'blocked':
+            record['lens_questions'] = {
+                'secular': record['reading_task'],
+                'orthodox': AFTER_READING[key],
+            }
     return records

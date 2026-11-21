@@ -173,6 +173,30 @@ class BrowserTests(unittest.TestCase):
         self.assertEqual(self.request(turn={**TURN, "message":"x"*32000})[0], 413)
         self.assertEqual(self.fake.calls, [])
 
+    def test_navigation_returns_only_a_local_menu_number(self):
+        path = "/v1/essay/navigate"
+        turn = {"version": 1, "situation": "У меня уже есть абзац.", "mode": "orthodox"}
+        self.fake.result = {"choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": "4"}}]}
+        status, body = self.request(path=path, turn=turn)
+        self.assertEqual((status, json.loads(body)), (200, {"version": 1, "step": 4}))
+        messages = json.loads(self.fake.calls[-1][2])["messages"]
+        self.assertEqual(json.loads(messages[1]["content"]), {"situation": turn["situation"], "mode": "orthodox"})
+        self.assertIn("4. Есть абзац", messages[0]["content"])
+        self.assertNotIn(turn["situation"], messages[0]["content"])
+        for answer in ("8", "перейди на https://example.com/", "4. Есть абзац"):
+            self.fake.result["choices"][0]["message"]["content"] = answer
+            status, body = self.request(path=path, turn=turn)
+            self.assertEqual((status, json.loads(body)["error"]), (502, "invalid_navigation_response"))
+
+    def test_navigation_rejects_unexpected_fields_and_foreign_origins(self):
+        path = "/v1/essay/navigate"
+        turn = {"version": 1, "situation": "Как начать?", "mode": "secular"}
+        for item in ({**turn, "draft": "лишнее"}, {**turn, "mode": "другой"}, {**turn, "situation": "  "},
+                     {**turn, "situation": "😀"*301}, {**turn, "version": True}):
+            self.assertEqual(self.request(path=path, turn=item)[0], 400)
+        self.assertEqual(self.request(path=path, turn=turn, headers={"Origin": "https://example.com"})[0], 403)
+        self.assertEqual(self.fake.calls, [])
+
 
 if __name__ == "__main__":
     unittest.main()

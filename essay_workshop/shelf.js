@@ -81,7 +81,7 @@ const EssayShelf = (() => {
     const opts=topics.map(t=>'<option value="'+h(t.id)+'"'+(t.id===active?' selected':'')+'>'+h(t.title)+'</option>').join('');
     const key=h(card.id);
     return '<article class="ew-text-card" data-shelf-card="'+key+'"><h3>'+h(card.title)+'</h3>'+
-      '<p class="ew-note">'+h(card.observation)+'</p>'+
+      '<p class="ew-note">'+h(card.observation)+'</p>'+EssayReadingLens.detail('shelf')+
       (card.quote?excerpt(card.quote,card.source):'<p class="ew-small">Источник · '+sourceRef(card.source)+'</p>')+
       '<div class="ew-actions">'+btn('choose','Взять для темы',true)+btn('remove','Убрать с полки')+'</div>'+
       '<form data-shelf-use hidden><div class="ew-field"><label for="ew-shelf-topic-'+key+'">К какой теме подходит эта сцена?</label>'+

@@ -6,6 +6,9 @@ import json
 from pathlib import Path
 import zipfile
 
+from reading_lens import lens_picker, lens_questions
+from reader_lens_tasks import QUESTIONS
+
 
 PAGE_PATH = '/praktika-chteniya/'
 DOWNLOAD_PATH = '/materials/reader-practice-20261120.zip'
@@ -84,9 +87,23 @@ def publish_download(output, source=SOURCE):
         ],
     }
     files['provenance.json'] = (json.dumps(provenance, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
+    stages = {'before': 'Начать с одной фразы', 'during': 'Читаю начало', 'after': 'Начало прочитано. Обсудить'}
+    worksheet = ['# Вопросы для двух ракурсов чтения', '',
+                 'Откройте карточку выбранной книги. На первом этапе читайте только первую фразу (у Крылова — первую строку), на двух следующих — показанное начало. '
+                 'Выберите один ракурс. Запишите свой ответ прежде, чем пользоваться самопроверкой.', '']
+    for work_id, author, title, *_ in LESSONS:
+        worksheet.extend([f'## {author}. «{title}»', ''])
+        for stage, name in stages.items():
+            worksheet.extend([f'### {name}', ''])
+            for lens, label in [('secular', 'Общелитературный'), ('orthodox', 'Православный')]:
+                question, check = QUESTIONS[work_id][stage][lens]
+                worksheet.extend([f'**{label}.** {question}', '', f'Самопроверка. {check}', ''])
+    files['Вопросы_для_двух_ракурсов.md'] = ('\n'.join(worksheet) + '\n').encode('utf-8')
     files['README_RU.md'] = '''# Четыре карточки чтения с подсказками
 
 «Узел тоски по миру», 20 ноября 2026 года.
+
+В файле «Вопросы_для_двух_ракурсов.md» собраны 24 задания для трёх этапов чтения четырёх книг: по вопросу и самопроверке в каждом из двух ракурсов.
 
 В папке cards находятся четыре неизменённых открытых JSON: начало «Студента»
 Чехова, «Шинели» Гоголя, «Чудесного доктора» Куприна и первые десять строк
@@ -134,16 +151,19 @@ def publish_reading_practice(page, output):
     size = publish_download(output)
     entries = []
     for work_id, author, title, heading, action, mode in LESSONS:
+        stage = {'Начать с одной фразы': 'before', 'Читаю начало': 'during', 'Начало прочитано. Обсудить': 'after'}[mode]
+        tasks = QUESTIONS[work_id][stage]
         entries.append(f'''<article class="practice-card">
 <p class="practice-author">{escape(author)} · «{escape(title)}»</p>
 <h2>{escape(heading)}</h2><p>{escape(action)}</p>
+{lens_questions(tasks["secular"][0], tasks["orthodox"][0])}
 <p class="practice-mode">Режим для этого задания: «{escape(mode)}».</p>
 <a class="button secondary" href="/poisk-po-pamyati/#{work_id}">Открыть карточку «{escape(title)}»</a>
 </article>''')
     body = '''<div class="wrap practice-page">
 <div class="breadcrumb"><a href="/">Главная</a><span>/</span><a href="/chtenie/">Что читать</a><span>/</span>Читаем вместе</div>
 <header class="page-title"><h1>Читаем вместе: четыре коротких занятия</h1>
-<p class="lead">Один фрагмент, одна деталь и собственная мысль. Можно читать самостоятельно или обсуждать в группе до четырёх человек.</p></header>
+<p class="lead">Один фрагмент, одна деталь и собственная мысль. Можно читать самостоятельно или обсуждать в группе до четырёх человек.</p></header>''' + lens_picker() + '''
 <section class="practice-start" aria-labelledby="practice-start-title">
 <h2 id="practice-start-title">Как начать</h2>
 <p>Выберите книгу ниже. На её карточке нажмите <strong>«Читать начало вместе, шаг за шагом»</strong>, затем сами выберите объём чтения. Сохранённый фрагмент не откроется автоматически.</p>
@@ -170,7 +190,7 @@ def publish_reading_practice(page, output):
 </section>
 <section class="practice-materials" aria-labelledby="practice-materials-title">
 <h2 id="practice-materials-title">Материалы для преподавателя</h2>
-<p>Четыре исходные карточки можно скачать для подготовки занятия или адаптации на своём сайте. В ZIP — вопросы и ступени помощи, ссылки на тексты, инструкция и сведения о происхождении. Это файлы данных, не готовое автономное приложение.</p>
+<p>Четыре исходные карточки можно скачать для подготовки занятия или адаптации на своём сайте. В ZIP есть 24 задания с самопроверкой в двух ракурсах, четыре исходные карточки, ссылки на тексты и инструкция. Это файлы данных, не готовое автономное приложение.</p>
 <p><a class="button secondary" href="''' + DOWNLOAD_PATH + '''" download>Скачать четыре карточки · ZIP, ''' + str(round(size / 1024)) + ''' КБ</a></p>
 <p>Показанные маршруты работают по подготовленным вопросам без обращения к модели. Материалы проверялись ИИ-агентами; опыт их применения с учениками ещё предстоит собрать.</p>
 <p>Другие разработки: <a href="https://mathexam.space/laboratory/">лаборатория репетитора MathExam</a> и <a href="https://mathexam.space/pedagogam/">материалы MathExam для педагогов</a>.</p>

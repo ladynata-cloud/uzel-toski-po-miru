@@ -61,7 +61,7 @@ const EssayDraftReader = (() => {
     const choice=work[c.branch];
     let result='<fieldset><legend>Мой следующий шаг</legend>'+Object.entries(work).map(([key,o])=>'<label class="ew-check"><input type="radio" name="dr-branch" data-dr-field="branch" value="'+key+'"'+(key===c.branch?' checked':'')+'><span>'+h(o.label)+'</span></label>').join('')+'</fieldset>';
     if(choice) result+='<section class="ew-coach" data-dr-branch="'+h(c.branch)+'"><p>'+h(choice.question)+'</p>'+
-      (c.branch==='reading'&&mode==='orthodox'?'<p>Если тебе близко православное прочтение, какое слово или поступок в сцене помогает его обосновать?</p>':'')+
+      EssayReadingLens.detail(c.branch==='reading'?'alternative':'link')+
       '<label class="ew-check"><input type="checkbox" data-dr-field="disagree"'+(c.disagree?' checked':'')+'><span>Я вижу это место иначе и хочу предложить свой ход.</span></label>'+
       field('reason',c.disagree?'Почему я не согласен и что предлагаю проверить?':'На какие слова текста я опираюсь? Можно добавить своё основание.',c.reason)+'</section>';
     return result;

@@ -39,6 +39,19 @@ class FullEssayReviewTests(unittest.TestCase):
         user, = [m for m in json.loads(chat[2])["messages"] if m["role"] == "user"]
         self.assertEqual(json.loads(user["content"]), {"topic": self.data["topic"], "essay": self.data["essay"]})
 
+    def test_selected_lens_goes_to_model_and_unknown_lens_never_sends(self):
+        for mode in ("orthodox", "secular"):
+            with self.subTest(mode=mode):
+                response = {"choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": json.dumps(review())}}]}
+                post = Mock(side_effect=[{"access_token": "test"}, response])
+                server.request_review({**self.data, "mode": mode}, post)
+                user = json.loads(post.call_args.args[2])["messages"][1]["content"]
+                self.assertEqual(json.loads(user)["mode"], mode)
+        post = Mock()
+        with self.assertRaises(server.Problem):
+            server.request_review({**self.data, "mode": "unknown"}, post)
+        post.assert_not_called()
+
     def test_unmatched_quote_and_dependent_feedback_are_removed(self):
         response = review()
         bad = response["criteria"][1]
