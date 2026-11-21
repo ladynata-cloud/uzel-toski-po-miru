@@ -14,7 +14,8 @@ pre{max-height:24rem;overflow-y:auto}
 .share-preview{margin:.4rem 0;padding:.7rem .85rem;border-left:3px solid #9db7a6;background:#f2f5ee}.share-preview p{white-space:pre-wrap;overflow-wrap:anywhere}.share-preview p+p{margin-top:.5rem}.share-body{max-height:20rem;overflow:auto}
 .guide-image{display:block;width:min(100%,768px);height:auto;margin:.6rem 0;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
 .shelf-result{border-top:1px solid var(--line);padding:.4rem 0}.shelf-result .check{margin:.32rem 0}.shelf-result details{margin:0 0 .35rem 1.75rem}.shelf-result summary{font-size:.9rem}.shelf-result p{margin:.25rem 0}.shelf-results{margin-top:.6rem;max-height:27rem;overflow-y:auto}.shelf-picked{margin:.3rem 0;color:var(--muted);font-size:.93rem}.preview-card{margin:.6rem 0;padding:.55rem .75rem;border-left:3px solid var(--line)}.preview-card p{margin:.25rem 0}
-#topic-picker select{max-width:100%;font:inherit;color:var(--ink);background:white;border:1px solid #91a298;border-radius:6px;padding:.4rem .6rem;margin-bottom:.6rem}
+#topic-picker select,#local-passage{max-width:100%;font:inherit;color:var(--ink);background:white;border:1px solid #91a298;border-radius:6px;padding:.4rem .6rem;margin-bottom:.6rem}
+#local-passage{width:100%;min-height:44px}#local-passage:focus-visible{outline:3px solid #aa692f;outline-offset:2px}
 .topic-match{border-top:1px solid var(--line);padding:.55rem 0}.topic-match button{display:block;width:100%;text-align:left}.topic-match .small{display:block;margin-top:.25rem}
 </style>
 </head>
@@ -350,37 +351,114 @@ function openGuide(){
   requestAnimationFrame(()=>guide.scrollIntoView({block:'start'}));
 }
 window.addEventListener('hashchange',openGuide);openGuide();
-function snippet(s) {return s.length>220?s.slice(0,219)+'…':s;}
+function draftSentences(paragraphs){
+  const splitter=typeof Intl!=='undefined'&&typeof Intl.Segmenter==='function'?new Intl.Segmenter('ru',{granularity:'sentence'}):null;
+  return paragraphs.flatMap(paragraph=>{
+    const parts=splitter?Array.from(splitter.segment(paragraph),item=>item.segment):
+      paragraph.match(/[^.!?…]*[.!?…]+[»”"“]*\s*|[^.!?…]+$/gu)||[paragraph];
+    const sentences=[];
+    let start='';
+    for(const part of parts){
+      start+=part;
+      // Keep the initials and the surname in a single verbatim passage.
+      if(/(?:^|[^\p{L}])\p{Lu}\.\s*$/u.test(start))continue;
+      if(start.trim())sentences.push(start.trim());
+      start='';
+    }
+    if(start.trim())sentences.push(start.trim());
+    return sentences;
+  });
+}
+const uncertainWords=/не (?:помню|уверен|точно)|сомневаюсь|(?:смешал|перепутал|неточно процитировал)[а-яё]*|по памяти/iu;
+function passageQuestions(sentences){
+  const text=sentences.join(' ');
+  const personalReading=/мне кажется|по-моему|я (?:думаю|считаю|вижу)|меня интересует|для меня/iu.test(text);
+  const diary=/дневник|записк[аи]|мемуар|воспоминания/iu.test(text);
+  const choices=sentences.map((sentence,i)=>{
+    const spoken=/сказ|слов[ао]|реплик|произн|цитир|говор|крикнул|ответил|писал[аи]?\s*:/iu;
+    const unsure=uncertainWords.test(sentence)||uncertainWords.test(sentences[i+1]||'');
+    const quoted=Array.from(sentence.matchAll(/[«„“"]([^»”“"\n]+)[»”“"]/gu)).some(match=>
+      !/(?:роман|повест|рассказ|книг|поэм|пьес|сборник|назван|заглав|стихотворени)[а-яё]*\s*$/iu.test(sentence.slice(0,match.index)));
+    if((quoted||/^[—–]\s/u.test(sentence))&&(unsure||spoken.test(sentence))){
+      return {kind:'quotation',question:'Найди реплику в первоисточнике. Кто её произносит и какими словами? Если точный текст найти сложно, передай своими словами только то, что удалось проверить.'};
+    }
+    const cause=/потому|из-за|оттого|поскольку|чтобы|ради|из (?:страха|зависти|ревности)|боялся|боялась|опасал|хотел[аи]?\s+казаться/iu;
+    const feeling=/страх|пугал|испуг|боял|боится|страш|мест[ьи]|отомст|зави[дс]|ревно|тщеслав|стыд|стесн|опасал|жажд|хотел|желал|похвал|наград|слав[ыуа]/iu;
+    if(cause.test(sentence)&&feeling.test(sentence)){
+      return {kind:'motive',question:'Что герой сделал и по какой детали ты судишь о его мотиве? Найди в книге слова, жест или обстоятельство. Если причина прямо не названа, обозначь свою догадку.'};
+    }
+    if(/(?:нужно|надо|осталось|предстоит|попробую)\s+(?:ещ[её] )?(?:вспомнить|подобрать|выбрать|найти|добавить)\s+(?:эпизод|сцену|пример|книгу)/iu.test(sentence)){
+      return {kind:'plan',question:'Какую сцену из прочитанного ты можешь добавить? Запиши один поступок или одну реплику, а затем объясни связь со своим тезисом.'};
+    }
+    if(diary&&/в записи|(?:автор|рассказчик)\s+(?:отмеч|запис|описыва|вспомина)|(?:отмечено|записано) в/iu.test(sentence)){
+      return {kind:'diary',question:'Как именно эта деталь дневника помогает понять твою мысль? Если источник ещё не назван, укажи автора или название издания, чтобы читатель мог найти запись.'};
+    }
+    if(personalReading&&/потому что|об этом (?:говорит|свидетельствует)|это видно|судить об|из этого|да[её]т (?:понять|увидеть)|по (?:его|её|этим) словам/iu.test(sentence)){
+      return {kind:'reading',question:'Какие слова или действия в этой сцене поддерживают именно твоё прочтение? Покажи их связь с твоей мыслью, сохранив свою трактовку.'};
+    }
+    if(/(?:оставил|приш[её]л|заш[её]л|спрятал|спрятала|вернул|отдал|отказал|открыл|протянул|поднял|заметил|произн[её]с|передал|ответил|спас|отв[её]л|вытащил|прячет|возвращает|поднимает|дарит|попросил|защитил)[а-яё]*/iu.test(sentence)){
+      return {kind:'action',question:'Что этот поступок помогает понять о герое? Объясни, как он связан с твоим ответом на тему.'};
+    }
+    return {kind:'other',question:'Какую деталь эпизода ты хочешь здесь выделить и что она объясняет в твоём ответе на тему?'};
+  });
+  const priority=['quotation','motive','diary','reading','plan'];
+  const kind=priority.find(name=>choices.some(choice=>choice.kind===name));
+  let index=choices.findIndex(choice=>choice.kind===kind);
+  const chronology=/потом|затем|позднее|следом|после этого|сначала/iu;
+  if(index<0&&sentences.length>1&&!personalReading&&chronology.test(text)){
+    index=sentences.findIndex(sentence=>chronology.test(sentence));
+    choices[index]={kind:'sequence',question:'Что изменилось после названного события? Объясни, как эта деталь помогает ответить на вопрос темы.'};
+  }
+  if(index<0)index=choices.findIndex(choice=>choice.kind==='action');
+  if(index<0&&sentences.length>1){
+    index=sentences.findIndex(sentence=>!/(?:я|мы)\s+(?:выбр|выбира|возьм|обращусь|хочу взять)/iu.test(sentence));
+  }
+  return {choices,index};
+}
 function localCheck() {
   const out=byId('local-result');out.replaceChildren();
   const text=essay.value.trim();
   if(!text){out.append(el('p','Напиши одно своё предложение или вставь абзац, чтобы начать разбор.','status'));essay.focus();return;}
   localSnapshot=data();
-  const paragraphs=text.split(/\n\s*\n|\r?\n/u).map(p=>p.trim()).filter(Boolean);
-  const sentences=text.match(/[^.!?…\n]+(?:[.!?…]+[»”"]?|$)/gmu)?.map(p=>p.trim()).filter(Boolean)||[text];
+  const paragraphs=text.split(/\r?\n/u).map(p=>p.trim()).filter(Boolean);
+  const sentences=draftSentences(paragraphs);
   const count=words(text);
   out.append(el('h3','Перечитай свой текст'));
-  function card(title,quote,help){
-    const item=el('section',undefined,'insight');
-    item.append(el('strong',title));
-    if(quote)item.append(el('blockquote',snippet(quote)));
-    item.append(el('p',help));out.append(item);
+  const normalized=s=>s.toLocaleLowerCase('ru').replace(/[\p{P}\s]/gu,'');
+  if(topic.value.trim()&&normalized(sentences[0])===normalized(topic.value)){
+    out.append(el('p','Первое предложение повторяет тему. Попробуй дописать свой ответ одной фразой.'));
   }
-  if(topic.value.trim()&&sentences[0].toLocaleLowerCase('ru').replace(/[\p{P}\s]/gu,'')===topic.value.trim().toLocaleLowerCase('ru').replace(/[\p{P}\s]/gu,'')){
-    card('Первое предложение повторяет тему',sentences[0],'Что ты сам отвечаешь на этот вопрос? Попробуй дописать свой ответ одной фразой.');
-  }else{
-    card('Начало твоего текста',sentences[0],topic.value.trim()?'Перечитай эту фразу рядом с темой. Где ты выражаешь свою позицию? Если она появится позже, найди это место.':'Добавь формулировку темы выше, затем найди в своей записи собственный ответ на её вопрос.');
+  const {choices,index}=passageQuestions(sentences);
+  const item=el('section',undefined,'insight');
+  const picker=el('select');picker.id='local-passage';
+  const label=el('label','Какую фразу разберём?');label.htmlFor=picker.id;
+  picker.add(new Option('Хочу добавить эпизод к тезису',''));
+  sentences.forEach((s,i)=>picker.add(new Option((i+1)+'. '+(s.length>100?s.slice(0,99)+'…':s),String(i))));
+  picker.value=index<0||choices[index].kind==='plan'?'':String(index);
+  const evidence=el('blockquote');evidence.id='local-evidence';
+  const question=el('p');question.id='local-question';
+  function showQuestion(){
+    const i=picker.selectedIndex-1;
+    evidence.hidden=i<0;evidence.textContent=i<0?'':sentences[i];
+    question.textContent=i<0?'Какой эпизод из книги поможет обосновать твой тезис? Запиши один поступок или одну реплику героя.':choices[i].question;
   }
-  const scene=sentences.find(s=>/под блюдцем|попросил[аи]?|(?:оставил|отказал|вернул|передал|увидел|спас|выбрал|защитил|помог|напомнил|сказал|показал|заметил|покраснел)[а-яё]*/iu.test(s));
-  if(scene)card('Фраза для сверки с книгой',scene,'Назови поступок или деталь, которую можно проверить по книге. Что именно она объясняет в твоём ответе на тему?');
-  else card('Литературный аргумент','','Выбери место, где вспоминаешь книгу. Отметь действие или слова героя. После них найди своё объяснение: почему этот пример помогает ответить на тему?');
-  const last=sentences.length>1?sentences.at(-1):'';
-  if(last)card('Последняя фраза',last,'Вернись к первому утверждению. Читателю понятно, как литературная деталь привела тебя к этому выводу?');
+  picker.addEventListener('change',showQuestion);showQuestion();
+  item.append(label,picker,evidence,question);out.append(item);
+  if(sentences.length>=3||(sentences.length===2&&(count>=40||paragraphs.length>1))){
+    const structure=el('details');
+    structure.append(el('summary','Перечитать начало и конец'),el('blockquote',sentences[0]),
+      el('p',topic.value.trim()?'Как начало связано с вопросом темы? Где дальше ты развиваешь эту мысль?':'Запиши тему и сопоставь с ней начало черновика.'));
+    const end=sentences.at(-1);
+    if(choices.at(-1).kind!=='plan'&&!uncertainWords.test(end)){
+      structure.append(el('blockquote',end),el('p','Как последняя фраза связана с предыдущей мыслью и с вопросом темы?'));
+    }
+    out.append(structure);
+  }
   const meta=paragraphs.length+' абз. · '+count+' сл. ';
   const volume=count<250?'Можно тренировать один абзац. Минимум 250 слов относится к полной экзаменационной работе.':'Для полной работы рекомендуемый объём — от 350 слов. Теперь выбери одну фразу для правки.';
   out.append(el('p',meta+volume,'status'));
   const revise=el('button','Вернуться к правке');revise.type='button';revise.addEventListener('click',()=>essay.focus());
-  const row=el('div',undefined,'buttons'); row.append(revise);out.append(row);
+  const row=el('div',undefined,'buttons');row.append(revise);out.append(row);
 }
 byId('local-check').addEventListener('click',localCheck);
 function download(name,blob){

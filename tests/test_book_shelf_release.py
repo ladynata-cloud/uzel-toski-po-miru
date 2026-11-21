@@ -42,7 +42,9 @@ class BookShelfReleaseTests(unittest.TestCase):
     def test_site_html_and_downloads_share_catalogue_and_method(self):
         with ZipFile(ASSETS / "proverka-gigachat.zip") as download:
             self.assertEqual(download.read("essay-check.html").decode(), self.page)
-            self.assertEqual(read_catalog(download.read("practice.html").decode()), self.catalog)
+            practice = download.read("practice.html")
+            self.assertEqual(practice, (ASSETS / "masterskaya.html").read_bytes())
+            self.assertEqual(read_catalog(practice.decode()), self.catalog)
         encoded = base64.b64encode(self.launcher).decode()
         self.assertIn(encoded, self.page, "Single-page launcher differs from the family ZIP")
         self.assertEqual(self.method, json.loads((ROOT / "essay_workshop/full-review/method.json").read_text(encoding="utf-8")))
