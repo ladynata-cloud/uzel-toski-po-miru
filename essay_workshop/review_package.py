@@ -132,6 +132,7 @@ def build_review_package(destination, practice_page=None):
     replacements = {
         '__LOCAL_LAUNCHER_B64__': b64encode(server).decode('ascii'),
         '/*__COACH_WORD_COUNTER__*/': (HERE / 'coach.js').read_text(encoding='utf-8'),
+        '/*__QUOTE_EVIDENCE__*/': (HERE / 'quote-evidence.js').read_text(encoding='utf-8'),
         '/*__REVIEW_BUNDLE__*/': inline_json(bundle),
         '/*__TOPIC_MENU__*/': inline_json(topic_menu(catalog, planner)),
         '__KEY_GUIDE_POSTER__': b64encode((SOURCE / 'gigachat-key-poster.png').read_bytes()).decode('ascii'),

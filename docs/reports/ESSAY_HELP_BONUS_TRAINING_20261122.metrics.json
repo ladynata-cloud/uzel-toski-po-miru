@@ -1,0 +1,909 @@
+{
+  "task": "ESSAY_HELP_BONUS_TRAINING_20261122",
+  "evaluation_started_utc": "2026-11-21T18:58:08.132628+00:00",
+  "evaluation_completed_utc": "2026-11-21T18:58:09.545430+00:00",
+  "formal_comparison_count": 1,
+  "base": "2f2e670aabd34e4a004bf090e396992234abbf77",
+  "frozen_candidate": {
+    "frozen_utc": "2026-11-21T18:54:04.446688+00:00",
+    "base": "2f2e670aabd34e4a004bf090e396992234abbf77",
+    "candidate_sha256": "fbc1a6ffbc04b4827ec843db10f65a0f93054895ef41514e5515d8f04f962b3b",
+    "training_sha256": "ed1d7d56ea367eece4fa9c9dbdc1430d3ab39a10be262e77c2f436cead8bd65c",
+    "controls": {
+      "intent-control-2026-11-22.json": "7223d6655f5997e080a0572354deb8d2beee969e38fc384645984815cbf7ca34",
+      "intent-sealed-2026-11-22.json": "78baaebc44b7719d74bf24df815705e02bbc58aee1f6ff2dbe1434a1d034f768"
+    },
+    "epochs": 18,
+    "closed_control_opened": false
+  },
+  "baseline_sha256": "c220a3bb5c68cf5a3706066fc4d8668256c286bd5f76afa4cf4da81c8cc69fa1",
+  "candidate_sha256": "fbc1a6ffbc04b4827ec843db10f65a0f93054895ef41514e5515d8f04f962b3b",
+  "training_records": 596,
+  "evaluator": "essay_workshop/assistant/check_intents.cjs",
+  "evaluator_sha256": "ebdf02e06a88ce61fe99c451ff006f30b857e5e689853148dd3f0c1a32ca3c01",
+  "candidate_training_separation": "All six evaluation files were checked for normalized exact duplicates with the 596-record candidate training data; no overlap.",
+  "precision_definition": "Correct relevant predictions divided by all offered educational predictions, including wrong relevant predictions and false positives on other requests. Relevant-only precision is reported separately.",
+  "sets": [
+    {
+      "evaluation_file": "essay_workshop/assistant/intent-control-2026-11-22.json",
+      "baseline": {
+        "sha256": "c220a3bb5c68cf5a3706066fc4d8668256c286bd5f76afa4cf4da81c8cc69fa1",
+        "evaluation_sha256": "7223d6655f5997e080a0572354deb8d2beee969e38fc384645984815cbf7ca34",
+        "groups": {
+          "thesis": {
+            "total": 12,
+            "correct": 10,
+            "wrong": 0,
+            "abstain": 2
+          },
+          "scene": {
+            "total": 12,
+            "correct": 10,
+            "wrong": 0,
+            "abstain": 2
+          },
+          "explain": {
+            "total": 12,
+            "correct": 6,
+            "wrong": 1,
+            "abstain": 5
+          },
+          "wording": {
+            "total": 12,
+            "correct": 8,
+            "wrong": 0,
+            "abstain": 4
+          },
+          "counter": {
+            "total": 12,
+            "correct": 7,
+            "wrong": 0,
+            "abstain": 5
+          },
+          "other": {
+            "total": 12,
+            "correct": 0,
+            "wrong": 3,
+            "abstain": 9
+          }
+        },
+        "relevant": {
+          "total": 60,
+          "correct": 41,
+          "wrong": 1,
+          "abstain": 18
+        },
+        "derived": {
+          "relevant_coverage": 0.7,
+          "relevant_selective_precision": 0.9761904761904762,
+          "precision_all_offered": 0.9111111111111111,
+          "other_false_positives": 3
+        }
+      },
+      "candidate": {
+        "sha256": "fbc1a6ffbc04b4827ec843db10f65a0f93054895ef41514e5515d8f04f962b3b",
+        "evaluation_sha256": "7223d6655f5997e080a0572354deb8d2beee969e38fc384645984815cbf7ca34",
+        "groups": {
+          "thesis": {
+            "total": 12,
+            "correct": 9,
+            "wrong": 0,
+            "abstain": 3
+          },
+          "scene": {
+            "total": 12,
+            "correct": 9,
+            "wrong": 0,
+            "abstain": 3
+          },
+          "explain": {
+            "total": 12,
+            "correct": 6,
+            "wrong": 1,
+            "abstain": 5
+          },
+          "wording": {
+            "total": 12,
+            "correct": 8,
+            "wrong": 0,
+            "abstain": 4
+          },
+          "counter": {
+            "total": 12,
+            "correct": 7,
+            "wrong": 0,
+            "abstain": 5
+          },
+          "other": {
+            "total": 12,
+            "correct": 0,
+            "wrong": 2,
+            "abstain": 10
+          }
+        },
+        "relevant": {
+          "total": 60,
+          "correct": 39,
+          "wrong": 1,
+          "abstain": 20
+        },
+        "derived": {
+          "relevant_coverage": 0.6666666666666666,
+          "relevant_selective_precision": 0.975,
+          "precision_all_offered": 0.9285714285714286,
+          "other_false_positives": 2
+        }
+      }
+    },
+    {
+      "evaluation_file": "essay_workshop/assistant/intent-sealed-2026-11-22.json",
+      "baseline": {
+        "sha256": "c220a3bb5c68cf5a3706066fc4d8668256c286bd5f76afa4cf4da81c8cc69fa1",
+        "evaluation_sha256": "78baaebc44b7719d74bf24df815705e02bbc58aee1f6ff2dbe1434a1d034f768",
+        "groups": {
+          "thesis": {
+            "total": 20,
+            "correct": 14,
+            "wrong": 1,
+            "abstain": 5
+          },
+          "scene": {
+            "total": 20,
+            "correct": 11,
+            "wrong": 1,
+            "abstain": 8
+          },
+          "explain": {
+            "total": 20,
+            "correct": 17,
+            "wrong": 0,
+            "abstain": 3
+          },
+          "wording": {
+            "total": 20,
+            "correct": 12,
+            "wrong": 3,
+            "abstain": 5
+          },
+          "counter": {
+            "total": 20,
+            "correct": 8,
+            "wrong": 2,
+            "abstain": 10
+          },
+          "other": {
+            "total": 20,
+            "correct": 0,
+            "wrong": 1,
+            "abstain": 19
+          }
+        },
+        "relevant": {
+          "total": 100,
+          "correct": 62,
+          "wrong": 7,
+          "abstain": 31
+        },
+        "derived": {
+          "relevant_coverage": 0.69,
+          "relevant_selective_precision": 0.8985507246376812,
+          "precision_all_offered": 0.8857142857142857,
+          "other_false_positives": 1
+        }
+      },
+      "candidate": {
+        "sha256": "fbc1a6ffbc04b4827ec843db10f65a0f93054895ef41514e5515d8f04f962b3b",
+        "evaluation_sha256": "78baaebc44b7719d74bf24df815705e02bbc58aee1f6ff2dbe1434a1d034f768",
+        "groups": {
+          "thesis": {
+            "total": 20,
+            "correct": 14,
+            "wrong": 2,
+            "abstain": 4
+          },
+          "scene": {
+            "total": 20,
+            "correct": 13,
+            "wrong": 1,
+            "abstain": 6
+          },
+          "explain": {
+            "total": 20,
+            "correct": 15,
+            "wrong": 0,
+            "abstain": 5
+          },
+          "wording": {
+            "total": 20,
+            "correct": 12,
+            "wrong": 2,
+            "abstain": 6
+          },
+          "counter": {
+            "total": 20,
+            "correct": 10,
+            "wrong": 2,
+            "abstain": 8
+          },
+          "other": {
+            "total": 20,
+            "correct": 0,
+            "wrong": 2,
+            "abstain": 18
+          }
+        },
+        "relevant": {
+          "total": 100,
+          "correct": 64,
+          "wrong": 7,
+          "abstain": 29
+        },
+        "derived": {
+          "relevant_coverage": 0.71,
+          "relevant_selective_precision": 0.9014084507042254,
+          "precision_all_offered": 0.8767123287671232,
+          "other_false_positives": 2
+        }
+      }
+    },
+    {
+      "evaluation_file": "essay_workshop/assistant/intent-evaluation.json",
+      "baseline": {
+        "sha256": "c220a3bb5c68cf5a3706066fc4d8668256c286bd5f76afa4cf4da81c8cc69fa1",
+        "evaluation_sha256": "202d1554183127cab3a54f92978863eb6cec83f8ffee85952153dc7a6c70d27b",
+        "groups": {
+          "thesis": {
+            "total": 6,
+            "correct": 5,
+            "wrong": 0,
+            "abstain": 1
+          },
+          "scene": {
+            "total": 6,
+            "correct": 5,
+            "wrong": 0,
+            "abstain": 1
+          },
+          "explain": {
+            "total": 6,
+            "correct": 6,
+            "wrong": 0,
+            "abstain": 0
+          },
+          "wording": {
+            "total": 6,
+            "correct": 6,
+            "wrong": 0,
+            "abstain": 0
+          },
+          "counter": {
+            "total": 6,
+            "correct": 6,
+            "wrong": 0,
+            "abstain": 0
+          },
+          "other": {
+            "total": 6,
+            "correct": 0,
+            "wrong": 0,
+            "abstain": 6
+          }
+        },
+        "relevant": {
+          "total": 30,
+          "correct": 28,
+          "wrong": 0,
+          "abstain": 2
+        },
+        "derived": {
+          "relevant_coverage": 0.9333333333333333,
+          "relevant_selective_precision": 1.0,
+          "precision_all_offered": 1.0,
+          "other_false_positives": 0
+        }
+      },
+      "candidate": {
+        "sha256": "fbc1a6ffbc04b4827ec843db10f65a0f93054895ef41514e5515d8f04f962b3b",
+        "evaluation_sha256": "202d1554183127cab3a54f92978863eb6cec83f8ffee85952153dc7a6c70d27b",
+        "groups": {
+          "thesis": {
+            "total": 6,
+            "correct": 5,
+            "wrong": 0,
+            "abstain": 1
+          },
+          "scene": {
+            "total": 6,
+            "correct": 5,
+            "wrong": 0,
+            "abstain": 1
+          },
+          "explain": {
+            "total": 6,
+            "correct": 6,
+            "wrong": 0,
+            "abstain": 0
+          },
+          "wording": {
+            "total": 6,
+            "correct": 6,
+            "wrong": 0,
+            "abstain": 0
+          },
+          "counter": {
+            "total": 6,
+            "correct": 5,
+            "wrong": 0,
+            "abstain": 1
+          },
+          "other": {
+            "total": 6,
+            "correct": 0,
+            "wrong": 0,
+            "abstain": 6
+          }
+        },
+        "relevant": {
+          "total": 30,
+          "correct": 27,
+          "wrong": 0,
+          "abstain": 3
+        },
+        "derived": {
+          "relevant_coverage": 0.9,
+          "relevant_selective_precision": 1.0,
+          "precision_all_offered": 1.0,
+          "other_false_positives": 0
+        }
+      }
+    },
+    {
+      "evaluation_file": "essay_workshop/assistant/intent-exam-2026-11-20.json",
+      "baseline": {
+        "sha256": "c220a3bb5c68cf5a3706066fc4d8668256c286bd5f76afa4cf4da81c8cc69fa1",
+        "evaluation_sha256": "2568fc1f501e23f88f311ac33118815170a85125748634d6d86d4f5c011fef9d",
+        "groups": {
+          "explain": {
+            "total": 8,
+            "correct": 6,
+            "wrong": 0,
+            "abstain": 2
+          },
+          "other": {
+            "total": 8,
+            "correct": 0,
+            "wrong": 1,
+            "abstain": 7
+          },
+          "counter": {
+            "total": 8,
+            "correct": 4,
+            "wrong": 1,
+            "abstain": 3
+          },
+          "wording": {
+            "total": 8,
+            "correct": 5,
+            "wrong": 1,
+            "abstain": 2
+          },
+          "thesis": {
+            "total": 8,
+            "correct": 5,
+            "wrong": 0,
+            "abstain": 3
+          },
+          "scene": {
+            "total": 8,
+            "correct": 4,
+            "wrong": 0,
+            "abstain": 4
+          }
+        },
+        "relevant": {
+          "total": 40,
+          "correct": 24,
+          "wrong": 2,
+          "abstain": 14
+        },
+        "derived": {
+          "relevant_coverage": 0.65,
+          "relevant_selective_precision": 0.9230769230769231,
+          "precision_all_offered": 0.8888888888888888,
+          "other_false_positives": 1
+        }
+      },
+      "candidate": {
+        "sha256": "fbc1a6ffbc04b4827ec843db10f65a0f93054895ef41514e5515d8f04f962b3b",
+        "evaluation_sha256": "2568fc1f501e23f88f311ac33118815170a85125748634d6d86d4f5c011fef9d",
+        "groups": {
+          "explain": {
+            "total": 8,
+            "correct": 6,
+            "wrong": 0,
+            "abstain": 2
+          },
+          "other": {
+            "total": 8,
+            "correct": 0,
+            "wrong": 1,
+            "abstain": 7
+          },
+          "counter": {
+            "total": 8,
+            "correct": 4,
+            "wrong": 1,
+            "abstain": 3
+          },
+          "wording": {
+            "total": 8,
+            "correct": 6,
+            "wrong": 1,
+            "abstain": 1
+          },
+          "thesis": {
+            "total": 8,
+            "correct": 4,
+            "wrong": 1,
+            "abstain": 3
+          },
+          "scene": {
+            "total": 8,
+            "correct": 4,
+            "wrong": 0,
+            "abstain": 4
+          }
+        },
+        "relevant": {
+          "total": 40,
+          "correct": 24,
+          "wrong": 3,
+          "abstain": 13
+        },
+        "derived": {
+          "relevant_coverage": 0.675,
+          "relevant_selective_precision": 0.8888888888888888,
+          "precision_all_offered": 0.8571428571428571,
+          "other_false_positives": 1
+        }
+      }
+    },
+    {
+      "evaluation_file": "essay_workshop/assistant/intent-exam-2026-11-21.json",
+      "baseline": {
+        "sha256": "c220a3bb5c68cf5a3706066fc4d8668256c286bd5f76afa4cf4da81c8cc69fa1",
+        "evaluation_sha256": "f11f12a3ba2de1afd4c65f79f8df9a202c4472b942991268d742c05d86bfb156",
+        "groups": {
+          "thesis": {
+            "total": 6,
+            "correct": 4,
+            "wrong": 0,
+            "abstain": 2
+          },
+          "scene": {
+            "total": 6,
+            "correct": 4,
+            "wrong": 0,
+            "abstain": 2
+          },
+          "explain": {
+            "total": 6,
+            "correct": 4,
+            "wrong": 0,
+            "abstain": 2
+          },
+          "wording": {
+            "total": 6,
+            "correct": 5,
+            "wrong": 0,
+            "abstain": 1
+          },
+          "counter": {
+            "total": 6,
+            "correct": 4,
+            "wrong": 0,
+            "abstain": 2
+          },
+          "other": {
+            "total": 6,
+            "correct": 0,
+            "wrong": 1,
+            "abstain": 5
+          }
+        },
+        "relevant": {
+          "total": 30,
+          "correct": 21,
+          "wrong": 0,
+          "abstain": 9
+        },
+        "derived": {
+          "relevant_coverage": 0.7,
+          "relevant_selective_precision": 1.0,
+          "precision_all_offered": 0.9545454545454546,
+          "other_false_positives": 1
+        }
+      },
+      "candidate": {
+        "sha256": "fbc1a6ffbc04b4827ec843db10f65a0f93054895ef41514e5515d8f04f962b3b",
+        "evaluation_sha256": "f11f12a3ba2de1afd4c65f79f8df9a202c4472b942991268d742c05d86bfb156",
+        "groups": {
+          "thesis": {
+            "total": 6,
+            "correct": 4,
+            "wrong": 1,
+            "abstain": 1
+          },
+          "scene": {
+            "total": 6,
+            "correct": 4,
+            "wrong": 0,
+            "abstain": 2
+          },
+          "explain": {
+            "total": 6,
+            "correct": 4,
+            "wrong": 0,
+            "abstain": 2
+          },
+          "wording": {
+            "total": 6,
+            "correct": 5,
+            "wrong": 0,
+            "abstain": 1
+          },
+          "counter": {
+            "total": 6,
+            "correct": 4,
+            "wrong": 0,
+            "abstain": 2
+          },
+          "other": {
+            "total": 6,
+            "correct": 0,
+            "wrong": 1,
+            "abstain": 5
+          }
+        },
+        "relevant": {
+          "total": 30,
+          "correct": 21,
+          "wrong": 1,
+          "abstain": 8
+        },
+        "derived": {
+          "relevant_coverage": 0.7333333333333333,
+          "relevant_selective_precision": 0.9545454545454546,
+          "precision_all_offered": 0.9130434782608695,
+          "other_false_positives": 1
+        }
+      }
+    },
+    {
+      "evaluation_file": "essay_workshop/assistant/intent-blind-2026-11-21.json",
+      "baseline": {
+        "sha256": "c220a3bb5c68cf5a3706066fc4d8668256c286bd5f76afa4cf4da81c8cc69fa1",
+        "evaluation_sha256": "1b4e85441a66dc12d34f3e20c3dae42aacdf8a7755d79c5b65812203ed4be0c8",
+        "groups": {
+          "thesis": {
+            "total": 4,
+            "correct": 1,
+            "wrong": 0,
+            "abstain": 3
+          },
+          "scene": {
+            "total": 4,
+            "correct": 2,
+            "wrong": 0,
+            "abstain": 2
+          },
+          "explain": {
+            "total": 4,
+            "correct": 2,
+            "wrong": 0,
+            "abstain": 2
+          },
+          "wording": {
+            "total": 4,
+            "correct": 2,
+            "wrong": 0,
+            "abstain": 2
+          },
+          "counter": {
+            "total": 4,
+            "correct": 3,
+            "wrong": 0,
+            "abstain": 1
+          },
+          "other": {
+            "total": 4,
+            "correct": 0,
+            "wrong": 1,
+            "abstain": 3
+          }
+        },
+        "relevant": {
+          "total": 20,
+          "correct": 10,
+          "wrong": 0,
+          "abstain": 10
+        },
+        "derived": {
+          "relevant_coverage": 0.5,
+          "relevant_selective_precision": 1.0,
+          "precision_all_offered": 0.9090909090909091,
+          "other_false_positives": 1
+        }
+      },
+      "candidate": {
+        "sha256": "fbc1a6ffbc04b4827ec843db10f65a0f93054895ef41514e5515d8f04f962b3b",
+        "evaluation_sha256": "1b4e85441a66dc12d34f3e20c3dae42aacdf8a7755d79c5b65812203ed4be0c8",
+        "groups": {
+          "thesis": {
+            "total": 4,
+            "correct": 1,
+            "wrong": 0,
+            "abstain": 3
+          },
+          "scene": {
+            "total": 4,
+            "correct": 1,
+            "wrong": 0,
+            "abstain": 3
+          },
+          "explain": {
+            "total": 4,
+            "correct": 2,
+            "wrong": 0,
+            "abstain": 2
+          },
+          "wording": {
+            "total": 4,
+            "correct": 2,
+            "wrong": 0,
+            "abstain": 2
+          },
+          "counter": {
+            "total": 4,
+            "correct": 3,
+            "wrong": 0,
+            "abstain": 1
+          },
+          "other": {
+            "total": 4,
+            "correct": 0,
+            "wrong": 2,
+            "abstain": 2
+          }
+        },
+        "relevant": {
+          "total": 20,
+          "correct": 9,
+          "wrong": 0,
+          "abstain": 11
+        },
+        "derived": {
+          "relevant_coverage": 0.45,
+          "relevant_selective_precision": 1.0,
+          "precision_all_offered": 0.8181818181818182,
+          "other_false_positives": 2
+        }
+      }
+    }
+  ],
+  "sealed_gates": {
+    "correct_increase_at_least_10_of_100": false,
+    "relevant_wrong_not_increased": true,
+    "other_false_positives_at_most_1_of_20": false,
+    "other_false_positives_not_worse_than_baseline": false,
+    "precision_all_offered_at_least_90_percent": false
+  },
+  "decision": "REJECT",
+  "sealed_control_policy": "Results opened once after freezing the candidate. The closed control is not available for further tuning; reuse only as an explicitly historical regression set.",
+  "limitations": [
+    "Synthetic request classification only; not an essay-grading or student-learning outcome evaluation.",
+    "No individual evaluation texts or per-case predictions are included.",
+    "Canonical training data and model have not been changed."
+  ],
+  "cost_accounting": {
+    "currency": "USD",
+    "basis": "Response usage and the fixed rates recorded for this authorized experiment; not a Billing or credit-balance reconciliation",
+    "rates_per_million_tokens": {
+      "gpt-4.1": {
+        "input": "2",
+        "output": "8"
+      },
+      "gpt-4.1-mini": {
+        "input": "0.4",
+        "output": "1.6"
+      }
+    },
+    "completed_corrected_requests": 11,
+    "corrected_usage_cost_usd": "0.1035636",
+    "successful_diagnostic_cost_usd": "0.000114",
+    "known_usage_cost_usd": "0.1036776",
+    "original_uncertain_reserve_usd": "0.044762",
+    "failed_diagnostic_retained_reserve_usd": "0.012",
+    "retained_uncertain_reserves_usd": "0.056762",
+    "known_usage_plus_reserves_usd": "0.1604396",
+    "authorized_cap_usd": "0.50",
+    "corrected_ledger_cap_usd": "0.44",
+    "planned_upper_bound_usd": "0.496876",
+    "source_sha256": {
+      "bonus_run_20261122/ledger.json": "80ca60c223e033db92873bfab38129472da53ab3818996b903d97751c4dffba0",
+      "bonus_run_20261122/diagnostic.json": "03e85e33f07cedfda003a86b8afc303e4af40332cc10bf8882212befdec8aaf7",
+      "bonus_run_20261122/diagnostic-json-mode.json": "d0285241882dd6ce245b2a48b840ec92eb96d0f389d6392ba70ef1276f7d365e",
+      "bonus_run_20261122_corrected/ledger.json": "ac4c5203c89195d0aea6e2e0aa13e739a5924b1bc857bce3dabdd8f85becf226"
+    },
+    "corrected_requests": [
+      {
+        "name": "generate-thesis",
+        "status": "completed",
+        "model": "gpt-4.1-2025-04-14",
+        "input_tokens": 536,
+        "output_tokens": 1166,
+        "cost_usd": "0.0104"
+      },
+      {
+        "name": "generate-scene",
+        "status": "completed",
+        "model": "gpt-4.1-2025-04-14",
+        "input_tokens": 534,
+        "output_tokens": 1250,
+        "cost_usd": "0.011068"
+      },
+      {
+        "name": "generate-explain",
+        "status": "completed",
+        "model": "gpt-4.1-2025-04-14",
+        "input_tokens": 544,
+        "output_tokens": 1480,
+        "cost_usd": "0.012928"
+      },
+      {
+        "name": "generate-wording",
+        "status": "completed",
+        "model": "gpt-4.1-2025-04-14",
+        "input_tokens": 534,
+        "output_tokens": 1305,
+        "cost_usd": "0.011508"
+      },
+      {
+        "name": "generate-counter",
+        "status": "completed",
+        "model": "gpt-4.1-2025-04-14",
+        "input_tokens": 526,
+        "output_tokens": 1189,
+        "cost_usd": "0.010564"
+      },
+      {
+        "name": "generate-other",
+        "status": "completed",
+        "model": "gpt-4.1-2025-04-14",
+        "input_tokens": 543,
+        "output_tokens": 870,
+        "cost_usd": "0.008046"
+      },
+      {
+        "name": "review-0",
+        "status": "completed",
+        "model": "gpt-4.1-mini-2025-04-14",
+        "input_tokens": 3297,
+        "output_tokens": 2598,
+        "cost_usd": "0.0054756"
+      },
+      {
+        "name": "review-64",
+        "status": "completed",
+        "model": "gpt-4.1-mini-2025-04-14",
+        "input_tokens": 3743,
+        "output_tokens": 1984,
+        "cost_usd": "0.0046716"
+      },
+      {
+        "name": "review-128",
+        "status": "completed",
+        "model": "gpt-4.1-mini-2025-04-14",
+        "input_tokens": 2966,
+        "output_tokens": 2191,
+        "cost_usd": "0.004692"
+      },
+      {
+        "name": "generate-supplement",
+        "status": "completed",
+        "model": "gpt-4.1-2025-04-14",
+        "input_tokens": 537,
+        "output_tokens": 2240,
+        "cost_usd": "0.018994"
+      },
+      {
+        "name": "review-192",
+        "status": "completed",
+        "model": "gpt-4.1-mini-2025-04-14",
+        "input_tokens": 2973,
+        "output_tokens": 2517,
+        "cost_usd": "0.0052164"
+      }
+    ],
+    "raw_receipts": "Stored separately by the owner; not included in the repository report"
+  },
+  "reproducibility": {
+    "result": "PASS",
+    "method": "One deterministic in-memory verification after the formal evaluation, using the same frozen input, seed, runtime and 18 epochs; no model file written or selected",
+    "sha256": "fbc1a6ffbc04b4827ec843db10f65a0f93054895ef41514e5515d8f04f962b3b",
+    "examples": 596,
+    "features": 2100,
+    "epochs": 18,
+    "seconds": 0.589,
+    "python": "3.12.14",
+    "node": "v24.22.3",
+    "source_sha256": {
+      "essay_workshop/assistant/train_intents.py": "4f96ab901bc106e5b151341938132a5a86f19929c1e69e6eac6ff95152df3444",
+      "essay_workshop/assistant/intent-runtime.js": "d7abdc7632c26bb62b30afd5d65e09b3c406b54d67124c2c693134d997c39346",
+      "essay_workshop/assistant/intent-seed-2026-11-20.json": "9ed5ee06860f99643e9b23589f431e3b21deb586141fef510da0da74f70b126a",
+      "essay_workshop/assistant/intent-training-candidate-2026-11-22.json": "ed1d7d56ea367eece4fa9c9dbdc1430d3ab39a10be262e77c2f436cead8bd65c"
+    }
+  },
+  "coach_compatibility": {
+    "source_tests": [
+      "tests/essay-workshop-worldview.test.cjs",
+      "tests/essay-answer-feedback.test.cjs"
+    ],
+    "method": "Existing unmodified Node tests run in isolated temporary copies with the exact baseline or frozen candidate; VM observation only",
+    "baseline": {
+      "tests": 16,
+      "passed": 16,
+      "failed": 0,
+      "exit_code": 0,
+      "coach_calls": 74,
+      "classify_calls": 4,
+      "intent_action_returns": 1,
+      "observed_labels": {
+        "explain": 1,
+        "null": 3
+      }
+    },
+    "candidate": {
+      "tests": 16,
+      "passed": 16,
+      "failed": 0,
+      "exit_code": 0,
+      "coach_calls": 74,
+      "classify_calls": 4,
+      "intent_action_returns": 1,
+      "observed_labels": {
+        "scene": 1,
+        "null": 3
+      }
+    },
+    "limitations": [
+      "Only one intent-to-action return is covered in each run; five educational actions are not comprehensively tested.",
+      "Existing assertions tolerate the observed explain/scene difference and do not establish pedagogical improvement.",
+      "The answer-feedback tests do not use the intent model.",
+      "No browser, live API, pupil data or human teacher validation."
+    ]
+  },
+  "offline_runner_tests": {
+    "command": "python3 -B -m unittest discover -s tests -p test_bonus_training.py -v",
+    "tests": 7,
+    "passed": 7,
+    "failed": 0,
+    "exit_code": 0,
+    "network": "Mocked; invented credentials in temporary files only"
+  },
+  "experimental_artifacts": {
+    "candidate-model.js": "essay_workshop/assistant/experiments/bonus-2026-11-22/candidate-model.js",
+    "frozen-candidate.json": "essay_workshop/assistant/experiments/bonus-2026-11-22/frozen-candidate.json"
+  },
+  "canonical_unchanged": {
+    "result": "PASS",
+    "base": "2f2e670aabd34e4a004bf090e396992234abbf77",
+    "files": [
+      "essay_workshop/intent-model.js",
+      "essay_workshop/assistant/intent-training.json",
+      "essay_workshop/coach.js",
+      "exam_tracks.py",
+      "essay_workshop/personal_package.py"
+    ]
+  }
+}

@@ -67,12 +67,86 @@ test('a causal connector and a proposed motive cannot establish that an argument
 });
 
 test('a book-specific factual comparison stays with the selected book',()=>{
-  const passage='Пирогов лично вручает Мерцалову деньги и заставляет его расписаться в получении.';
+  const passage='Пирогов лично вручает Мерцалову крупные кредитные билеты.';
   const res=review('episode',passage);
   assert.equal(res.kind,'check-source');assert.match(res.observation,/блюдцем/u);
   assert.equal(review('episode',passage,{work:{title:'Моя книга'}}).kind,'reader-check');
   for (const text of ['А если бы врач вручил деньги лично?', 'Доктор не передавал деньги лично.', 'Доктор не стал лично передавать деньги, Мерцалов обнаружил их под блюдцем.']) {
     assert.notEqual(review('episode',text).kind,'check-source');
+  }
+});
+
+test('the large-banknote comparison selects its own sentence despite a separate negation',()=>{
+  for (const stage of ['episode','draft']) {
+    for (const sentence of [
+      'Пирогов вручил Мерцалову крупные кредитные билеты.',
+      'Пирогов дал Мерцалову крупные кредитные билеты в руки.',
+      'Пирогов дал в руки Мерцалову несколько крупных кредитных билетов.',
+      'Пирогов вручил Мерцалову крупные кредитные билеты на еду.'
+    ]) {
+      for (const text of [sentence+' Семья не ожидала помощи.', 'Семья не ожидала помощи. '+sentence]) {
+        const result=review(stage,text);
+        assert.equal(result.kind,'check-source',stage+': '+text);
+        assert.equal(result.excerpt,sentence);
+        assert.match(result.observation,/под чайным блюдцем/u);
+        assert.match(result.next,/когда он увидел крупные билеты/u);
+        assert.notEqual(review(stage,text,{work:{id:'student'}}).kind,'check-source');
+      }
+    }
+  }
+});
+
+test('a negated, hypothetical or corrected banknote account is not turned into a handover claim',()=>{
+  for (const stage of ['episode','draft']) {
+    for (const text of [
+      'Пирогов не вручил Мерцалову крупные кредитные билеты.',
+      'Пирогов не дал Мерцалову крупные кредитные билеты в руки.',
+      'Нельзя утверждать, что Пирогов вручил Мерцалову крупные кредитные билеты.',
+      'Неверно писать, что Пирогов вручил Мерцалову крупные кредитные билеты.',
+      'Ошибочно считать, что Пирогов вручил Мерцалову крупные кредитные билеты.',
+      'Это ошибка: Пирогов вручил Мерцалову крупные кредитные билеты.',
+      'Если бы Пирогов лично вручил крупные кредитные билеты, Мерцалов мог бы смутиться.',
+      'Разве Пирогов лично вручил Мерцалову крупные кредитные билеты?',
+      '«Пирогов лично вручил крупные кредитные билеты» — это спорная запись.',
+      'Пирогов дал совет. Позже Мерцалов взял найденные крупные кредитные билеты в руки.',
+      'Пирогов дал совет, а крупные кредитные билеты Мерцалов взял в руки позже.',
+      'Вернувшись из коридора, Мерцалов нашёл крупные кредитные билеты под блюдцем.'
+    ]) {
+      const result=review(stage,text);
+      assert.notEqual(result.kind,'check-source',stage+': '+text);
+      assert.notEqual(result.kind,'money-episode',stage+': '+text);
+    }
+  }
+});
+
+test('the earlier three roubles for food remain distinct from the large banknotes',()=>{
+  for (const stage of ['episode','draft']) {
+    for (const text of [
+      'Пирогов лично передал Мерцалову деньги — три рубля на еду.',
+      'Пирогов дал Мерцалову деньги в руки: 3 рубля на чай и сахар.',
+      'Пирогов вручил Мерцалову деньги на продукты.',
+      'Пирогов дал Мерцалову деньги.',
+      'Пирогов лично передал Мерцалову три рубля, а крупные кредитные билеты тот нашёл после его ухода.',
+      'На три рубля, полученные от доктора, Мерцалов купил еды.'
+    ]) {
+      const result=review(stage,text);
+      assert.notEqual(result.kind,'check-source',stage+': '+text);
+      assert.notEqual(result.kind,'money-episode',stage+': '+text);
+    }
+    const ambiguous='Пирогов лично вручил Мерцалову деньги.';
+    const result=review(stage,ambiguous);
+    assert.equal(result.kind,'money-episode');
+    assert.equal(result.excerpt,ambiguous);
+    assert.match(result.observation,/два эпизода/u);
+    assert.match(result.observation,/три рубля/u);
+    assert.match(result.next,/Уточни, о каких деньгах/u);
+    assert.doesNotMatch(result.observation+' '+result.next,/ошибк|неверн|не давал|не вручил/iu);
+    const banknotes='Пирогов вручил Мерцалову крупные кредитные билеты.';
+    assert.equal(review(stage,'Пирогов передал Мерцалову три рубля на еду. '+banknotes).excerpt,banknotes);
+    const mixed='Пирогов дал Мерцалову три рубля, а затем лично вручил крупные кредитные билеты.';
+    const mixedResult=review(stage,mixed);
+    assert.equal(mixedResult.kind,'check-source');
+    assert.equal(mixedResult.excerpt,mixed);
   }
 });
 

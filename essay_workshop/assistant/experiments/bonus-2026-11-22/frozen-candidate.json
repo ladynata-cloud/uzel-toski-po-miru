@@ -1,0 +1,12 @@
+{
+  "frozen_utc": "2026-11-21T18:54:04.446688+00:00",
+  "base": "2f2e670aabd34e4a004bf090e396992234abbf77",
+  "candidate_sha256": "fbc1a6ffbc04b4827ec843db10f65a0f93054895ef41514e5515d8f04f962b3b",
+  "training_sha256": "ed1d7d56ea367eece4fa9c9dbdc1430d3ab39a10be262e77c2f436cead8bd65c",
+  "controls": {
+    "intent-control-2026-11-22.json": "7223d6655f5997e080a0572354deb8d2beee969e38fc384645984815cbf7ca34",
+    "intent-sealed-2026-11-22.json": "78baaebc44b7719d74bf24df815705e02bbc58aee1f6ff2dbe1434a1d034f768"
+  },
+  "epochs": 18,
+  "closed_control_opened": false
+}
