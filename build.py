@@ -223,7 +223,7 @@ home = f'''<div class="wrap home-wrap">
     <p class="home-kicker">Литературная мастерская</p>
     <h1>Узел тоски<br>по миру</h1>
     <p class="home-lead">Читаем литературу в диалоге с православной мыслью. Возвращаемся к реплике, детали или поступку героя, чтобы понять, на чём держится наше прочтение.</p>
-    <div class="home-entry-links"><a href="/shkola/">Литература по классам</a><a href="#masterskaya">Выбрать занятие</a></div>
+    <div class="home-entry-links"><a href="{ESSAY_WORKSHOP}">Тренажёр итогового сочинения</a><a href="/shkola/">Литература по классам</a><a href="#masterskaya">Выбрать занятие</a></div>
   </div>
   {hero_artwork()}
 </header>

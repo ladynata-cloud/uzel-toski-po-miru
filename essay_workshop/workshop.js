@@ -5,6 +5,7 @@
   const instruction = JSON.parse(document.getElementById('ew-system').textContent);
   const panel = root.querySelector('#ew-current');
   const menu = root.querySelector('#ew-steps');
+  const practiceScreen = root.querySelector('#ew-practice-screen');
   const mode = root.querySelector('#ew-mode');
   const storageKey = 'uzel.essay-workshop.v1';
   const steps = [['start','Старт'],['topic','Тема'],['thesis','Тезис'],['episode','Эпизод'],['link','Аргумент'],['draft','Черновик'],['review','Самопроверка'],['drills','Упражнения']];
@@ -14,7 +15,7 @@
   steps.push(['library','Книжная полка'],['shelf','Моя полка'],['themeAtlas','Библиотека тем']);
   steps.push(['rehearsal','Репетиция']);
   steps.push(['thesisLab','Уточнить тезис']);
-  steps.push(['draftReader','Разметить черновик'],['paragraphTrial','Абзац на новую тему']);
+  steps.push(['draftReader','Разметить черновик'],['paragraphTrial','Абзац на новую тему'],['writingPractice','От темы до вывода']);
   const routes = {quick:'Собрать аргумент',full:'Написать сочинение',edit:'Разобрать мой черновик',draftReader:'Разметить мой черновик'};
   const checklist = [
     ['topic','Тема','Я могу показать фразу, в которой отвечаю на вопрос темы.'],
@@ -129,25 +130,32 @@
     if(page==='read')state.readingFromLibrary=fromLibrary;
     if (!steps.some(([id])=>id===page)) page = 'start';
     if (page==='draftReader') state.route='draftReader';
+    if (page === 'start' && state.page !== 'start') state.previousPage = state.page;
     state.page = page;
     render(); save();
-    document.getElementById('ew-title')?.focus({preventScroll:true});
-    panel.scrollIntoView({block:'nearest'});
+    const currentScreen = page === 'writingPractice' ? practiceScreen : panel;
+    const title = currentScreen.querySelector('h2');
+    title?.focus({preventScroll:true});
+    (title || currentScreen).scrollIntoView({block:'nearest'});
   }
   function routeButton(id,name,summary) {
-    return '<button class="ew-route" type="button" data-act="route-'+id+'"><span><b>'+h(name)+'</b><small>'+h(summary)+'</small></span><em aria-hidden="true">→</em></button>';
+    return '<button class="ew-route" type="button" data-act="route-'+id+'"><b>'+h(name)+'</b><small>'+h(summary)+'</small></button>';
   }
   function start() {
-    return '<div data-ew-entry>'+heading('С чего начнём?')+'<div class="ew-entry-choices">'+
-      routeButton('read','Смутно помню книгу','Прочитай отрывок или вспомни сцену по короткому пересказу. Запиши, что тебе запомнилось.')+
-      routeButton('draftReader','У меня есть черновик','Принеси хотя бы один свой абзац. Отметь событие и свою мысль, затем попробуй одну правку.')+'</div>'+
-      '<div class="ew-entry-return ew-actions">'+'<a class="ew-library-entry" href="#knizhnaya-polka" data-act="page-library">Найти книгу на книжной полке</a>'+button('route-themeAtlas','Выбрать тему сочинения')+button('page-shelf','Открыть мою полку сцен')+'</div>'+
-      '<h3 class="ew-entry-heading">Другие занятия</h3><div class="ew-entry-tools">'+
-      button('route-quick','Подобрать аргумент к теме')+button('route-thesisLab','Уточнить свой тезис')+
-      button('route-drills','Потренировать отдельную правку')+button('route-edit','Открыть редактор моей работы')+
-      button('route-full','Написать целое сочинение')+button('route-rehearsal','Репетиция без подсказок')+'</div></div>'+
+    const previous = steps.find(([id]) => id !== 'start' && id === state.previousPage);
+    const resume = previous ? '<div class="ew-resume">'+button('page-'+previous[0], 'Вернуться к занятию «'+previous[1]+'»')+'</div>' : '';
+    return '<div data-ew-entry>'+heading('С чего хочешь начать?')+resume+
+      '<div class="ew-entry-choices">'+
+      routeButton('read','Смутно помню книгу','Вспомни один эпизод и сохрани деталь для своего аргумента.')+
+      routeButton('draftReader','У меня есть черновик','Вставь свой абзац, найди в нём мысль и попробуй одну правку.')+
+      routeButton('full','Хочу написать сочинение целиком','Выбери тему, собери план и открой лист для текста.')+'</div>'+
+      '<div class="ew-entry-return"><a href="#knizhnaya-polka" data-act="page-library">Найти книгу на книжной полке</a><a href="#temy-sochineniya">Выбрать тему сочинения</a></div>'+
+      '<p class="ew-small ew-entry-store">Записи сохраняются в этом браузере, если он разрешает сохранение. Копию сочинения можно скачать в разделе «Самопроверка».</p>'+
+      '<h3 class="ew-entry-heading">Продолжить подготовку</h3><div class="ew-entry-tools">'+
+      button('page-shelf','Открыть мою полку сцен')+button('route-quick','Подобрать аргумент к теме')+button('route-thesisLab','Уточнить свой тезис')+
+      button('route-drills','Потренировать отдельную правку')+button('route-edit','Открыть редактор моей работы')+button('route-rehearsal','Репетиция без подсказок')+'</div></div>'+
       fullReviewControls(false)+
-      '<p class="ew-small"><a href="https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/proverka-gigachat.zip">Скачать мастерскую, темы и проверку сочинения для дома (ZIP)</a></p>'+
+      '<p class="ew-small"><a href="https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/proverka-gigachat.zip">Скачать мастерскую для занятий без интернета (ZIP)</a>. Распакуй архив и открой practice.html.</p>'+
       '<details><summary>Мне нужна подсказка к одной фразе</summary><p><a href="https://usel-toski-po-miru.art/k-sochineniyu/itogovoe/pomoshchnik/trenazher-gigachat.zip">Скачать домашнюю версию с диалогом по выделенному фрагменту</a></p></details>';
   }
   function pageAfterTopic() {
@@ -751,6 +759,15 @@
     menu.innerHTML=steps.map(([id,title],i)=>'<button type="button" data-act="page-'+id+'"'+(state.page===id?' aria-current="step"':'')+'><span aria-hidden="true">'+(i>0&&i<7?i+' ·':'')+'</span>'+title+'</button>').join('');
     mode.value=state.mode==='orthodox'?'orthodox':'secular';
     root.classList.toggle('ew-in-rehearsal',state.page==='rehearsal');
+    const writingPractice = state.page === 'writingPractice';
+    practiceScreen.hidden = !writingPractice;
+    panel.hidden = writingPractice;
+    root.querySelector('#ew-back-start').hidden = state.page === 'start';
+    root.querySelector('#ew-start-offer').hidden = state.page !== 'start';
+    if (writingPractice) {
+      panel.replaceChildren();
+      return;
+    }
     const pages={start,topic:topicScreen,review,drills,read:readingScreen,library:libraryScreen,shelf:()=>EssayShelf.render(shelfContext()),rehearsal:EssayRehearsal.render,thesisLab};
     pages.themeAtlas=()=>EssayThemeAtlas.render(catalog,sectionNames);
     pages.draftReader=()=>EssayDraftReader.render(draftReaderContext());
@@ -759,7 +776,7 @@
     if (state.page==='draftReader') EssayDraftReader.mount(panel,draftReaderContext());
     if (state.page==='paragraphTrial') EssayParagraphTrial.mount(panel,{record:state.paragraphTrial,save,go});
     if (state.page==='library') updateLibrary();
-    if (state.page==='themeAtlas') EssayThemeAtlas.mount(panel,catalog,sectionNames,selectAtlasTopic);
+    if (state.page==='themeAtlas') EssayThemeAtlas.mount(panel,catalog,sectionNames,selectAtlasTopic,{record:state.topicPlanner ||= {},save,openDraft:plan=>EssayThemePlanner.openDraft(state,plan,go)});
     if (state.page==='shelf') EssayShelf.mount(panel,shelfContext());
     if (state.page==='thesisLab') EssayThesisLab.mount(panel,{record:note().thesisLab,save});
     if (state.page==='rehearsal') EssayRehearsal.mount(panel,catalog,reviewRehearsal);
@@ -896,6 +913,7 @@
       const n=note(), target='proverka-sochineniya.html';
       const selected=n.shelfChoice?.bookId || n.work;
       const data={topic:topic().title,essay:n.draft};
+      if(n.draftHeading && n.draftHeading===EssayCoach.firstDraftLine(n.draft)) data.draftHeading=n.draftHeading;
       if(catalog.works.some(w=>w.id===selected)) data.cardIds=[selected];
       if(action==='export-review-draft'){
         const url=URL.createObjectURL(new Blob([JSON.stringify({format:'uzel-essay-review.1',...data})],{type:'application/json'}));
@@ -1011,7 +1029,11 @@
   // A shared exercise opens with the learner's own saved answer for that card.
   function openLinkedExercise() {
     const drill=catalog.drills.find(d=>location.hash==='#uprazhnenie-'+d.id);
-    if (location.hash==='#temy-sochineniya') {
+    if (location.hash==='#ot-temy-do-vyvoda') {
+      go('writingPractice');
+    } else if (location.hash==='#essay-workshop') {
+      go('start');
+    } else if (location.hash==='#temy-sochineniya') {
       go('themeAtlas');
     } else if (location.hash==='#knizhnaya-polka') {
       go('library');

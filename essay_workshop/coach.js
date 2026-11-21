@@ -302,6 +302,23 @@ const EssayCoach = (() => {
     return '';
   }
 
+  function asksMeaningOfKnownPassage(raw, words) {
+    // A pupil can remember exact words and still need help interpreting them.
+    const knowsPassage = /помню|помним|знаю|знаем|запомнил|выписал|сверил|выучил|перечитал/u;
+    const literaryContext = /сцен|эпизод|персонаж|геро|поступ|реплик|автор|детал|финал|строф|тезис|рассказ|монолог|отрывок|книг/u;
+    if (!/дословн|наизусть|слово в слово/u.test(words) || !knowsPassage.test(words) || !literaryContext.test(words)) return false;
+
+    const parts = raw.split(/[.!?;]+|(?:^|\s)(?:но|зато|а)\s+|,\s*(?=(?:теперь |сначала )?(?:хочу|помоги|подскажи|найди) )/iu);
+    const request = normalized(parts.filter(part => part.trim()).pop());
+    const sourceQuestion = /кто (?:[а-я]+ ){0,3}(?:сказал|говорил|произнес|автор)|кому принадлежит|в какой главе|как (?:именно )?звуч|как (?:найти|проверить)|где (?:это |именно )?(?:найти|сказано|написано)|точн[а-я]+ цитат|процитирова|цитировать/u;
+    if (sourceQuestion.test(request)) return false;
+
+    const asks = /(?:^| )(?:как|что|чем|почему|зачем|помоги|подскажи|хочу|нужно|не (?:понимаю|знаю|могу|получается))(?= |$)/u;
+    const asksInterpretation = /объясн[а-я]* .{0,30}(?:смысл|значени|роль|важ|зачем|почему)|что .{0,42}(?:говорит|показывает) о |зачем автор |(?:почему|чем|зачем) .{0,38}(?:важн|значим)/u;
+    const asksLink = /(?:связать|увязать|сопоставить|связь|обоснов[а-я]*|доказыва[а-я]*|подтвержда[а-я]*) .{0,44}(?:тезис|мысл|вывод|темой)/u;
+    return asks.test(request) && (asksInterpretation.test(request) || asksLink.test(request));
+  }
+
   function dialogueReply(context = {}, message = '', previousTurn = null) {
     const raw = String(message ?? '').trim();
     const words = normalized(raw);
@@ -318,6 +335,11 @@ const EssayCoach = (() => {
 
     const perspective = readingPerspective(context, raw);
     if (perspective) return perspective;
+
+    if (asksMeaningOfKnownPassage(raw, words)) {
+      return repeated ? 'Какие слова или действия в этом месте подсказали тебе такой вывод? Назови одну деталь и попробуй объяснить её значение своими словами.'
+        : intentFeedback('explain', context);
+    }
 
     if (/(?:дв[аеух]|два|две|втор|одн|один|количеств|сколько|\d+).*?(?:книг|книж|литературн|аргумент|пример|произведени|текст)|(?:книг|аргумент|произведени|пример).*?(?:дв[аеух]|сколько)/u.test(words) && (asks || /обязательн|требую|нуж(?:но|ны|на)|хватит/u.test(words))) {
       return 'Достаточно одного опубликованного произведения. Выбери из него эпизод, который действительно помогает обосновать твою мысль. ' + (repeated ? 'Какую сцену из этой книги ты лучше всего помнишь?' : 'Как поступок героя связан с темой?');

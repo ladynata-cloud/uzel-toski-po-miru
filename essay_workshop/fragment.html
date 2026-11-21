@@ -1,7 +1,13 @@
 <style>{{ESSAY_CSS}}</style>
 <div class="ew" id="essay-workshop" data-essay-assistant-origin="{{ESSAY_ORIGIN}}">
   <header class="ew-head">
-    <div><p class="ew-kicker">Узел тоски по миру <span> / </span> 11 класс</p><h1>Итоговое сочинение</h1><p>Выбери книгу и предложи своё прочтение. Можно начать с одной фразы или принести целый черновик.</p></div>
+    <div><p class="ew-kicker">Узел тоски по миру <span> / </span> 11 класс</p><h1>Итоговое сочинение</h1>
+      <div id="ew-start-offer">
+        <p>За пять минут попробуй улучшить одну фразу в учебном черновике. Если трудно начать, открой вопрос помощника.</p>
+        <a class="ew-launch" href="#ot-temy-do-vyvoda">Начать с одной фразы</a>
+        <span class="ew-entry-access">Без регистрации и ключа ИИ</span>
+      </div>
+    </div>
     <aside class="ew-date"><strong>2 декабря 2026</strong><span>Основной день · 3 ч 55 мин</span><a href="#ew-exam-guide">Памятка выпускнику</a></aside>
   </header>
   <noscript>Для работы с черновиком включи JavaScript. <a href="https://fipi.ru/itogovoe-sochinenie">Материалы ФИПИ</a> доступны отдельно.</noscript>
@@ -14,7 +20,11 @@
       <p id="ew-mode-help" class="ew-small">Православный комментарий мастерской можно включить по желанию. С любой подсказкой можно спорить.</p>
       <p id="ew-save" class="ew-save" role="status"></p>
     </aside>
-    <div class="ew-sheet"><div id="ew-current"></div></div>
+    <div class="ew-sheet" id="knizhnaya-polka">
+      <button type="button" class="ew-back-start" id="ew-back-start" data-act="page-start" hidden>К началу занятий</button>
+      <div id="ew-current"></div>
+      <div id="ew-practice-screen" hidden>{{ESSAY_WRITING_PRACTICE}}</div>
+    </div>
   </div>
   <section class="ew-exam-guide" id="ew-exam-guide" aria-labelledby="ew-guide-title">
     <h2 id="ew-guide-title">Памятка выпускнику на 2026/27 год</h2>
@@ -42,6 +52,7 @@
       <p>Школьник, получивший незачёт, может переписать сочинение в дополнительные даты этого учебного года, до двух раз. После повторного незачёта можно письменно попросить о проверке другой комиссией по правилам региона. Зачёт для допуска к ГИА действует бессрочно.</p>
       <p><a href="https://publication.pravo.gov.ru/document/0001202305160003">Порядок проведения ГИА-11, глава III</a> · <a href="https://doc.fipi.ru/itogovoe-sochinenie/mr_organizacia_it_sochineniya_2026-27.pdf#page=43">Порядок ознакомления с результатами, с. 43–44</a> · <a href="https://fipi.ru/itogovoe-sochinenie/">Все документы ФИПИ за 2026/27 год</a></p>
     </div></details>
+    <p><a href="{{ESSAY_STUDY_URL}}">Как мы проверяли вопросы помощника</a></p>
   </section>
 </div>
 <script type="application/json" id="ew-catalog">{{ESSAY_CATALOG}}</script>

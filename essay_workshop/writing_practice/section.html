@@ -1,0 +1,61 @@
+<section id="ot-temy-do-vyvoda" class="wp-practice" aria-labelledby="wp-title">
+  <header class="wp-header">
+    <h2 id="wp-title" tabindex="-1">От темы до вывода</h2>
+    <p>Прочитай тему и попробуй написать одну фразу. Если застрянешь, открой вопрос помощника.</p>
+  </header>
+  <div class="wp-pickers">
+    <div><label for="wp-skill">Что потренировать?</label><select id="wp-skill"></select></div>
+    <div><label for="wp-exercise">Упражнение</label><select id="wp-exercise"></select></div>
+  </div>
+  <div class="wp-work">
+    <p class="wp-label">Тема сочинения</p>
+    <h3 id="wp-topic" tabindex="-1"></h3>
+    <p id="wp-book" class="wp-book" hidden></p>
+    <p id="wp-context"></p>
+    <div class="wp-manuscript" id="wp-manuscript"><h4>Учебный черновик</h4><p id="wp-draft"></p></div>
+    <p id="wp-blank" hidden>Здесь пока нет черновика. Запиши свою первую мысль.</p>
+    <details class="wp-help" id="wp-hint"><summary>Нужен вопрос помощника</summary><p id="wp-question"></p></details>
+    <div id="wp-keep-wrap"><label class="wp-check-label"><input type="checkbox" id="wp-keep"> Оставить черновик и объяснить почему</label></div>
+    <label for="wp-response" id="wp-response-label">Моя версия</label>
+    <textarea id="wp-response" rows="4" spellcheck="true"></textarea>
+    <p id="wp-save" class="wp-note"></p>
+    <div class="wp-actions">
+      <button type="button" class="wp-primary" id="wp-compare" disabled>Сверить свою запись</button>
+      <button type="button" id="wp-pin" disabled>Запомнить первую версию</button>
+    </div>
+    <p class="wp-note" id="wp-action-status" role="status"></p>
+    <div class="wp-review" id="wp-review" hidden>
+      <h4 id="wp-review-title" tabindex="-1">Самопроверка</h4>
+      <p class="wp-orient" id="wp-self-check"></p>
+      <div class="wp-pair">
+        <div id="wp-before-box"><h5 id="wp-before-label"></h5><p id="wp-before"></p></div>
+        <div><h5 id="wp-after-label"></h5><p id="wp-after"></p></div>
+      </div>
+      <p id="wp-why" hidden></p>
+      <div class="wp-actions">
+        <button type="button" id="wp-revise">Вернуться к своей записи</button>
+        <button type="button" id="wp-next">Другое упражнение</button>
+      </div>
+    </div>
+    <details class="wp-transfer" id="wp-prompt-wrap" hidden>
+      <summary>Подготовить вопрос для своего ИИ</summary>
+      <p>В запрос войдут тема, учебный материал и твоя запись. Его можно скопировать в GigaChat или другой чат по своему выбору.</p>
+      <label for="wp-prompt">Текст запроса</label>
+      <textarea rows="5" id="wp-prompt" readonly></textarea>
+      <button type="button" id="wp-copy">Скопировать запрос</button>
+      <p id="wp-copy-status" role="status"></p>
+    </details>
+    <details class="wp-transfer" id="wp-transfer" hidden>
+      <summary>Попробовать на другом эпизоде</summary>
+      <p id="wp-transfer-task"></p>
+      <label for="wp-transfer-text">Мой самостоятельный ответ</label>
+      <textarea rows="3" id="wp-transfer-text" spellcheck="true"></textarea>
+      <button type="button" id="wp-transfer-check" disabled>Открыть ориентир</button>
+      <p id="wp-transfer-rule" class="wp-orient" tabindex="-1" hidden></p>
+    </details>
+  </div>
+  <footer class="wp-footer">
+    <a href="#essay-workshop">К началу тренажёра</a>
+    <button type="button" id="wp-export" disabled>Скачать мои записи</button>
+  </footer>
+</section>
