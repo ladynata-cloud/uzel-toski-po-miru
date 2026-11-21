@@ -25,7 +25,7 @@ from reading_pages import publish_reading_pages, reading_path
 from reading_lists import publish_reading_lists
 from extra_reading import publish_extra_reading
 from reader_catalogue import DATA_PATH, SEARCH_PATH, publish_reader_catalogue
-from reading_practice import publish_reading_practice
+from reading_practice import PAGE_PATH as READING_PRACTICE_PATH, publish_reading_practice
 from articles import home_articles, load_articles, publish_articles
 from caucasus_reading import home_card as caucasus_home, navigation as caucasus_nav
 from site_config import SITE_URL, deployment_links, write_domain_file
@@ -223,7 +223,8 @@ home = f'''<div class="wrap home-wrap">
     <p class="home-kicker">Литературная мастерская</p>
     <h1>Узел тоски<br>по миру</h1>
     <p class="home-lead">Читаем литературу в диалоге с православной мыслью. Возвращаемся к реплике, детали или поступку героя, чтобы понять, на чём держится наше прочтение.</p>
-    <div class="home-entry-links"><a href="{ESSAY_WORKSHOP}">Тренажёр итогового сочинения</a><a href="/shkola/">Литература по классам</a><a href="#masterskaya">Выбрать занятие</a></div>
+    <p><a class="home-index-link" href="{READING_PRACTICE_PATH}">Выбрать одно из четырёх коротких занятий</a></p>
+    <div class="home-entry-links"><a href="{ESSAY_WORKSHOP}">Тренажёр итогового сочинения</a><a href="/shkola/">Литература по классам</a><a href="#masterskaya">Занятия о доме, разлуке и милосердии</a></div>
   </div>
   {hero_artwork()}
 </header>
@@ -253,7 +254,7 @@ home = f'''<div class="wrap home-wrap">
 <div class="home-desk home-section">
   <section id="masterskaya" aria-labelledby="home-lessons-title">
     <h2 id="home-lessons-title">Дом, разлука, милосердие</h2>
-    <p>От возвращения Дуни к дому смотрителя до ночного визита доктора к Мерцаловым. Выберите произведение для подробного занятия.</p>
+    <p>Как герои переживают разлуку и замечают чужую беду? Выберите произведение для подробного занятия.</p>
     <ul class="home-works">{FEATURED_LINKS}</ul>
     <ul class="home-index-links">
       <li><a href="/masterskaya/">Все занятия</a></li>

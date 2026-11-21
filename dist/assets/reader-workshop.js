@@ -95,7 +95,7 @@
       'Браузер не разрешил сохранение. Можно продолжать; скопируйте заметку перед уходом.';
   }
 
-  function showStep() {
+  function showStep(focusStep = true) {
     const step = currentStep(packet, state);
     element('goal').hidden = Boolean(step);
     element('step').hidden = !step;
@@ -107,7 +107,7 @@
     element('previous').disabled = state.step === 0;
     element('next').disabled = state.step === 4;
     element('next').textContent = state.step === 3 ? 'Перейти к проверке' : 'Следующий шаг';
-    element('step-title').focus();
+    if (focusStep) element('step-title').focus();
   }
 
   function showPacket() {
@@ -133,7 +133,7 @@
     element('note').value = state.note;
     element('saved').textContent = state.note || state.branchId ? 'Восстановлена ваша заметка и шаг для этого режима.' :
       'Заметка остаётся в этом браузере. Сайт не оценивает ваш ответ автоматически.';
-    showStep();
+    showStep(false);
   }
 
   async function selectMode(mode) {
@@ -155,8 +155,13 @@
       const restored = readProgress(storage, key, packet);
       state = restored.state;
       showPacket();
+      const selectedButton = modeButtons.find(button => button.dataset.mode === mode);
+      element('note-mode').textContent = '(режим «' + selectedButton.textContent + '»)';
       if (!restored.available) element('saved').textContent = 'Локальное сохранение недоступно. Можно продолжать и скопировать заметку вручную.';
-      element('status').textContent = 'Открыт только выбранный фрагмент. Выберите подходящую вам ситуацию.';
+      element('status').textContent = 'Прочитайте фрагмент. Ниже можно выбрать подсказку и записать свою мысль.';
+      const heading = element('fragment-title');
+      heading.focus({preventScroll: true});
+      heading.scrollIntoView({block: 'start', behavior: 'instant'});
     } catch {
       element('status').textContent = 'Не удалось открыть фрагмент. Выберите режим ещё раз или вернитесь к карточкам.';
     }
@@ -176,9 +181,12 @@
     if (!/^work-[a-z0-9-]+$/.test(work.id)) return;
     selected = work;
     element('title').textContent = 'Читаем «' + work.title + '»';
+    for (const hint of element('recommendations').querySelectorAll('[data-work]')) {
+      hint.hidden = hint.dataset.work !== work.id;
+    }
     panel.hidden = false;
     for (const button of modeButtons) button.setAttribute('aria-pressed', 'false');
-    element('status').textContent = 'Выберите объём чтения. Сохранённый фрагмент сам не откроется.';
+    element('status').textContent = 'Текст откроется, когда вы выберете режим.';
     element('title').focus();
   }
   for (const button of modeButtons) button.addEventListener('click', () => selectMode(button.dataset.mode));

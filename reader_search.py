@@ -39,12 +39,14 @@ WORKSHOP_MARKUP
 <input type="search" id="memory-query" maxlength="300" placeholder="Например, разбирали горницу">
 <button id="memory-send" class="button" type="submit">Найти</button>
 <button class="button secondary" type="reset">Начать заново</button></div>
+<p id="memory-example">Попробуйте найти рассказ по детали <button class="button secondary" id="memory-example-query" type="button">двое мальчиков у витрины</button></p>
 <div class="memory-actions" id="memory-actions" hidden>
 <button class="button secondary" type="button" data-question="Что разбирает мастерская?">О чём поговорим?</button>
 <button class="button secondary" type="button" data-question="Где сверить источник?">Где сверить источник?</button>
 <button class="button secondary" type="button" id="memory-safe">Без спойлеров</button></div>
 </form>
 <p id="memory-status" role="status" aria-live="polite"></p>
+<p id="memory-practice-link" hidden><a href="/praktika-chteniya/">Выбрать одно из четырёх коротких занятий</a></p>
 <section id="memory-results" aria-label="Карточки произведений">''' + ''.join(rows) + '''</section>
 </div>
 <style>
