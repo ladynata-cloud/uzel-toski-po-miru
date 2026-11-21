@@ -7,11 +7,14 @@ const os = require('node:os');
 const path = require('node:path');
 const {pathToFileURL} = require('node:url');
 const {chromium} = require('playwright');
+const {checkComparison, checkStorageFailure} = require('./essay-conclusion-check.cjs');
 
 const base = (process.env.READER_BASE_URL || 'http://127.0.0.1:8074').replace(/\/?$/, '/');
 const workshop = new URL('k-sochineniyu/itogovoe/pomoshchnik/', base).href;
 const release = path.resolve(__dirname, '../dist/k-sochineniyu/itogovoe/pomoshchnik');
 const actions = ['empty', 'topic', 'scene', 'paragraph', 'essay', 'rehearsal', 'quick'];
+const primary = ['empty', 'paragraph'];
+const secondary = ['topic', 'scene', 'essay', 'rehearsal', 'quick'];
 const targets = {
   empty:'#ew-write-reading', topic:'#ew-custom', scene:'#ew-library-search', paragraph:'#dr-source',
   essay:'#ew-write-draft', rehearsal:'[data-rehearsal-body]', quick:'#wp-response',
@@ -27,7 +30,17 @@ function card(page, id) {
 }
 
 async function enter(page, id) {
-  await card(page, id).click();
+  if (secondary.includes(id)) {
+    const more = page.locator('#ew-situations [data-entry-more]');
+    if (!(await more.evaluate(el => el.open))) {
+      await more.locator('summary').focus();
+      await page.keyboard.press('Enter');
+    }
+    assert.ok(await more.evaluate(el => el.open), 'Other routes must open with the keyboard');
+    await fits(page);
+  }
+  await card(page, id).focus();
+  await page.keyboard.press('Enter');
   await page.locator(targets[id]).waitFor();
 }
 
@@ -46,11 +59,93 @@ async function fits(page) {
   assert.deepEqual(out, [], 'Visible controls must fit the viewport');
 }
 
+async function selfCheck(page) {
+  const panel = page.locator('#ew-current');
+  const field = panel.locator('#ew-write-link');
+  const feedback = panel.locator('[data-answer-result]');
+  const title = feedback.locator('[data-answer-self-check]');
+  const note = feedback.locator('[data-answer-choice-note]');
+  const original = await field.inputValue();
+  const topic = await panel.locator('.ew-topic').textContent();
+  const thesis = 'Иногда признание даётся труднее, чем помощь.';
+  const check = () => panel.locator('[data-act="answer-check"]').click();
+  const checkLabel = async () => {
+    assert.equal(await title.innerText(), 'Вопрос для самопроверки');
+    assert.equal(await note.innerText(), 'Выбери подходящий вопрос ниже или продолжай с текущим текстом.');
+    assert.equal(await feedback.locator('[data-answer-next] strong').count(), 0, 'A general self-check does not demand a correction');
+    assert.deepEqual(await feedback.locator('[data-link-help]').evaluateAll(nodes => nodes.map(n => n.dataset.linkHelp)),
+      ['repeat', 'retell', 'reading', 'guess'], 'The four existing choices appear exactly once');
+    assert.ok((await panel.innerText()).includes(thesis));
+    assert.equal(await panel.locator('.ew-topic').textContent(), topic);
+  };
+  await check();
+  await checkLabel();
+  for (const choice of await feedback.locator('[data-link-help]').all()) {
+    await choice.locator('summary').focus();
+    await page.keyboard.press('Enter');
+    assert.ok(await choice.evaluate(el => el.open));
+    assert.ok((await choice.locator('p').innerText()).trim());
+    assert.equal(await field.inputValue(), original, 'Opening a help choice must not rewrite the learner’s words');
+    await fits(page);
+  }
+  // These phrases intentionally express different possible readings. This test
+  // checks the voluntary UI, not whether any interpretation is correct.
+  for (const phrase of [
+    'Мерцалов заметил деньги, потому что поднял блюдце.',
+    'Оставленная без личного вручения помощь позволяет семье принять её без унизительной просьбы.',
+    'Доктор боялся славы.',
+    'Мы не знаем, боялся ли доктор славы.',
+    'Можно предположить, что доктор не хотел благодарности, но его точный мотив нам неизвестен.',
+  ]) {
+    await field.fill(phrase);
+    assert.equal(await title.count(), 0, 'An edited answer must not retain an earlier self-check');
+    await check();
+    await checkLabel();
+    assert.equal(await field.inputValue(), phrase);
+  }
+  await field.fill('Моя запись об одном поступке.');
+  await check();
+  assert.equal(await title.count(), 0, 'An exact episode repeat keeps its specific feedback');
+  assert.equal(await note.count(), 0);
+  assert.equal(await feedback.locator('[data-answer-next] strong').innerText(), 'Попробуй сейчас.');
+  assert.equal(await feedback.locator('[data-link-help]').count(), 4);
+  await field.fill('');
+  await check();
+  assert.equal(await title.count(), 0, 'An empty answer is not presented as a completed self-check');
+  assert.equal(await feedback.locator('[data-link-help]').count(), 0);
+  await field.fill(original);
+  await check();
+  await checkLabel();
+  const lens = page.locator('#ew-mode');
+  const mode = await lens.inputValue();
+  await lens.selectOption(mode === 'orthodox' ? 'secular' : 'orthodox');
+  await checkLabel();
+  assert.equal(await field.inputValue(), original);
+  await lens.selectOption(mode);
+  await page.reload();
+  await checkLabel();
+  assert.equal(await field.inputValue(), original, 'Reload preserves the checked answer without forcing a revision');
+  await panel.locator('[data-act="finish-argument"]').click();
+  assert.ok((await panel.innerText()).includes(original), 'The learner can continue with the same answer');
+}
+
 async function routes(page, url) {
   await page.goto(url);
   const ids = await page.locator('#ew-situations [data-entry-situation]').evaluateAll(nodes =>
     nodes.map(n => n.dataset.entrySituation));
-  assert.deepEqual(ids, actions);
+  assert.deepEqual(ids, [...primary, ...secondary]);
+  assert.deepEqual(await page.locator('[data-entry-primary] [data-entry-situation]').evaluateAll(nodes =>
+    nodes.map(n => n.dataset.entrySituation)), primary);
+  assert.deepEqual(await page.locator('[data-entry-primary] b').allTextContents(),
+    ['Начать с короткого отрывка', 'Поработать с моим текстом']);
+  const more = page.locator('#ew-situations [data-entry-more]');
+  assert.equal(await more.evaluate(el => el.open), false, 'Only the two main starting choices are expanded initially');
+  assert.deepEqual(await more.locator('[data-entry-situation]').evaluateAll(nodes => nodes.map(n => n.dataset.entrySituation)), secondary);
+  assert.deepEqual(await page.locator('#ew-situations [data-entry-situation]:visible').evaluateAll(nodes => nodes.map(n => n.dataset.entrySituation)), primary);
+  assert.ok(await page.locator('#ew-situations [data-act="page-themeAtlas"]').isVisible(), 'Topic selection remains directly available');
+  await card(page, 'empty').focus();
+  await page.keyboard.press('Tab');
+  assert.ok(await card(page, 'paragraph').evaluate(el => el === document.activeElement), 'Both main routes are adjacent in keyboard order');
   await fits(page);
 
   for (const id of actions) {
@@ -66,10 +161,13 @@ async function routes(page, url) {
   assert.equal(await page.locator('#ew-custom').inputValue(), myTopic);
   await page.locator('#ew-custom-form button').click();
   await page.locator('#ew-write-thesis').fill('Иногда признание даётся труднее, чем помощь.');
+  await page.locator('#ew-current [data-act="answer-check"]').click();
+  assert.equal(await page.locator('[data-answer-self-check]').count(), 0, 'The new label is limited to the link stage');
   await page.locator('#ew-current [data-act="page-episode"]').click();
   await page.locator('#ew-write-episode').fill('Моя запись об одном поступке.');
   await page.locator('#ew-current [data-act="page-link"]').click();
   await page.locator('#ew-write-link').fill('В этом поступке видна забота.');
+  await selfCheck(page);
   await back(page);
 
   await enter(page, 'empty');
@@ -77,6 +175,14 @@ async function routes(page, url) {
   await back(page);
   await enter(page, 'paragraph');
   await page.locator('#dr-source').fill(myParagraph);
+  await back(page);
+  const resume = page.locator('#ew-situations .ew-resume button');
+  assert.ok(await resume.isVisible());
+  assert.ok(await resume.evaluate(el => Boolean(el.compareDocumentPosition(document.querySelector('[data-entry-primary]')) & Node.DOCUMENT_POSITION_FOLLOWING)),
+    'Saved work is offered before the two starting cards');
+  await resume.focus();
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#dr-source').inputValue(), myParagraph, 'Resume reopens the exact saved paragraph');
   await back(page);
   await enter(page, 'essay');
   await page.locator('#ew-finished-topic').fill(myTopic);
@@ -185,6 +291,7 @@ async function online(page) {
   await page.goto(workshop + '#ot-temy-do-vyvoda');
   await page.locator(targets.quick).waitFor();
   await capture(page, 'essay-direct-writing-practice');
+  await checkComparison(page, workshop, {extended:page.viewportSize().width === 390});
   assert.deepEqual(submissions, []);
 }
 
@@ -220,6 +327,7 @@ async function offline(browser, folder) {
         await page.locator('#local-check').click();
         assert.ok((await page.locator('#local-result').innerText()).trim());
       }
+      await checkComparison(page, file);
       assert.deepEqual(outgoing, [], 'The extracted or standalone workshop must work without network requests');
     } finally { await context.close(); }
   }
@@ -305,11 +413,12 @@ async function personal(browser, folder) {
   const browser = await chromium.launch({executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE});
   const folder = await fs.mkdtemp(path.join(os.tmpdir(), 'essay-entry-'));
   try {
-    for (const width of [390, 1360]) {
+    for (const width of [320, 390, 1360]) {
       const page = await browser.newPage({viewport:{width,height:844}});
       page.setDefaultTimeout(6500);
       try { await online(page); } finally { await page.close(); }
     }
+    await checkStorageFailure(browser, workshop);
     const shared = await browser.newPage();
     try { await sharedReadingLens(shared); } finally { await shared.close(); }
     await offline(browser, folder);

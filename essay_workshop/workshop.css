@@ -24,6 +24,7 @@
 .ew .ew-exam-guide{margin-top:2rem;scroll-margin-top:1.5rem}.ew .ew-exam-guide h2{font:500 clamp(23px,3vw,30px)/1.2 Georgia,serif}.ew .ew-exam-guide details{margin-top:.5rem}.ew .ew-exam-guide details>div{max-width:80ch}.ew .ew-date a{font-size:14px}
 .ew [data-answer-result]{overflow-wrap:anywhere}
 .ew .ew-answer-card{margin:.6rem 0;padding:.2rem .85rem;border-inline-start:3px solid var(--deep);background:#f2f5ef}
+.ew .ew-answer-card h3{font:650 1.05rem/1.4 'Segoe UI',Arial,sans-serif;margin:.5rem 0}.ew .ew-answer-card [data-answer-choice-note]{margin:.6rem 0}
 .ew .ew-answer-change{border-inline-start:3px solid var(--deep);padding-inline-start:.8rem}
 .ew .ew-entry-tools button{min-height:44px}
 .ew .ew-entry-heading{font-size:1.22rem;margin:1.35rem 0 .45rem}
@@ -47,6 +48,7 @@
 .ew .ew-resume{margin:.75rem 0}
 .ew .ew-entry-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem;margin:1rem 0 .8rem}
 .ew .ew-entry-choices .ew-route{display:block;width:100%;height:100%;min-height:48px;text-align:left;padding:.65rem .8rem;background:var(--paper);border:1px solid var(--rule);border-radius:5px;text-decoration:none}
+.ew .ew-entry-primary .ew-route{padding:.9rem 1rem;border-color:var(--deep);background:var(--pale)}
 .ew .ew-entry-choices .ew-route:focus-visible{outline:3px solid var(--deep);outline-offset:2px}
 .ew .ew-entry-choices .ew-route:focus-visible,.ew .ew-entry-choices .ew-route:hover{background:#f1f5ed;border-color:var(--deep)}
 .ew-route b{display:block;font:600 1.12rem/1.3 Georgia,serif;color:var(--deep)}.ew-route small{display:block;margin-top:.35rem;font-size:.95rem;line-height:1.45;color:var(--muted)}
@@ -72,3 +74,9 @@
 .ew .ew-route-topic h4{font:600 1.18rem/1.35 Georgia,serif;margin:.3rem 0}
 .ew .ew-route-topic button,.ew #ta-catalog .ew-library-filters{margin-top:.8rem}
 @media(max-width:480px){.ew-topic-interests{grid-template-columns:1fr}}
+
+.ew .ew-evidence-comparison{margin:1rem 0;padding:1rem;border:1px solid var(--rule);border-radius:5px;background:var(--paper);overflow-wrap:anywhere}
+.ew .ew-evidence-comparison h3{margin-top:0}.ew .ew-comparison-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+.ew .ew-comparison-pair .ew-text-card{margin:0;min-width:0}.ew .ew-comparison-pair h4{margin:0 0 .5rem;font-size:1.05rem}
+.ew .ew-comparison-pair .ew-actions{margin-bottom:0}
+@media(max-width:620px){.ew .ew-comparison-pair{grid-template-columns:1fr}.ew .ew-evidence-comparison{padding:.75rem}}

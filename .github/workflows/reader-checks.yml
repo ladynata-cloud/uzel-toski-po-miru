@@ -39,12 +39,13 @@ jobs:
           python3 -m unittest discover -s tests -p test_full_essay_review.py
           python3 -m unittest discover -s tests -p test_book_shelf_release.py
           python3 -m unittest discover -s tests -p test_reading_lens_release.py
+          python3 -m unittest discover -s tests -p test_bonus_training.py
           node --check dist/assets/app.js
           node --check dist/assets/exam-practice.js
           node --check dist/assets/reader-search.js
           node --check dist/assets/reader-workshop.js
           node essay_workshop/entry_router/train.cjs --check --report
-          node --test tests/essay-entry-model.test.cjs tests/reader-search.test.cjs tests/reader-workshop.test.cjs tests/workshop-draft.test.cjs tests/essay-workshop-worldview.test.cjs tests/essay-answer-feedback.test.cjs
+          node --test tests/essay-entry-model.test.cjs tests/reader-search.test.cjs tests/reader-workshop.test.cjs tests/workshop-draft.test.cjs tests/essay-workshop-worldview.test.cjs tests/essay-answer-feedback.test.cjs tests/essay-quote-evidence.test.cjs
 
   reader-browser:
     name: Reader browser smoke (Chromium)
@@ -106,14 +107,15 @@ jobs:
             done
             return "$failed"
           }
-          run_group essay-entry-browser essay-workshop-browser essay-book-shelf-browser &
+          run_group essay-entry-browser essay-workshop-browser essay-book-shelf-browser essay-review-quotes-browser &
           essay_jobs=$!
-          run_group reader-browser-smoke essay-workshop-integration exam-reading-lens-browser &
+          run_group reader-browser-smoke essay-workshop-integration exam-reading-lens-browser essay-quote-demo-browser &
           reading_jobs=$!
           failed=0
           wait "$essay_jobs" || failed=1
           wait "$reading_jobs" || failed=1
-          exit "$failed"
+          if [ "$failed" -ne 0 ]; then exit "$failed"; fi
+          node scripts/capture-essay-article.cjs
       - name: Save browser evidence
         if: always()
         uses: actions/upload-artifact@v4

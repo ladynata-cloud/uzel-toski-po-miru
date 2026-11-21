@@ -221,10 +221,10 @@
   const finishedEssayId = 'finished-essay';
   const unnamedEssay = 'Моё готовое сочинение';
   const entrySituations = [
-    ['empty', 'route-read', 'Пока ничего не выбрал', 'Прочитай короткий эпизод и запиши одну деталь.'],
+    ['empty', 'route-read', 'Начать с короткого отрывка', 'Подойдёт, если текста пока нет или трудно вспомнить книгу. Прочитай и запиши одну свою мысль.'],
     ['topic', 'entry-topic', 'Есть тема', 'Введи свой вопрос и попробуй ответить одной фразой.'],
     ['scene', 'entry-scene', 'Помню книгу или эпизод', 'Найди знакомую книгу по названию или автору.'],
-    ['paragraph', 'route-draftReader', 'Есть абзац', 'Вставь его и отметь, где поступок, а где твоя мысль.'],
+    ['paragraph', 'route-draftReader', 'Поработать с моим текстом', 'Вставь абзац или черновик и выбери одну правку.'],
     ['essay', 'entry-essay', 'Сочинение готово', 'Вставь свой текст и открой самопроверку.'],
     ['rehearsal', 'route-rehearsal', 'Хочу репетицию целиком', 'Открой комплект тем и напиши работу самостоятельно.'],
     ['quick', 'page-writingPractice', 'Начать с одной фразы', 'Выбери короткое упражнение на пять минут.']
@@ -283,9 +283,12 @@
     const previous = steps.find(([id]) => id !== 'start' && id === state.previousPage);
     const resumeAction=previous?.[0]==='library'?(state.shelfTopic===state.active?'topic-books':'library-all'):'page-'+previous?.[0];
     const resume = previous ? '<div class="ew-resume">'+button(state.resumeFinished?'resume-finished':resumeAction, 'Вернуться к занятию «'+previous[1]+'»')+'</div>' : '';
+    const primary = entrySituations.filter(([id]) => id === 'empty' || id === 'paragraph');
+    const other = entrySituations.filter(([id]) => id !== 'empty' && id !== 'paragraph');
     return '<section data-ew-entry id="ew-situations" aria-labelledby="ew-title">'+heading('С чего ты начинаешь?')+resume+
-      '<div class="ew-actions">'+button('page-themeAtlas','Помоги выбрать тему сочинения',true)+'</div>'+
-      '<div class="ew-entry-choices">'+entrySituations.map(entryCard).join('')+'</div>'+
+      '<div class="ew-entry-choices ew-entry-primary" data-entry-primary>'+primary.map(entryCard).join('')+'</div>'+
+      '<div class="ew-actions">'+button('page-themeAtlas','Помоги выбрать тему сочинения')+'</div>'+
+      '<details data-entry-more><summary>Другие способы начать</summary><div class="ew-entry-choices">'+other.map(entryCard).join('')+'</div></details>'+
       (window.EssayGigaNavigator?.panel(state.mode) || '')+
       '<div class="ew-entry-return"><a href="#knizhnaya-polka" data-act="library-all">Все книги</a></div>'+
       '<h3 class="ew-entry-heading">Другие занятия</h3><div class="ew-entry-tools">'+
@@ -533,8 +536,11 @@
     if(stale) result='<p class="ew-small" data-answer-stale>Запись изменилась. Можно проверить её ещё раз и сравнить формулировки.</p>';
     else if(checked && text.trim()) {
       const reply=inspectAnswer(stage,text), change=record.change;
-      result='<div class="ew-answer-card">'+(reply.excerpt?'<p class="ew-note" data-answer-excerpt>«'+h(reply.excerpt)+'»</p>':'')+
-        '<p data-answer-observation>'+h(reply.observation)+'</p><p data-answer-next><strong>Попробуй сейчас.</strong> '+h(reply.next)+'</p></div>';
+      const selfCheck=stage==='link' && reply.kind==='reader-check';
+      result='<div class="ew-answer-card">'+(selfCheck?'<h3 data-answer-self-check>Вопрос для самопроверки</h3>':'')+
+        (reply.excerpt?'<p class="ew-note" data-answer-excerpt>«'+h(reply.excerpt)+'»</p>':'')+
+        '<p data-answer-observation>'+h(reply.observation)+'</p><p data-answer-next>'+(selfCheck?'':'<strong>Попробуй сейчас.</strong> ')+h(reply.next)+'</p>'+
+        (selfCheck?'<p class="ew-small" data-answer-choice-note>Выбери подходящий вопрос ниже или продолжай с текущим текстом.</p>':'')+'</div>';
       if (stage==='link') {
         const paths=EssayDraftReader.helpChoices.map(choice=>'<details data-link-help="'+h(choice.id)+'"><summary>'+
           h(choice.label)+'</summary><p>'+h(choice.hint)+'</p></details>');
@@ -779,13 +785,36 @@
   const evidenceTasks = {
     position:{title:'Мой ответ на вопрос темы',criterion:'К1',hint:'Что ты сам отвечаешь на вопрос темы? Сформулируй ответ в одном предложении.'},
     detail:{title:'Деталь из произведения',criterion:'К2',hint:'Вернись к книге. Какой поступок, реплика или деталь служит примером для твоей мысли?'},
-    reasoning:{title:'Почему деталь доказывает мысль',criterion:'К2',hint:'Что становится понятно из выбранной детали? Свяжи её с собственным ответом на тему.'}
+    reasoning:{title:'Почему деталь доказывает мысль',criterion:'К2',hint:'Что становится понятно из выбранной детали? Свяжи её с собственным ответом на тему.'},
+    conclusion:{title:'Мой вывод из рассуждения',criterion:'К3',hint:'К какому выводу тебя привели аргументы? Его можно отметить в любой части текста; отдельный заключительный абзац не нужен.'}
   };
   function evidenceIsCurrent(mark,draft) {
-    return mark && !mark.stale && !mark.missing && draft.replace(/\r\n?/g,'\n').slice(mark.start,mark.end)===mark.quote;
+    const source=draft.replace(/\r\n?/g,'\n');
+    return mark && !mark.stale && !mark.missing && Number.isInteger(mark.start) && Number.isInteger(mark.end) &&
+      mark.start>=0 && mark.end>mark.start && mark.end<=source.length && typeof mark.quote==='string' &&
+      source.slice(mark.start,mark.end)===mark.quote;
+  }
+  function evidenceComparison(n) {
+    const cards=[['position','Мой ответ на тему'],['conclusion','Мой вывод из рассуждения']].map(([key,title])=>{
+      const mark=n.evidence?.[key], current=evidenceIsCurrent(mark,n.draft);
+      const message=mark && !mark.missing ? 'Текст изменился. Отметь фразу заново.' :
+        mark?.missing ? 'Пока не нашёл. Можно продолжить самопроверку.' : 'Фраза пока не отмечена. Можно продолжить самопроверку.';
+      return '<div class="ew-text-card"'+(mark?' data-evidence-result="'+key+'"':'')+'><h4>'+title+'</h4>'+
+        (current?'<p class="ew-note" data-comparison-quote="'+key+'">«'+h(mark.quote)+'»</p>':
+          '<p data-comparison-state="'+key+'">'+message+'</p>')+
+        actions(button('evidence-reselect-'+key,current?'Выделить другую фразу':mark && !mark.missing?'Выделить заново':'Отметить фразу'),
+          ...(current?[button('evidence-edit-'+key,'Править эту фразу')]:[]),
+          ...(mark?[button('evidence-remove-'+key,'Снять отметку')]:[]))+'</div>';
+    }).join('');
+    return '<section class="ew-evidence-comparison" data-evidence-comparison aria-labelledby="ew-comparison-title">'+
+      '<h3 id="ew-comparison-title">Мой ответ на тему и мой вывод</h3><p class="ew-topic">'+h(topic().title)+'</p>'+
+      '<div class="ew-comparison-pair">'+cards+'</div>'+
+      '<p>Что в твоём рассуждении привело к этому выводу? Как он связан с ответом на тему?</p>'+
+      '<details><summary>Как сопоставить две фразы</summary><p>Вывод может развивать или уточнять твою мысль. Совпадение формулировок само по себе не показывает, достаточно ли обоснования. Вывод можно отметить в любой части текста.</p></details>'+
+      actions(button('evidence-compare-continue','Продолжить самопроверку',true),button('evidence-compare-edit','Вернуться к правке'))+'</section>';
   }
   function evidenceFindings(n) {
-    return Object.entries(evidenceTasks).map(([key,task])=>{
+    return evidenceComparison(n)+Object.entries(evidenceTasks).filter(([key])=>key!=='position' && key!=='conclusion').map(([key,task])=>{
       const mark=n.evidence?.[key];
       if(!mark)return '';
       const current=evidenceIsCurrent(mark,n.draft);
@@ -800,8 +829,9 @@
     const pending=tasks.find(t=>!n.evidence?.[t.id] || n.evidence[t.id].stale)?.id;
     return '<section aria-labelledby="ew-evidence-title"><h3 id="ew-evidence-title">Проверь, чем ты доказал свою мысль</h3>'+
       '<label for="ew-evidence-kind">Что ищешь в своей работе?</label><select id="ew-evidence-kind">'+options(tasks,pending)+'</select>'+
+      '<p class="ew-small" id="ew-evidence-selection-help">С клавиатуры: выдели фразу на странице правки и нажми «Проверить работу». Выделение появится здесь для отметки.</p>'+
       '<div class="ew-field"><label for="ew-evidence-draft">Выдели нужные слова в черновике</label>'+
-      '<textarea id="ew-evidence-draft" readonly rows="7">\n'+h(n.draft)+'</textarea></div>'+
+      '<textarea id="ew-evidence-draft" readonly rows="7" aria-describedby="ew-evidence-selection-help">\n'+h(n.draft)+'</textarea></div>'+
       actions(button('evidence-mark','Отметить выделенную фразу',true),button('evidence-missing','Пока не нашёл'))+
       '<p role="status" id="ew-evidence-status"></p><div id="ew-evidence-results">'+evidenceFindings(n)+'</div></section>';
   }
@@ -813,6 +843,38 @@
     }
     const n=note(), select=panel.querySelector('#ew-evidence-kind');
     if(!select)return;
+    if(action==='evidence-compare-continue'){
+      panel.querySelector('[data-check]')?.focus();
+      return;
+    }
+    if(action==='evidence-compare-edit'){
+      const key=evidenceIsCurrent(n.evidence?.conclusion,n.draft)?'conclusion':
+        evidenceIsCurrent(n.evidence?.position,n.draft)?'position':'conclusion';
+      handleEvidence('evidence-edit-'+key);
+      return;
+    }
+    if(action.startsWith('evidence-reselect-')){
+      const key=action.slice('evidence-reselect-'.length);
+      if(!Object.hasOwn(evidenceTasks,key))return;
+      select.value=key;
+      const source=panel.querySelector('#ew-evidence-draft'), mark=n.evidence?.[key];
+      const current=evidenceIsCurrent(mark,source.value);
+      source.focus();
+      source.setSelectionRange(current?mark.start:0,current?mark.end:0);
+      panel.querySelector('#ew-evidence-status').textContent='Выдели фразу: «'+evidenceTasks[key].title+'».';
+      return;
+    }
+    if(action.startsWith('evidence-remove-')){
+      const key=action.slice('evidence-remove-'.length);
+      if(!Object.hasOwn(evidenceTasks,key))return;
+      if(n.evidence)delete n.evidence[key];
+      select.value=key;
+      save();
+      panel.querySelector('#ew-evidence-results').innerHTML=evidenceFindings(n);
+      panel.querySelector('#ew-evidence-status').textContent='Отметка «'+evidenceTasks[key].title+'» снята. Текст не изменён.';
+      panel.querySelector('[data-act="evidence-reselect-'+key+'"]')?.focus();
+      return;
+    }
     if(action.startsWith('evidence-edit-')){
       const key=action.slice('evidence-edit-'.length);
       if(!Object.hasOwn(evidenceTasks,key))return;
@@ -834,6 +896,7 @@
       return;
     }
     const key=select.value, task=evidenceTasks[key];
+    if(!task)return;
     const source=panel.querySelector('#ew-evidence-draft'), status=panel.querySelector('#ew-evidence-status');
     const missing=action==='evidence-missing';
     let start=source.selectionStart, end=source.selectionEnd;
@@ -1208,7 +1271,28 @@
       state.active=action.slice(5);takeLibraryWork(selected);go(pageAfterTopic());return;
     }
     if(action==='page-library'){if(state.notes[state.active])booksForThisTopic();else wholeLibrary();return;}
-    if(action.startsWith('page-')){if(action==='page-review')state.reviewKind='draft';go(action.slice(5));return;}
+    if(action==='page-review'){
+      const editor=sourceField('draft');
+      let selected=null;
+      if(editor){
+        const text=editor.value, start=editor.selectionStart, end=editor.selectionEnd;
+        if(start>=0 && end>start && end<=text.length && text.slice(start,end).trim()){
+          selected={text,start,end,direction:editor.selectionDirection};
+        }
+      }
+      state.reviewKind='draft';
+      go('review');
+      const source=panel.querySelector('#ew-evidence-draft');
+      // Both textarea values have normalized line endings. Carry the exact range only;
+      // existing evidence stays unchanged until the learner explicitly marks it.
+      if(selected && source?.value===selected.text){
+        source.setSelectionRange(selected.start,selected.end,selected.direction);
+        panel.querySelector('#ew-evidence-kind').focus();
+        panel.querySelector('#ew-evidence-status').textContent='Выделенная фраза перенесена из черновика. Выбери её роль и нажми «Отметить выделенную фразу».';
+      }
+      return;
+    }
+    if(action.startsWith('page-')){go(action.slice(5));return;}
     if(action.startsWith('route-')){
       const route=action.slice(6);
       if(route==='drills'||route==='read'||route==='rehearsal'||route==='thesisLab'||route==='draftReader'||route==='themeAtlas'){go(route);return;}

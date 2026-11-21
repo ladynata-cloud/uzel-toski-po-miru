@@ -92,17 +92,43 @@ const EssayAnswerFeedback = (() => {
       return finding('source-detail','Эти слова есть в показанном отрывке. Ты выбрал деталь для наблюдения.','Допиши своими словами, почему ты выделил именно эту деталь.',text);
     }
     if (stage==='exercise' && drill) return drillFeedback(drill,text,words,last);
+    if (work?.id==='doctor' && (stage==='episode' || stage==='draft')) {
+      const largeBanknotes=/крупн[а-я]* (?:кредитн[а-я]* )?(?:билет[а-я]*|купюр[а-я]*)/u;
+      const money='(?:деньги|купюры|купюр|кредитные билеты|кредитных билетов)';
+      const amount='(?:несколько )?(?:крупные |крупных )?';
+      const receiver='(?:мерцалову |ему )?';
+      const gaveInHand=new RegExp('(?:^| )дал '+receiver+'(?:'+amount+money+' '+receiver+'в руки|в руки '+receiver+amount+money+')(?: |$)','u');
+      const transfers=[];
+      for (const sentence of parts) {
+        const phrase=norm(sentence);
+        // These are sentence-local signals, not a verdict on the whole retelling.
+        if (/(?:^| )(?:не|нельзя|неверно|ошибочно|ошибк[а-я]*|если|бы)(?: |$)|блюдц/u.test(phrase) || /[?«»"]/u.test(sentence)) continue;
+        if (stage==='draft' && !/(?:^| )(?:пирогов|мерцалову)(?: |$)/u.test(phrase)) continue;
+        // Keep two money episodes separate even when they share one sentence.
+        for (const statement of sentence.split(/[,;]|\s+(?:а затем|затем|потом)\s+/iu)) {
+          const clause=norm(statement), largeBills=largeBanknotes.test(clause);
+          // The earlier three roubles for food are an allowed, distinct detail.
+          if (/(?:^| )(?:три|3) рубл/u.test(clause) ||
+              !largeBills && /на (?:еду|пищу|продукты|чай|сахар|булки)(?: |$)/u.test(clause)) continue;
+          const handed=/(?:^| )вруч(?:ил[аи]?|ает)(?: |$)/u.test(clause) ||
+            /(?:^| )(?:лично|в руки|из рук)(?: |$)/u.test(clause) && /переда|отда/u.test(clause);
+          if (/деньг|денег|купюр|кредитн/u.test(clause) && (handed || gaveInHand.test(clause))) {
+            transfers.push({sentence,largeBills});
+          }
+        }
+      }
+      const transfer=transfers.find(item=>item.largeBills)||transfers[0];
+      if (transfer) {
+        if (transfer.largeBills) return finding('check-source','В этой фразе крупные кредитные билеты вручены лично. В рассказе Мерцалов находит их под чайным блюдцем, когда возвращается в комнату после разговора с врачом в коридоре.','Перечитай момент возвращения Мерцалова в комнату и уточни в своей фразе, когда он увидел крупные билеты.',transfer.sentence);
+        return finding('money-episode','В рассказе есть два эпизода с деньгами: три рубля на еду Мерцалов получает от врача, а крупные кредитные билеты позже находит под чайным блюдцем.','Уточни, о каких деньгах ты пишешь, и сверь способ передачи именно в этом эпизоде.',transfer.sentence);
+      }
+    }
     const formula=parts.find(s=>/^(?:(?:таким образом|значит|поэтому) )?(?:(?:это|пример|этот (?:пример|эпизод|поступок)) (?:еще раз )?(?:подтверждает|доказывает|иллюстрирует|показывает) (?:мою (?:мысль|позицию|правоту)|мой тезис|это)|(?:это|так) (?:доказывает|подтверждает) тезис)(?: потому что (?:поступок героя|этот пример|эпизод|он) (?:его |ее |это )?(?:доказывает|подтверждает))?$/u.test(norm(s)));
     if (formula) return finding('empty-link','Здесь есть ссылка на доказательство. Что именно в эпизоде служит доказательством, в этой фразе пока не названо.','Замени общую связку своим объяснением того, что мы поняли по конкретному поступку героя.',formula);
     const broad=parts.find(s=>/^(?:(?:я считаю что|поэтому|значит|в жизни|автор показывает что) )?(?:(?:очень )?важно быть добрым(?: человеком)?|нужно (?:быть добрым|помогать (?:людям|другим))|(?:доктор|герой|он|она) (?:был[аи]? |оказал(?:ся|ась) )?(?:очень )?(?:добры[йм]|хорош(?:ий|им)|добрая|милосердны[йм])(?: (?:человек|человеком))?)$/u.test(norm(s)));
     if (broad) {
       const hint=work?.id==='doctor'?'По какому поступку врача Мерцалов мог судить о его отношении к семье?':'Назови поступок, по которому читатель поймёт, что ты вкладываешь в эту оценку.';
       return finding('general-claim','В этой фразе есть общая оценка. Проверь, виден ли читателю поступок, на котором она основана.',hint,broad);
-    }
-    if (stage==='episode' && work?.id==='doctor' && /деньг|купюр|кредитн/u.test(words) &&
-        /(?:^| )(?:лично|в руки|из рук)(?: |$)/u.test(words) && /вруч|переда|отда/u.test(words) &&
-        !/(?:^| )(?:не|если|бы)(?: |$)|блюдц|после уход/u.test(words)) {
-      return finding('check-source','В твоей записи описано, как деньги переходят к Мерцалову. В карточке книги он находит их под чайным блюдцем после ухода врача.','Перечитай момент возвращения Мерцалова в комнату и уточни в своей фразе, когда он увидел деньги.',text);
     }
     if (stage==='thesis' || stage==='link' || stage==='draft') {
       const absolute=parts.find(s=>/(?:^| )(?:всегда|все люди|каждый человек)(?: |$)/u.test(norm(s).replace(/(?:далеко )?не (?:всегда|все люди|каждый человек)/gu,'')) && !/[«»"]/u.test(s));
