@@ -467,7 +467,8 @@ async function exercise(page) {
   await page.reload();
   assert.equal(await trial.locator('[data-pt-first]').textContent(), firstParagraph);
   assert.equal(await trial.locator('[data-pt="draft"]').count(), 0);
-  assert.ok(await trial.locator('summary').isVisible());
+  assert.ok(await trial.getByText('Вопросы для самопроверки или обсуждения', {exact:true}).isVisible());
+  assert.ok(await trial.locator('[data-ew-lens-question] > summary').isVisible());
 
   await start();
   await action('route-draftReader');

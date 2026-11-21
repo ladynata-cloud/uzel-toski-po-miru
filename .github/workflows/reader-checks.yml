@@ -92,12 +92,28 @@ jobs:
                       raise
                   time.sleep(0.2)
           PY
-          NODE_PATH="$RUNNER_TEMP/reader-browser-deps/node_modules" READER_ARTIFACT_DIR="$RUNNER_TEMP/reader-browser" node tests/reader-browser-smoke.cjs
-          NODE_PATH="$RUNNER_TEMP/reader-browser-deps/node_modules" node tests/essay-workshop-browser.cjs
-          NODE_PATH="$RUNNER_TEMP/reader-browser-deps/node_modules" node tests/essay-workshop-integration.cjs
-          NODE_PATH="$RUNNER_TEMP/reader-browser-deps/node_modules" node tests/essay-book-shelf-browser.cjs
-          NODE_PATH="$RUNNER_TEMP/reader-browser-deps/node_modules" node tests/exam-reading-lens-browser.cjs
-          NODE_PATH="$RUNNER_TEMP/reader-browser-deps/node_modules" READER_ARTIFACT_DIR="$RUNNER_TEMP/reader-browser" node tests/essay-entry-browser.cjs
+          export NODE_PATH="$RUNNER_TEMP/reader-browser-deps/node_modules"
+          export READER_ARTIFACT_DIR="$RUNNER_TEMP/reader-browser"
+          run_group() {
+            local failed=0 suite logfile
+            for suite in "$@"; do
+              logfile="$READER_ARTIFACT_DIR/$suite.log"
+              if ! node "tests/$suite.cjs" > "$logfile" 2>&1; then
+                echo "::error::Browser suite failed: $suite"
+                failed=1
+              fi
+              cat "$logfile"
+            done
+            return "$failed"
+          }
+          run_group essay-entry-browser essay-workshop-browser essay-book-shelf-browser &
+          essay_jobs=$!
+          run_group reader-browser-smoke essay-workshop-integration exam-reading-lens-browser &
+          reading_jobs=$!
+          failed=0
+          wait "$essay_jobs" || failed=1
+          wait "$reading_jobs" || failed=1
+          exit "$failed"
       - name: Save browser evidence
         if: always()
         uses: actions/upload-artifact@v4
